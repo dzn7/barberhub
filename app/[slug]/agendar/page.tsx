@@ -136,7 +136,7 @@ export default function PaginaAgendar() {
         event: '*',
         schema: 'public',
         table: 'configuracoes_barbearia',
-        filter: `tenant_id=eq.\${tenant.id}`
+        filter: `tenant_id=eq.${tenant.id}`
       }, () => {
         verificarStatusBarbearia()
       })
@@ -179,7 +179,7 @@ export default function PaginaAgendar() {
           .select('*')
           .eq('tenant_id', tenant.id)
           .eq('data', dataSelecionada)
-          .or(`barbeiro_id.is.null,barbeiro_id.eq.\${barbeiroSelecionado}`)
+          .or(`barbeiro_id.is.null,barbeiro_id.eq.${barbeiroSelecionado}`)
 
         if (errorBloqueios) {
           console.error('Erro ao buscar bloqueios:', errorBloqueios)
@@ -228,12 +228,12 @@ export default function PaginaAgendar() {
 
     if (dataSelecionada && barbeiroSelecionado && tenant) {
       channel = supabase
-        .channel(`horarios-\${barbeiroSelecionado}-\${dataSelecionada}`)
+        .channel(`horarios-${barbeiroSelecionado}-${dataSelecionada}`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'agendamentos',
-          filter: `barbeiro_id=eq.\${barbeiroSelecionado}`
+          filter: `barbeiro_id=eq.${barbeiroSelecionado}`
         }, () => {
           buscarHorariosOcupados()
         })
@@ -393,8 +393,8 @@ export default function PaginaAgendar() {
   const formatarTelefone = (valor: string) => {
     const numeros = valor.replace(/\D/g, '')
     if (numeros.length <= 2) return numeros
-    if (numeros.length <= 7) return `(\${numeros.slice(0, 2)}) \${numeros.slice(2)}`
-    return `(\${numeros.slice(0, 2)}) \${numeros.slice(2, 7)}-\${numeros.slice(7, 11)}`
+    if (numeros.length <= 7) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`
   }
 
   const finalizarAgendamento = async () => {
@@ -470,7 +470,7 @@ export default function PaginaAgendar() {
       setAgendamentoConcluido(true)
     } catch (error: any) {
       console.error('Erro ao criar agendamento:', error)
-      alert(`Erro ao criar agendamento: \${error.message || 'Erro desconhecido'}`)
+      alert(`Erro ao criar agendamento: ${error.message || 'Erro desconhecido'}`)
     } finally {
       setEnviando(false)
     }
@@ -552,7 +552,7 @@ export default function PaginaAgendar() {
           </p>
           
           <Link
-            href={`/\${slug}`}
+            href={`/${slug}`}
             className="inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl transition-all hover:scale-[1.02]"
             style={{ 
               backgroundColor: cores.secundaria,
@@ -633,7 +633,7 @@ export default function PaginaAgendar() {
           </div>
 
           <Link
-            href={`/\${slug}`}
+            href={`/${slug}`}
             className="block w-full py-3 font-semibold rounded-xl transition-all hover:scale-[1.02]"
             style={{ 
               backgroundColor: cores.secundaria,
@@ -667,7 +667,7 @@ export default function PaginaAgendar() {
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link 
-              href={`/\${slug}`} 
+              href={`/${slug}`} 
               className="flex items-center gap-2 transition-opacity hover:opacity-80"
               style={{ color: cores.destaque }}
             >

@@ -92,6 +92,7 @@ export function PreviewSite({ dados, totalServicos = 0, totalBarbeiros = 0 }: Pr
                         alt="Logo"
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     </div>
                   ) : (

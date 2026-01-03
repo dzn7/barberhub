@@ -328,14 +328,15 @@ export function BarbeirosMiniGestao({
             <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
               {/* Foto */}
               <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center">
+                <div className="relative flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center relative">
                     {formulario.foto_url ? (
                       <Image
                         src={formulario.foto_url}
                         alt="Foto"
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <User className="w-6 h-6 text-zinc-600" />
@@ -347,22 +348,24 @@ export function BarbeirosMiniGestao({
                     )}
                   </div>
                   <button
+                    type="button"
                     onClick={() => inputFotoRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 p-1.5 bg-zinc-700 rounded-full hover:bg-zinc-600 transition-colors"
+                    disabled={uploadandoFoto}
+                    className="absolute -bottom-1 -right-1 p-1.5 bg-zinc-700 rounded-full hover:bg-zinc-600 transition-colors disabled:opacity-50"
                   >
                     <Camera className="w-3 h-3 text-white" />
                   </button>
                   <input
                     ref={inputFotoRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     onChange={handleUploadFoto}
                     className="hidden"
                   />
                 </div>
                 <div className="text-xs text-zinc-500">
                   <p>Foto do profissional</p>
-                  <p className="text-zinc-600">Opcional • JPG, PNG</p>
+                  <p className="text-zinc-600">Opcional • JPG, PNG, WebP</p>
                 </div>
               </div>
 
@@ -490,6 +493,7 @@ export function BarbeirosMiniGestao({
                     alt={barbeiro.nome}
                     fill
                     className="object-cover"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -527,16 +531,18 @@ export function BarbeirosMiniGestao({
               </div>
 
               {/* Ações */}
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
                 <button
                   onClick={() => iniciarEdicao(barbeiro)}
                   className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                  aria-label="Editar barbeiro"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => removerBarbeiro(barbeiro.id)}
                   className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                  aria-label="Remover barbeiro"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

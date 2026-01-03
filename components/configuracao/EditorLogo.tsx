@@ -337,6 +337,7 @@ export function EditorLogo({
               alt="Logo"
               fill
               className="object-cover"
+              unoptimized
             />
           ) : (
             <Store className="w-8 h-8" style={{ color: corSecundaria + '50' }} />

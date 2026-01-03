@@ -340,7 +340,13 @@ export default function RegistrarPage() {
                     value={form.senha}
                     onChange={e => setForm({ ...form, senha: e.target.value })}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-12 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className={`w-full bg-zinc-900 border rounded-lg pl-10 pr-12 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
+                      form.senha.length > 0 
+                        ? form.senha.length >= 6 
+                          ? 'border-green-500/50' 
+                          : 'border-amber-500/50'
+                        : 'border-zinc-700'
+                    }`}
                   />
                   <button
                     type="button"
@@ -350,6 +356,26 @@ export default function RegistrarPage() {
                     {mostrarSenha ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {/* Indicador de força da senha em tempo real */}
+                {form.senha.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4].map((nivel) => (
+                        <div 
+                          key={nivel}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            form.senha.length >= nivel * 2
+                              ? form.senha.length >= 8 ? 'bg-green-500' : form.senha.length >= 6 ? 'bg-amber-500' : 'bg-red-500'
+                              : 'bg-zinc-700'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className={`text-xs ${form.senha.length >= 6 ? 'text-green-400' : 'text-amber-400'}`}>
+                      {form.senha.length >= 8 ? 'Senha forte' : form.senha.length >= 6 ? 'Senha válida' : `Faltam ${6 - form.senha.length} caracteres`}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -361,9 +387,28 @@ export default function RegistrarPage() {
                     value={form.confirmar_senha}
                     onChange={e => setForm({ ...form, confirmar_senha: e.target.value })}
                     placeholder="Repita a senha"
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className={`w-full bg-zinc-900 border rounded-lg pl-10 pr-10 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors ${
+                      form.confirmar_senha.length > 0
+                        ? form.confirmar_senha === form.senha && form.senha.length >= 6
+                          ? 'border-green-500/50'
+                          : 'border-red-500/50'
+                        : 'border-zinc-700'
+                    }`}
                   />
+                  {/* Indicador visual de match */}
+                  {form.confirmar_senha.length > 0 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {form.confirmar_senha === form.senha && form.senha.length >= 6 ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                      )}
+                    </div>
+                  )}
                 </div>
+                {form.confirmar_senha.length > 0 && form.confirmar_senha !== form.senha && (
+                  <p className="text-xs text-red-400 mt-1">As senhas não coincidem</p>
+                )}
               </div>
 
               {/* Resumo */}

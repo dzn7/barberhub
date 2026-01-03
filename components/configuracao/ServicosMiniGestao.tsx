@@ -497,16 +497,18 @@ export function ServicosMiniGestao({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => iniciarEdicao(servico)}
                       className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                      aria-label="Editar serviço"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => removerServico(servico.id)}
                       className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                      aria-label="Remover serviço"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
