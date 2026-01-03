@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { Botao } from '@/components/ui/botao'
 import { LogoMarca } from '@/components/ui/logo-marca'
 import { 
@@ -17,7 +16,7 @@ import {
 } from 'lucide-react'
 
 export default function EntrarPage() {
-  const router = useRouter()
+  const { entrar } = useAuth()
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [mostrarSenha, setMostrarSenha] = useState(false)
@@ -39,38 +38,26 @@ export default function EntrarPage() {
     setCarregando(true)
 
     try {
-      console.log('[Login] Tentando login com:', form.email)
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: form.email,
-        password: form.senha,
-      })
+      const resultado = await entrar(form.email, form.senha)
 
-      if (error) {
-        console.error('[Login] Erro de autenticação:', error.message, error.status)
-        if (error.message.includes('Invalid login credentials')) {
+      if (resultado.erro) {
+        if (resultado.erro.includes('Invalid login credentials')) {
           setErro('E-mail ou senha incorretos')
-        } else if (error.message.includes('Email not confirmed')) {
+        } else if (resultado.erro.includes('Email not confirmed')) {
           setErro('E-mail não confirmado. Verifique sua caixa de entrada.')
         } else {
-          setErro(error.message)
+          setErro(resultado.erro)
         }
         setCarregando(false)
         return
       }
 
-      console.log('[Login] Login bem-sucedido! User ID:', data.user?.id)
-      console.log('[Login] Sessão criada:', data.session ? 'Sim' : 'Não')
-
-      // Forçar redirecionamento com reload completo da página
-      // Isso garante que o AuthContext será reinicializado com a nova sessão
-      console.log('[Login] Redirecionando para /admin...')
+      // Login bem-sucedido - redirecionar
       window.location.href = '/admin'
 
     } catch (error) {
-      console.error('[Login] Erro inesperado:', error)
+      console.error('[Login] Erro:', error)
       setErro('Erro ao fazer login. Tente novamente.')
-    } finally {
       setCarregando(false)
     }
   }
