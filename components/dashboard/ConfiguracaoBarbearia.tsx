@@ -15,15 +15,14 @@ interface ConfiguracaoBarbeariaProps {
   onSalvar?: () => void;
 }
 
+// Paletas sofisticadas e elegantes - design monocromático profissional
 const CORES_PREDEFINIDAS = [
-  { nome: "Preto Clássico", primaria: "#18181b", secundaria: "#ffffff", destaque: "#fbbf24" },
-  { nome: "Azul Profissional", primaria: "#1e3a5f", secundaria: "#ffffff", destaque: "#3b82f6" },
-  { nome: "Verde Elegante", primaria: "#14532d", secundaria: "#ffffff", destaque: "#22c55e" },
-  { nome: "Vermelho Moderno", primaria: "#7f1d1d", secundaria: "#ffffff", destaque: "#ef4444" },
-  { nome: "Roxo Premium", primaria: "#4c1d95", secundaria: "#ffffff", destaque: "#8b5cf6" },
-  { nome: "Dourado Luxo", primaria: "#1c1917", secundaria: "#ffffff", destaque: "#d4af37" },
-  { nome: "Cinza Minimalista", primaria: "#374151", secundaria: "#f3f4f6", destaque: "#6b7280" },
-  { nome: "Laranja Vibrante", primaria: "#7c2d12", secundaria: "#ffffff", destaque: "#f97316" },
+  { nome: "Obsidian", descricao: "Elegância clássica", primaria: "#09090b", secundaria: "#fafafa", destaque: "#fafafa" },
+  { nome: "Grafite", descricao: "Minimalismo moderno", primaria: "#18181b", secundaria: "#f4f4f5", destaque: "#a1a1aa" },
+  { nome: "Midnight", descricao: "Sofisticação noturna", primaria: "#0c0a09", secundaria: "#fafaf9", destaque: "#a8a29e" },
+  { nome: "Slate", descricao: "Profissional discreto", primaria: "#0f172a", secundaria: "#f8fafc", destaque: "#94a3b8" },
+  { nome: "Charcoal", descricao: "Neutro atemporal", primaria: "#171717", secundaria: "#fafafa", destaque: "#d4d4d4" },
+  { nome: "Onyx", descricao: "Contraste marcante", primaria: "#0a0a0a", secundaria: "#ffffff", destaque: "#737373" },
 ];
 
 export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) {
@@ -40,8 +39,8 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
     nome: "",
     logo_url: "",
     cor_primaria: "#18181b",
-    cor_secundaria: "#ffffff",
-    cor_destaque: "#fbbf24",
+    cor_secundaria: "#f4f4f5",
+    cor_destaque: "#a1a1aa",
     telefone: "",
     whatsapp: "",
     email: "",
@@ -58,8 +57,8 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
         nome: tenant.nome || "",
         logo_url: tenant.logo_url || "",
         cor_primaria: tenant.cor_primaria || "#18181b",
-        cor_secundaria: tenant.cor_secundaria || "#ffffff",
-        cor_destaque: tenant.cor_destaque || "#fbbf24",
+        cor_secundaria: tenant.cor_secundaria || "#f4f4f5",
+        cor_destaque: tenant.cor_destaque || "#a1a1aa",
         telefone: tenant.telefone || "",
         whatsapp: tenant.whatsapp || "",
         email: tenant.email || "",
@@ -308,38 +307,48 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
               <Palette className="w-5 h-5" />
-              Paletas de Cores
+              Estilos Visuais
             </h3>
 
-            <div className="grid grid-cols-2 gap-3">
-              {CORES_PREDEFINIDAS.map((paleta, index) => (
-                <button
-                  key={index}
-                  onClick={() => aplicarPaleta(paleta)}
-                  className={`p-3 rounded-xl border-2 transition-all hover:scale-[1.02] ${
-                    dados.cor_primaria === paleta.primaria &&
-                    dados.cor_secundaria === paleta.secundaria &&
-                    dados.cor_destaque === paleta.destaque
-                      ? "border-zinc-900 dark:border-white"
-                      : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-600"
-                  }`}
-                  style={{ backgroundColor: paleta.secundaria }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div
-                      className="w-6 h-6 rounded-full border border-zinc-200"
-                      style={{ backgroundColor: paleta.primaria }}
-                    />
-                    <div
-                      className="w-6 h-6 rounded-full border border-zinc-200"
-                      style={{ backgroundColor: paleta.destaque }}
-                    />
-                  </div>
-                  <p className="text-xs font-medium text-zinc-700 text-left">
-                    {paleta.nome}
-                  </p>
-                </button>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {CORES_PREDEFINIDAS.map((paleta, index) => {
+                const selecionada = dados.cor_primaria === paleta.primaria &&
+                  dados.cor_secundaria === paleta.secundaria &&
+                  dados.cor_destaque === paleta.destaque;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => aplicarPaleta(paleta)}
+                    className={`relative p-4 rounded-xl border-2 transition-all hover:scale-[1.02] bg-zinc-50 dark:bg-zinc-800 ${
+                      selecionada
+                        ? "border-zinc-900 dark:border-white"
+                        : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500"
+                    }`}
+                  >
+                    {selecionada && (
+                      <div className="absolute top-2 right-2">
+                        <Check className="w-4 h-4 text-zinc-900 dark:text-white" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div
+                        className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-600"
+                        style={{ backgroundColor: paleta.primaria }}
+                      />
+                      <div
+                        className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-600"
+                        style={{ backgroundColor: paleta.secundaria }}
+                      />
+                    </div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-white text-left">
+                      {paleta.nome}
+                    </p>
+                    <p className="text-xs text-zinc-500 text-left">
+                      {paleta.descricao}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

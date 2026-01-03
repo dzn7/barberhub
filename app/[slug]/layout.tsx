@@ -58,8 +58,8 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
       className="min-h-screen bg-zinc-900"
       style={{
         '--cor-primaria': tenant.cor_primaria || '#18181b',
-        '--cor-secundaria': tenant.cor_secundaria || '#ffffff',
-        '--cor-destaque': tenant.cor_destaque || '#fbbf24',
+        '--cor-secundaria': tenant.cor_secundaria || '#f4f4f5',
+        '--cor-destaque': tenant.cor_destaque || '#a1a1aa',
       } as React.CSSProperties}
     >
       {children}
