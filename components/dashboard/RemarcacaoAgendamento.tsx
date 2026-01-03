@@ -94,7 +94,7 @@ export function RemarcacaoAgendamento() {
         })
       );
       
-      setAgendamentos(agendamentosComHistorico);
+      setAgendamentos(agendamentosComHistorico as any);
     } catch (error) {
       console.error("Erro ao buscar agendamentos:", error);
     } finally {

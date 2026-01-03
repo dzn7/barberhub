@@ -23,8 +23,9 @@ import { Relatorios } from "@/components/dashboard/Relatorios";
 import { GestaoTrabalhos } from "@/components/dashboard/GestaoTrabalhos";
 import { GestaoComentarios } from "@/components/dashboard/GestaoComentarios";
 import { AlternadorTema } from "@/components/AlternadorTema";
-import { NotificationPermission } from "@/components/NotificationPermission";
-import { useAgendamentosRealtime } from "@/hooks/useAgendamentosRealtime";
+// PWA removido temporariamente
+// import { NotificationPermission } from "@/components/NotificationPermission";
+// import { useAgendamentosRealtime } from "@/hooks/useAgendamentosRealtime";
 import { supabase } from "@/lib/supabase";
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear, subDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -60,18 +61,18 @@ export default function DashboardCompleto() {
   });
   const [carregando, setCarregando] = useState(true);
 
-  // Hook de notificações em tempo real
-  useAgendamentosRealtime({
-    enabled: !!user && !!tenant,
-    onNewAgendamento: (agendamento) => {
-      console.log("[Dashboard] 🎉 Novo agendamento:", agendamento);
-      buscarMetricas();
-    },
-    onCancelamento: (agendamento) => {
-      console.log("[Dashboard] ❌ Cancelamento:", agendamento);
-      buscarMetricas();
-    },
-  });
+  // Hook de notificações em tempo real (PWA removido temporariamente)
+  // useAgendamentosRealtime({
+  //   enabled: !!user && !!tenant,
+  //   onNewAgendamento: (agendamento) => {
+  //     console.log("[Dashboard] 🎉 Novo agendamento:", agendamento);
+  //     buscarMetricas();
+  //   },
+  //   onCancelamento: (agendamento) => {
+  //     console.log("[Dashboard] ❌ Cancelamento:", agendamento);
+  //     buscarMetricas();
+  //   },
+  // });
 
   // Redirecionar se não autenticado
   useEffect(() => {
@@ -332,8 +333,8 @@ export default function DashboardCompleto() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black overflow-x-hidden">
-      {/* Componente de Notificações Push */}
-      <NotificationPermission />
+      {/* Componente de Notificações Push - PWA removido temporariamente */}
+      {/* <NotificationPermission /> */}
       
       {/* Navbar Exclusiva do Dashboard */}
       <header className="bg-white dark:bg-[#1a1a1a] border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-40 w-full">

@@ -16,7 +16,7 @@ import {
  * Aparece apenas no dashboard
  */
 export function NotificationPermission() {
-  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [permission, setPermission] = useState<"default" | "granted" | "denied">("default");
   const [showBanner, setShowBanner] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [showIndicator, setShowIndicator] = useState(true);
@@ -33,7 +33,7 @@ export function NotificationPermission() {
 
     // Verificar permissão atual
     const currentPermission = getNotificationPermission();
-    setPermission(currentPermission);
+    setPermission(currentPermission as "default" | "granted" | "denied");
 
     // Esconder indicador se já concedeu permissão
     if (currentPermission === "granted") {
@@ -151,17 +151,17 @@ export function NotificationPermission() {
             <button
               onClick={() => setShowBanner(true)}
               className={`p-3 rounded-full shadow-lg transition-colors ${
-                permission === "granted"
+                String(permission) === "granted"
                   ? "bg-green-500 text-white"
                   : "bg-yellow-500 text-white hover:bg-yellow-600"
               }`}
               title={
-                permission === "granted"
+                String(permission) === "granted"
                   ? "Notificações ativadas"
                   : "Clique para ativar notificações"
               }
             >
-              {permission === "granted" ? (
+              {String(permission) === "granted" ? (
                 <Bell className="w-5 h-5" />
               ) : (
                 <BellOff className="w-5 h-5" />

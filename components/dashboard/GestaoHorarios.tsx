@@ -341,7 +341,7 @@ export function GestaoHorarios() {
       <div className="bg-zinc-50 dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           💡 <strong>Dica:</strong> Os horários configurados aqui serão exibidos automaticamente 
-          na página inicial, na seção "Como nos encontrar" e em outras partes do site.
+          na página inicial, na seção &quot;Como nos encontrar&quot; e em outras partes do site.
         </p>
       </div>
 

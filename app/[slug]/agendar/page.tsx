@@ -94,7 +94,7 @@ export default function PaginaAgendar() {
           .select('id, slug, nome')
           .eq('slug', slug)
           .eq('ativo', true)
-          .single()
+          .single() as { data: Tenant | null }
 
         if (!tenantData) return
 
@@ -121,6 +121,7 @@ export default function PaginaAgendar() {
     if (!dataSelecionada || !barbeiroSelecionado || !tenant) return
 
     async function carregarHorarios() {
+      if (!dataSelecionada || !barbeiroSelecionado || !tenant) return
       setCarregandoHorarios(true)
       try {
         const dataStr = dataSelecionada.toISOString().split('T')[0]
