@@ -62,16 +62,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Verificar sessão existente
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        carregarDadosProprietario(session.user.id)
+    const inicializar = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setSession(session)
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          await carregarDadosProprietario(session.user.id)
+        }
+      } catch (error) {
+        console.error('Erro ao inicializar autenticação:', error)
+      } finally {
+        setCarregando(false)
       }
-      
-      setCarregando(false)
-    })
+    }
+    
+    inicializar()
 
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

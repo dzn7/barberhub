@@ -4,28 +4,34 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Botao } from '@/components/ui/botao'
 import { 
-  ArrowLeft, 
   Calendar, 
   Clock, 
   User, 
+  Scissors, 
+  Check, 
+  Lock,
+  ArrowLeft,
   Phone,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Users,
-  AlertCircle,
+  MessageSquare,
   Loader2
 } from 'lucide-react'
-
-type Etapa = 'servico' | 'barbeiro' | 'data' | 'horario' | 'dados' | 'confirmacao'
+import { format, parse, addMinutes } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { 
+  gerarTodosHorarios, 
+  gerarDatasDisponiveis,
+  HorarioComStatus 
+} from '@/lib/horarios'
 
 interface Tenant {
   id: string
   slug: string
   nome: string
+  logo_url: string | null
+  cor_primaria: string | null
 }
 
 interface Servico {
@@ -42,597 +48,984 @@ interface Barbeiro {
   foto_url: string | null
 }
 
-interface Configuracoes {
+interface ConfiguracaoBarbearia {
+  id: string
+  aberta: boolean
+  mensagem_fechamento: string | null
   horario_abertura: string
   horario_fechamento: string
   dias_funcionamento: string[]
-  intervalo_horarios: number
   intervalo_almoco_inicio: string | null
   intervalo_almoco_fim: string | null
+  intervalo_horarios: number
+  usar_horarios_personalizados: boolean
+  horarios_personalizados: any
 }
 
-interface HorarioDisponivel {
-  dia_semana: number
-  hora_inicio: string
-  hora_fim: string
-}
-
+/**
+ * Página de Agendamento Multi-tenant
+ * Permite ao cliente agendar um horário na barbearia
+ */
 export default function PaginaAgendar() {
   const params = useParams()
   const slug = params.slug as string
   
+  // Estados principais
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [servicos, setServicos] = useState<Servico[]>([])
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
-  const [configuracoes, setConfiguracoes] = useState<Configuracoes | null>(null)
   const [carregando, setCarregando] = useState(true)
   
-  const [etapa, setEtapa] = useState<Etapa>('servico')
-  const [servicoSelecionado, setServicoSelecionado] = useState<Servico | null>(null)
-  const [barbeiroSelecionado, setBarbeiroSelecionado] = useState<Barbeiro | null>(null)
-  const [dataSelecionada, setDataSelecionada] = useState<Date | null>(null)
-  const [horarioSelecionado, setHorarioSelecionado] = useState<string | null>(null)
-  const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([])
-  const [carregandoHorarios, setCarregandoHorarios] = useState(false)
+  // Estados do formulário
+  const [etapa, setEtapa] = useState(1)
+  const [barbeiroSelecionado, setBarbeiroSelecionado] = useState('')
+  const [servicoSelecionado, setServicoSelecionado] = useState('')
+  const [dataSelecionada, setDataSelecionada] = useState('')
+  const [horarioSelecionado, setHorarioSelecionado] = useState('')
+  const [nomeCliente, setNomeCliente] = useState('')
+  const [telefoneCliente, setTelefoneCliente] = useState('')
+  const [observacoes, setObservacoes] = useState('')
   
-  const [formDados, setFormDados] = useState({
-    nome: '',
-    telefone: '',
-    observacoes: ''
-  })
-  
+  // Estados de controle
+  const [agendamentoConcluido, setAgendamentoConcluido] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  const [erro, setErro] = useState<string | null>(null)
-  const [sucesso, setSucesso] = useState(false)
-  const [mesAtual, setMesAtual] = useState(new Date())
+  const [horariosOcupados, setHorariosOcupados] = useState<Array<{horario: string, duracao: number}>>([])
+  const [barbeariaAberta, setBarbeariaAberta] = useState(true)
+  const [mensagemFechamento, setMensagemFechamento] = useState('')
+  const [configuracaoHorario, setConfiguracaoHorario] = useState({
+    inicio: '09:00',
+    fim: '19:00',
+    intervaloAlmocoInicio: null as string | null,
+    intervaloAlmocoFim: null as string | null,
+    diasFuncionamento: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab'] as string[],
+    intervaloHorarios: 20
+  })
+  const [usarHorariosPersonalizados, setUsarHorariosPersonalizados] = useState(false)
+  const [horariosPersonalizados, setHorariosPersonalizados] = useState<any>(null)
 
+  // Carregar dados iniciais
   useEffect(() => {
-    async function carregarDados() {
-      try {
-        const { data: tenantData } = await supabase
-          .from('tenants')
-          .select('id, slug, nome')
-          .eq('slug', slug)
-          .eq('ativo', true)
-          .single() as { data: Tenant | null }
-
-        if (!tenantData) return
-
-        setTenant(tenantData)
-
-        const [servicosRes, barbeirosRes, configRes] = await Promise.all([
-          supabase.from('servicos').select('*').eq('tenant_id', tenantData.id).eq('ativo', true).order('ordem_exibicao'),
-          supabase.from('barbeiros').select('*').eq('tenant_id', tenantData.id).eq('ativo', true).order('nome'),
-          supabase.from('configuracoes_barbearia').select('*').eq('tenant_id', tenantData.id).single()
-        ])
-
-        setServicos(servicosRes.data || [])
-        setBarbeiros(barbeirosRes.data || [])
-        setConfiguracoes(configRes.data)
-      } finally {
-        setCarregando(false)
-      }
+    if (slug) {
+      carregarDados()
     }
-
-    if (slug) carregarDados()
   }, [slug])
 
+  // Carregar dados do localStorage
   useEffect(() => {
-    if (!dataSelecionada || !barbeiroSelecionado || !tenant) return
-
-    async function carregarHorarios() {
-      if (!dataSelecionada || !barbeiroSelecionado || !tenant) return
-      setCarregandoHorarios(true)
+    const dadosSalvos = localStorage.getItem('dadosCliente')
+    if (dadosSalvos) {
       try {
-        const dataStr = dataSelecionada.toISOString().split('T')[0]
-        const diaSemana = dataSelecionada.getDay()
+        const dados = JSON.parse(dadosSalvos)
+        setNomeCliente(dados.nome || '')
+        setTelefoneCliente(dados.telefone || '')
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error)
+      }
+    }
+  }, [])
 
-        // Buscar horários do barbeiro
-        const { data: horariosConfig } = await supabase
-          .from('horarios_disponiveis')
-          .select('*')
-          .eq('barbeiro_id', barbeiroSelecionado.id)
-          .eq('ativo', true)
+  // Realtime para status da barbearia
+  useEffect(() => {
+    if (!tenant) return
 
-        const horarioDia = horariosConfig?.find((h: HorarioDisponivel) => h.dia_semana === diaSemana)
-        
-        if (!horarioDia) {
-          setHorariosDisponiveis([])
-          return
-        }
+    const channel = supabase
+      .channel('status-barbearia')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'configuracoes_barbearia',
+        filter: `tenant_id=eq.${tenant.id}`
+      }, () => {
+        verificarStatusBarbearia()
+      })
+      .subscribe()
 
-        // Buscar agendamentos existentes
-        const { data: agendamentos } = await supabase
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [tenant])
+
+  // Buscar horários ocupados quando data e barbeiro são selecionados
+  useEffect(() => {
+    let channel: any = null
+
+    const buscarHorariosOcupados = async () => {
+      if (!dataSelecionada || !barbeiroSelecionado || !tenant) {
+        setHorariosOcupados([])
+        return
+      }
+
+      try {
+        const [ano, mes, dia] = dataSelecionada.split('-').map(Number)
+        const inicioDia = new Date(Date.UTC(ano, mes - 1, dia, 0, 0, 0, 0))
+        const fimDia = new Date(Date.UTC(ano, mes - 1, dia, 23, 59, 59, 999))
+
+        // Buscar agendamentos
+        const { data: agendamentosData, error: errorAgendamentos } = await supabase
           .from('agendamentos')
-          .select('data_hora')
+          .select(`
+            id, 
+            data_hora, 
+            status,
+            servicos (duracao)
+          `)
           .eq('tenant_id', tenant.id)
-          .eq('barbeiro_id', barbeiroSelecionado.id)
-          .gte('data_hora', `${dataStr}T00:00:00`)
-          .lt('data_hora', `${dataStr}T23:59:59`)
-          .in('status', ['pendente', 'confirmado'])
+          .eq('barbeiro_id', barbeiroSelecionado)
+          .gte('data_hora', inicioDia.toISOString())
+          .lte('data_hora', fimDia.toISOString())
+          .neq('status', 'cancelado')
 
-        const horariosOcupados = new Set(
-          agendamentos?.map(a => {
-            const hora = new Date(a.data_hora)
-            return `${hora.getHours().toString().padStart(2, '0')}:${hora.getMinutes().toString().padStart(2, '0')}`
-          }) || []
-        )
-
-        // Gerar horários
-        const intervalo = configuracoes?.intervalo_horarios || 30
-        const horarios: string[] = []
-        
-        const [horaInicio, minInicio] = horarioDia.hora_inicio.split(':').map(Number)
-        const [horaFim, minFim] = horarioDia.hora_fim.split(':').map(Number)
-        
-        let atual = horaInicio * 60 + minInicio
-        const fim = horaFim * 60 + minFim
-
-        while (atual < fim) {
-          const hora = Math.floor(atual / 60)
-          const min = atual % 60
-          const horarioStr = `${hora.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`
-          
-          if (!horariosOcupados.has(horarioStr)) {
-            // Verificar intervalo de almoço
-            let emAlmoco = false
-            if (configuracoes?.intervalo_almoco_inicio && configuracoes?.intervalo_almoco_fim) {
-              const [almocoInicio] = configuracoes.intervalo_almoco_inicio.split(':').map(Number)
-              const [almocoFim] = configuracoes.intervalo_almoco_fim.split(':').map(Number)
-              emAlmoco = hora >= almocoInicio && hora < almocoFim
-            }
-            
-            if (!emAlmoco) {
-              horarios.push(horarioStr)
-            }
-          }
-          
-          atual += intervalo
+        if (errorAgendamentos) {
+          console.error('Erro ao buscar agendamentos:', errorAgendamentos)
         }
 
-        setHorariosDisponiveis(horarios)
-      } finally {
-        setCarregandoHorarios(false)
+        // Buscar horários bloqueados
+        const { data: bloqueiosData, error: errorBloqueios } = await supabase
+          .from('horarios_bloqueados')
+          .select('*')
+          .eq('tenant_id', tenant.id)
+          .eq('data', dataSelecionada)
+          .or(`barbeiro_id.is.null,barbeiro_id.eq.${barbeiroSelecionado}`)
+
+        if (errorBloqueios) {
+          console.error('Erro ao buscar bloqueios:', errorBloqueios)
+        }
+
+        // Converter agendamentos para o formato: {horario, duracao}
+        const ocupadosAgendamentos = (agendamentosData || []).map((ag: any) => {
+          const horario = format(new Date(ag.data_hora), 'HH:mm')
+          const duracao = ag.servicos?.duracao || 30
+          return { horario, duracao }
+        })
+
+        // Converter bloqueios para o formato: {horario, duracao}
+        const ocupadosBloqueios: Array<{horario: string, duracao: number}> = []
+        if (bloqueiosData) {
+          bloqueiosData.forEach((bloqueio: any) => {
+            const horaInicioStr = bloqueio.horario_inicio.substring(0, 5)
+            const horaFimStr = bloqueio.horario_fim.substring(0, 5)
+            
+            const dataBase = new Date(2000, 0, 1)
+            const inicioBloqueio = parse(horaInicioStr, 'HH:mm', dataBase)
+            const fimBloqueio = parse(horaFimStr, 'HH:mm', dataBase)
+            
+            let horarioAtual = inicioBloqueio
+            while (horarioAtual < fimBloqueio) {
+              const horarioFormatado = format(horarioAtual, 'HH:mm')
+              const tempoRestante = Math.ceil((fimBloqueio.getTime() - horarioAtual.getTime()) / 60000)
+              const duracaoBloqueio = Math.min(20, tempoRestante)
+              
+              ocupadosBloqueios.push({
+                horario: horarioFormatado,
+                duracao: duracaoBloqueio
+              })
+              
+              horarioAtual = new Date(horarioAtual.getTime() + 20 * 60000)
+            }
+          })
+        }
+
+        const todosOcupados = [...ocupadosAgendamentos, ...ocupadosBloqueios]
+        setHorariosOcupados(todosOcupados)
+      } catch (error) {
+        console.error('Erro ao buscar horários ocupados:', error)
       }
     }
 
-    carregarHorarios()
-  }, [dataSelecionada, barbeiroSelecionado, tenant, configuracoes])
+    buscarHorariosOcupados()
 
-  const diasDoMes = () => {
-    const dias: Date[] = []
-    const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
-    
-    const inicio = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1)
-    const fim = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 0)
-    
-    for (let d = new Date(inicio); d <= fim; d.setDate(d.getDate() + 1)) {
-      if (d >= hoje) {
-        dias.push(new Date(d))
+    // Realtime para agendamentos e bloqueios
+    if (dataSelecionada && barbeiroSelecionado && tenant) {
+      channel = supabase
+        .channel(`horarios-${barbeiroSelecionado}-${dataSelecionada}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agendamentos',
+            filter: `barbeiro_id=eq.${barbeiroSelecionado}`
+          },
+          () => {
+            buscarHorariosOcupados()
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'horarios_bloqueados'
+          },
+          () => {
+            buscarHorariosOcupados()
+          }
+        )
+        .subscribe()
+    }
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel)
       }
     }
-    
-    return dias
+  }, [dataSelecionada, barbeiroSelecionado, tenant])
+
+  const carregarDados = async () => {
+    try {
+      // Buscar tenant
+      const { data: tenantData, error: tenantError } = await supabase
+        .from('tenants')
+        .select('id, slug, nome, logo_url, cor_primaria')
+        .eq('slug', slug)
+        .eq('ativo', true)
+        .single()
+
+      if (tenantError || !tenantData) {
+        console.error('Tenant não encontrado')
+        return
+      }
+
+      setTenant(tenantData)
+
+      // Buscar configurações, barbeiros e serviços em paralelo
+      const [configRes, barbeirosRes, servicosRes] = await Promise.all([
+        supabase
+          .from('configuracoes_barbearia')
+          .select('*')
+          .eq('tenant_id', tenantData.id)
+          .single(),
+        supabase
+          .from('barbeiros')
+          .select('id, nome, foto_url')
+          .eq('tenant_id', tenantData.id)
+          .eq('ativo', true),
+        supabase
+          .from('servicos')
+          .select('id, nome, descricao, preco, duracao')
+          .eq('tenant_id', tenantData.id)
+          .eq('ativo', true)
+          .order('ordem_exibicao')
+      ])
+
+      // Processar configurações
+      if (configRes.data) {
+        const config = configRes.data as ConfiguracaoBarbearia
+        setBarbeariaAberta(config.aberta ?? true)
+        setMensagemFechamento(config.mensagem_fechamento || '')
+        
+        const formatarHorario = (horario: string | null) => {
+          if (!horario) return null
+          return horario.substring(0, 5)
+        }
+        
+        setConfiguracaoHorario({
+          inicio: formatarHorario(config.horario_abertura) || '09:00',
+          fim: formatarHorario(config.horario_fechamento) || '19:00',
+          intervaloAlmocoInicio: formatarHorario(config.intervalo_almoco_inicio),
+          intervaloAlmocoFim: formatarHorario(config.intervalo_almoco_fim),
+          diasFuncionamento: config.dias_funcionamento || ['seg', 'ter', 'qua', 'qui', 'sex', 'sab'],
+          intervaloHorarios: config.intervalo_horarios || 20
+        })
+        
+        setUsarHorariosPersonalizados(config.usar_horarios_personalizados || false)
+        if (config.horarios_personalizados) {
+          setHorariosPersonalizados(config.horarios_personalizados)
+        }
+      }
+
+      setBarbeiros(barbeirosRes.data || [])
+      setServicos(servicosRes.data || [])
+
+      // Selecionar primeiro barbeiro automaticamente
+      if (barbeirosRes.data && barbeirosRes.data.length > 0) {
+        setBarbeiroSelecionado(barbeirosRes.data[0].id)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error)
+    } finally {
+      setCarregando(false)
+    }
   }
 
-  const formatarTelefone = (valor: string) => {
-    const numeros = valor.replace(/\D/g, '')
-    if (numeros.length <= 10) {
-      return numeros.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
-    }
-    return numeros.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
-  }
-
-  const handleSubmit = async () => {
-    if (!tenant || !servicoSelecionado || !barbeiroSelecionado || !dataSelecionada || !horarioSelecionado) {
-      setErro('Preencha todos os campos')
-      return
-    }
-
-    if (!formDados.nome || !formDados.telefone) {
-      setErro('Nome e telefone são obrigatórios')
-      return
-    }
-
-    setEnviando(true)
-    setErro(null)
+  const verificarStatusBarbearia = async () => {
+    if (!tenant) return
 
     try {
-      // Buscar ou criar cliente
-      let clienteId: string
+      const { data, error } = await supabase
+        .from('configuracoes_barbearia')
+        .select('aberta, mensagem_fechamento')
+        .eq('tenant_id', tenant.id)
+        .single()
+
+      if (!error && data) {
+        setBarbeariaAberta(data.aberta ?? true)
+        setMensagemFechamento(data.mensagem_fechamento || '')
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status:', error)
+    }
+  }
+
+  // Gerar datas disponíveis filtrando por dias de funcionamento
+  const todasDatas = gerarDatasDisponiveis()
+  const datasDisponiveis = todasDatas.filter(data => {
+    const dataObj = parse(data.valor, 'yyyy-MM-dd', new Date())
+    const diaSemanaNum = dataObj.getDay()
+    const mapa = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']
+    const diaAbreviado = mapa[diaSemanaNum]
+    return configuracaoHorario.diasFuncionamento.includes(diaAbreviado)
+  })
+
+  // Calcular horários disponíveis
+  const servicoObj = servicos.find(s => s.id === servicoSelecionado)
+  const duracaoServico = servicoObj?.duracao || 30
+
+  // Normalizar horário
+  const normalizarHorario = (horario: string | null): string | null => {
+    if (!horario) return null
+    if (horario.length === 5 && horario.includes(':')) return horario
+    if (horario.length === 8 && horario.split(':').length === 3) {
+      return horario.substring(0, 5)
+    }
+    return horario
+  }
+
+  // Determinar configuração de horário baseada no dia selecionado
+  let configHorarioFinal = configuracaoHorario
+
+  if (usarHorariosPersonalizados && horariosPersonalizados && dataSelecionada) {
+    const dataObj = parse(dataSelecionada, 'yyyy-MM-dd', new Date())
+    const diaSemanaNum = dataObj.getDay()
+    const mapa = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']
+    const diaAbreviado = mapa[diaSemanaNum]
+    
+    const horarioDia = horariosPersonalizados[diaAbreviado]
+    if (horarioDia) {
+      configHorarioFinal = {
+        inicio: normalizarHorario(horarioDia.abertura) || configuracaoHorario.inicio,
+        fim: normalizarHorario(horarioDia.fechamento) || configuracaoHorario.fim,
+        intervaloAlmocoInicio: normalizarHorario(horarioDia.almoco_inicio) || configuracaoHorario.intervaloAlmocoInicio,
+        intervaloAlmocoFim: normalizarHorario(horarioDia.almoco_fim) || configuracaoHorario.intervaloAlmocoFim,
+        diasFuncionamento: configuracaoHorario.diasFuncionamento,
+        intervaloHorarios: configuracaoHorario.intervaloHorarios
+      }
+    }
+  }
+
+  const todosHorarios = gerarTodosHorarios(duracaoServico, horariosOcupados, configHorarioFinal)
+  const horariosDisponiveis = todosHorarios.filter(h => h.disponivel).map(h => h.horario)
+
+  // Formatar telefone
+  const formatarTelefone = (valor: string) => {
+    const numeros = valor.replace(/\D/g, '')
+    if (numeros.length <= 2) return numeros
+    if (numeros.length <= 7) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`
+  }
+
+  // Finalizar agendamento
+  const finalizarAgendamento = async () => {
+    if (!tenant) return
+
+    setEnviando(true)
+    try {
+      // Criar ou buscar cliente
+      let clienteId = null
 
       const { data: clienteExistente } = await supabase
         .from('clientes')
         .select('id')
         .eq('tenant_id', tenant.id)
-        .eq('telefone', formDados.telefone)
-        .single()
+        .eq('telefone', telefoneCliente)
+        .limit(1)
 
-      if (clienteExistente) {
-        clienteId = clienteExistente.id
+      if (clienteExistente && clienteExistente.length > 0) {
+        clienteId = clienteExistente[0].id
       } else {
         const { data: novoCliente, error: erroCliente } = await supabase
           .from('clientes')
-          .insert({
+          .insert([{
             tenant_id: tenant.id,
-            nome: formDados.nome,
-            telefone: formDados.telefone,
-          })
+            nome: nomeCliente,
+            telefone: telefoneCliente,
+          }])
           .select('id')
           .single()
 
-        if (erroCliente || !novoCliente) {
-          throw new Error('Erro ao criar cliente')
-        }
-        
+        if (erroCliente) throw erroCliente
         clienteId = novoCliente.id
       }
 
-      // Criar agendamento
-      const dataHora = new Date(dataSelecionada)
-      const [hora, min] = horarioSelecionado.split(':').map(Number)
-      dataHora.setHours(hora, min, 0, 0)
+      // Criar data/hora
+      const [hora, minuto] = horarioSelecionado.split(':')
+      const [ano, mes, dia] = dataSelecionada.split('-').map(Number)
+      const dataHora = new Date(ano, mes - 1, dia, parseInt(hora), parseInt(minuto), 0, 0)
 
-      const { error: erroAgendamento } = await supabase
+      // Verificar disponibilidade
+      const { data: verificacao } = await supabase
         .from('agendamentos')
-        .insert({
-          tenant_id: tenant.id,
-          cliente_id: clienteId,
-          barbeiro_id: barbeiroSelecionado.id,
-          servico_id: servicoSelecionado.id,
-          data_hora: dataHora.toISOString(),
-          observacoes: formDados.observacoes || null
-        })
+        .select('id')
+        .eq('tenant_id', tenant.id)
+        .eq('barbeiro_id', barbeiroSelecionado)
+        .eq('data_hora', dataHora.toISOString())
+        .in('status', ['pendente', 'confirmado'])
+        .maybeSingle()
 
-      if (erroAgendamento) {
-        throw new Error('Erro ao criar agendamento')
+      if (verificacao) {
+        alert('Este horário acabou de ser reservado. Escolha outro horário.')
+        setEnviando(false)
+        setEtapa(2)
+        return
       }
 
-      setSucesso(true)
-    } catch (error) {
-      console.error('Erro:', error)
-      setErro('Erro ao criar agendamento. Tente novamente.')
+      // Criar agendamento
+      const { data: agendamento, error: erroAgendamento } = await supabase
+        .from('agendamentos')
+        .insert([{
+          tenant_id: tenant.id,
+          cliente_id: clienteId,
+          barbeiro_id: barbeiroSelecionado,
+          servico_id: servicoSelecionado,
+          data_hora: dataHora.toISOString(),
+          status: 'pendente',
+          observacoes: observacoes || null,
+        }])
+        .select()
+        .single()
+
+      if (erroAgendamento) throw erroAgendamento
+
+      // Salvar dados do cliente no localStorage
+      localStorage.setItem('dadosCliente', JSON.stringify({
+        nome: nomeCliente,
+        telefone: telefoneCliente,
+      }))
+
+      setAgendamentoConcluido(true)
+    } catch (error: any) {
+      console.error('Erro ao criar agendamento:', error)
+      alert(`Erro ao criar agendamento: ${error.message || 'Erro desconhecido'}`)
     } finally {
       setEnviando(false)
     }
   }
 
-  const voltarEtapa = () => {
-    const etapas: Etapa[] = ['servico', 'barbeiro', 'data', 'horario', 'dados']
-    const idx = etapas.indexOf(etapa)
-    if (idx > 0) setEtapa(etapas[idx - 1])
+  // Verificar se etapa está completa
+  const etapaCompleta = () => {
+    switch (etapa) {
+      case 1:
+        return barbeiroSelecionado !== '' && servicoSelecionado !== ''
+      case 2:
+        return dataSelecionada !== '' && horarioSelecionado !== ''
+      case 3:
+        return nomeCliente !== '' && telefoneCliente.replace(/\D/g, '').length >= 10
+      default:
+        return false
+    }
   }
 
+  // Avançar etapa
+  const avancarEtapa = () => {
+    if (etapaCompleta()) {
+      setEtapa(etapa + 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  // Voltar etapa
+  const voltarEtapa = () => {
+    if (etapa > 1) {
+      setEtapa(etapa - 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  // Loading
   if (carregando) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900">
-        <Loader2 className="w-8 h-8 text-white animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-amber-500 mx-auto mb-4" />
+          <p className="text-zinc-400">Carregando...</p>
+        </div>
       </div>
     )
   }
 
+  // Tenant não encontrado
   if (!tenant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white">
-        <p>Barbearia não encontrada</p>
-      </div>
-    )
-  }
-
-  // Tela de Sucesso
-  if (sucesso) {
-    return (
-      <div className="min-h-screen bg-zinc-900 text-white flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold mb-4">Agendamento Confirmado</h1>
-          <p className="text-zinc-400 mb-8">Seu horário foi reservado com sucesso.</p>
-          
-          <div className="bg-zinc-800 rounded-xl p-6 mb-8 text-left">
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Serviço:</span>
-                <span className="font-semibold">{servicoSelecionado?.nome}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Profissional:</span>
-                <span className="font-semibold">{barbeiroSelecionado?.nome}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Data:</span>
-                <span className="font-semibold">
-                  {dataSelecionada?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Horário:</span>
-                <span className="font-semibold">{horarioSelecionado}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-zinc-700">
-                <span className="text-zinc-400">Valor:</span>
-                <span className="font-semibold text-amber-500">R$ {servicoSelecionado?.preco.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-          
-          <Link href={`/${tenant.slug}`}>
-            <Botao className="w-full">Voltar ao Início</Botao>
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Barbearia não encontrada</h1>
+          <Link href="/" className="text-amber-500 hover:underline">
+            Voltar ao início
           </Link>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-zinc-900 text-white">
-      {/* Header */}
-      <header className="bg-zinc-800 px-4 py-4 sticky top-0 z-50">
-        <div className="max-w-2xl mx-auto flex items-center gap-4">
-          {etapa !== 'servico' ? (
-            <button onClick={voltarEtapa} className="p-2 hover:bg-zinc-700 rounded-lg">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          ) : (
-            <Link href={`/${tenant.slug}`} className="p-2 hover:bg-zinc-700 rounded-lg">
-              <ArrowLeft className="w-5 h-5" />
+  // Barbearia fechada
+  if (!barbeariaAberta) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full bg-zinc-900 rounded-2xl p-8 text-center border border-red-800"
+        >
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-red-900/30 rounded-full">
+              <Lock className="h-16 w-16 text-red-400" />
+            </div>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Barbearia Fechada
+          </h2>
+          
+          <p className="text-zinc-400 mb-6">
+            {mensagemFechamento || 'No momento não estamos aceitando agendamentos. Volte mais tarde!'}
+          </p>
+          
+          <Link
+            href={`/${slug}`}
+            className="inline-flex items-center justify-center px-6 py-3 bg-amber-500 text-black font-semibold rounded-lg hover:bg-amber-400 transition-colors"
+          >
+            Voltar para Início
+          </Link>
+        </motion.div>
+      </div>
+    )
+  }
+
+  // Agendamento concluído
+  if (agendamentoConcluido) {
+    const barbeiroNome = barbeiros.find(b => b.id === barbeiroSelecionado)?.nome || ''
+    const servicoNome = servicos.find(s => s.id === servicoSelecionado)?.nome || ''
+    const servicoPreco = servicos.find(s => s.id === servicoSelecionado)?.preco || 0
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full text-center space-y-6"
+        >
+          <div className="flex justify-center">
+            <div className="p-4 bg-green-900/30 rounded-full">
+              <Check className="h-16 w-16 text-green-400" />
+            </div>
+          </div>
+          
+          <h2 className="text-3xl font-bold text-white">
+            Agendamento Confirmado!
+          </h2>
+          
+          <p className="text-lg text-zinc-400">
+            Seu horário foi agendado com sucesso.
+          </p>
+
+          <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 space-y-3 text-left">
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Barbeiro:</span>
+              <span className="font-semibold text-white">{barbeiroNome}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Serviço:</span>
+              <span className="font-semibold text-white">{servicoNome}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Data:</span>
+              <span className="font-semibold text-white">
+                {dataSelecionada && format(parse(dataSelecionada, 'yyyy-MM-dd', new Date()), "dd 'de' MMMM", { locale: ptBR })}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-400">Horário:</span>
+              <span className="font-semibold text-white">{horarioSelecionado}</span>
+            </div>
+            <div className="flex justify-between border-t border-zinc-700 pt-3 mt-3">
+              <span className="text-zinc-400">Valor:</span>
+              <span className="font-bold text-amber-500 text-lg">
+                R$ {servicoPreco.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Link
+              href={`/${slug}`}
+              className="w-full py-3 bg-amber-500 text-black font-semibold rounded-lg hover:bg-amber-400 transition-colors"
+            >
+              Voltar ao Início
             </Link>
-          )}
-          <div>
-            <h1 className="font-bold">{tenant.nome}</h1>
-            <p className="text-sm text-zinc-400">Agendar horário</p>
+          </div>
+        </motion.div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-950">
+      {/* Header */}
+      <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link href={`/${slug}`} className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+              <span>Voltar</span>
+            </Link>
+            <h1 className="text-lg font-semibold text-white">{tenant.nome}</h1>
+            <div className="w-20" />
           </div>
         </div>
       </header>
 
-      {/* Progresso */}
-      <div className="bg-zinc-800/50 px-4 py-3">
-        <div className="max-w-2xl mx-auto flex justify-between">
-          {['Serviço', 'Profissional', 'Data', 'Horário', 'Dados'].map((label, i) => {
-            const etapas: Etapa[] = ['servico', 'barbeiro', 'data', 'horario', 'dados']
-            const ativo = etapas.indexOf(etapa) >= i
-            return (
-              <div key={label} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${ativo ? 'bg-amber-500 text-black' : 'bg-zinc-700 text-zinc-400'}`}>
-                  {i + 1}
+      {/* Progress */}
+      <div className="bg-zinc-900 border-b border-zinc-800">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-center gap-2">
+            {[1, 2, 3, 4].map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                    step <= etapa
+                      ? 'bg-amber-500 text-black'
+                      : 'bg-zinc-800 text-zinc-500'
+                  }`}
+                >
+                  {step < etapa ? <Check className="w-4 h-4" /> : step}
                 </div>
-                {i < 4 && <div className={`w-6 sm:w-10 h-1 ${ativo ? 'bg-amber-500' : 'bg-zinc-700'}`} />}
+                {step < 4 && (
+                  <div
+                    className={`w-12 h-1 mx-1 rounded ${
+                      step < etapa ? 'bg-amber-500' : 'bg-zinc-800'
+                    }`}
+                  />
+                )}
               </div>
-            )
-          })}
+            ))}
+          </div>
+          <div className="text-center mt-2 text-sm text-zinc-400">
+            {etapa === 1 && 'Escolha o serviço e barbeiro'}
+            {etapa === 2 && 'Escolha data e horário'}
+            {etapa === 3 && 'Seus dados'}
+            {etapa === 4 && 'Confirmação'}
+          </div>
         </div>
       </div>
 
-      {/* Conteúdo */}
-      <main className="px-4 py-6">
-        <div className="max-w-2xl mx-auto">
-          
-          {/* Etapa 1: Serviço */}
-          {etapa === 'servico' && (
+      {/* Content */}
+      <main className="container mx-auto px-4 py-6 max-w-2xl">
+        {/* Etapa 1: Serviço e Barbeiro */}
+        {etapa === 1 && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
+          >
+            {/* Serviços */}
             <div>
-              <h2 className="text-2xl font-bold mb-6">Escolha o serviço</h2>
-              <div className="space-y-3">
-                {servicos.map(servico => (
+              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Scissors className="w-5 h-5 text-amber-500" />
+                Escolha o Serviço
+              </h2>
+              <div className="grid gap-3">
+                {servicos.map((servico) => (
                   <button
                     key={servico.id}
-                    onClick={() => { setServicoSelecionado(servico); setEtapa('barbeiro') }}
-                    className={`w-full p-4 rounded-xl text-left transition-colors ${
-                      servicoSelecionado?.id === servico.id ? 'bg-amber-500 text-black' : 'bg-zinc-800 hover:bg-zinc-700'
+                    onClick={() => setServicoSelecionado(servico.id)}
+                    className={`p-4 rounded-xl border text-left transition-all ${
+                      servicoSelecionado === servico.id
+                        ? 'bg-amber-500/10 border-amber-500'
+                        : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
                     }`}
                   >
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-semibold text-lg">{servico.nome}</h3>
-                        {servico.descricao && <p className={`text-sm mt-1 ${servicoSelecionado?.id === servico.id ? 'text-black/70' : 'text-zinc-400'}`}>{servico.descricao}</p>}
+                        <h3 className="font-semibold text-white">{servico.nome}</h3>
+                        {servico.descricao && (
+                          <p className="text-sm text-zinc-400 mt-1">{servico.descricao}</p>
+                        )}
+                        <p className="text-sm text-zinc-500 mt-1">
+                          <Clock className="w-3 h-3 inline mr-1" />
+                          {servico.duracao} min
+                        </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-lg">R$ {servico.preco.toFixed(2)}</p>
-                        <p className={`text-sm ${servicoSelecionado?.id === servico.id ? 'text-black/70' : 'text-zinc-400'}`}>{servico.duracao} min</p>
-                      </div>
+                      <span className="text-amber-500 font-bold">
+                        R$ {servico.preco.toFixed(2)}
+                      </span>
                     </div>
                   </button>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* Etapa 2: Barbeiro */}
-          {etapa === 'barbeiro' && (
+            {/* Barbeiros */}
             <div>
-              <h2 className="text-2xl font-bold mb-6">Escolha o profissional</h2>
-              <div className="grid grid-cols-2 gap-4">
-                {barbeiros.map(barbeiro => (
+              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-amber-500" />
+                Escolha o Profissional
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {barbeiros.map((barbeiro) => (
                   <button
                     key={barbeiro.id}
-                    onClick={() => { setBarbeiroSelecionado(barbeiro); setEtapa('data') }}
-                    className={`p-4 rounded-xl text-center transition-colors ${
-                      barbeiroSelecionado?.id === barbeiro.id ? 'bg-amber-500 text-black' : 'bg-zinc-800 hover:bg-zinc-700'
+                    onClick={() => setBarbeiroSelecionado(barbeiro.id)}
+                    className={`p-4 rounded-xl border text-center transition-all ${
+                      barbeiroSelecionado === barbeiro.id
+                        ? 'bg-amber-500/10 border-amber-500'
+                        : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
                     }`}
                   >
-                    <div className="w-16 h-16 mx-auto mb-3 bg-zinc-700 rounded-full flex items-center justify-center overflow-hidden">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden">
                       {barbeiro.foto_url ? (
-                        <Image src={barbeiro.foto_url} alt={barbeiro.nome} width={64} height={64} className="w-full h-full object-cover" />
+                        <Image
+                          src={barbeiro.foto_url}
+                          alt={barbeiro.nome}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
-                        <Users className="w-8 h-8 text-zinc-500" />
+                        <User className="w-8 h-8 text-zinc-600" />
                       )}
                     </div>
-                    <h3 className="font-semibold">{barbeiro.nome}</h3>
+                    <h3 className="font-semibold text-white">{barbeiro.nome}</h3>
                   </button>
                 ))}
               </div>
             </div>
-          )}
+          </motion.div>
+        )}
 
-          {/* Etapa 3: Data */}
-          {etapa === 'data' && (
+        {/* Etapa 2: Data e Horário */}
+        {etapa === 2 && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
+          >
+            {/* Datas */}
             <div>
-              <h2 className="text-2xl font-bold mb-6">Escolha a data</h2>
-              
-              <div className="flex justify-between items-center mb-4">
-                <button onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1, 1))} className="p-2 hover:bg-zinc-800 rounded-lg">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <span className="font-semibold capitalize">
-                  {mesAtual.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-                </span>
-                <button onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1))} className="p-2 hover:bg-zinc-800 rounded-lg">
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-7 gap-2 mb-4">
-                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(dia => (
-                  <div key={dia} className="text-center text-sm text-zinc-500 py-2">{dia}</div>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-7 gap-2">
-                {Array.from({ length: new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1).getDay() }).map((_, i) => (
-                  <div key={`empty-${i}`} />
-                ))}
-                
-                {diasDoMes().map(dia => {
-                  const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
-                  const passado = dia < hoje
-                  const selecionado = dataSelecionada?.toDateString() === dia.toDateString()
-                  const diasMap: Record<number, string> = { 0: 'dom', 1: 'seg', 2: 'ter', 3: 'qua', 4: 'qui', 5: 'sex', 6: 'sab' }
-                  const diaFunciona = configuracoes?.dias_funcionamento?.includes(diasMap[dia.getDay()]) ?? true
+              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-amber-500" />
+                Escolha a Data
+              </h2>
+              <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
+                {datasDisponiveis.slice(0, 10).map((data) => {
+                  const dataObj = parse(data.valor, 'yyyy-MM-dd', new Date())
+                  const diaSemana = format(dataObj, 'EEE', { locale: ptBR })
+                  const diaNumero = format(dataObj, 'dd')
+                  const mes = format(dataObj, 'MMM', { locale: ptBR })
                   
                   return (
                     <button
-                      key={dia.toISOString()}
-                      disabled={passado || !diaFunciona}
-                      onClick={() => { setDataSelecionada(dia); setHorarioSelecionado(null); setEtapa('horario') }}
-                      className={`p-3 rounded-lg text-center transition-colors ${
-                        selecionado ? 'bg-amber-500 text-black font-bold' 
-                          : passado || !diaFunciona ? 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed'
-                          : 'bg-zinc-800 hover:bg-zinc-700'
+                      key={data.valor}
+                      onClick={() => {
+                        setDataSelecionada(data.valor)
+                        setHorarioSelecionado('')
+                      }}
+                      className={`flex-shrink-0 w-20 p-3 rounded-xl border text-center transition-all ${
+                        dataSelecionada === data.valor
+                          ? 'bg-amber-500/10 border-amber-500'
+                          : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
                       }`}
                     >
-                      {dia.getDate()}
+                      <p className="text-xs text-zinc-400 uppercase">{diaSemana}</p>
+                      <p className="text-2xl font-bold text-white">{diaNumero}</p>
+                      <p className="text-xs text-zinc-400">{mes}</p>
                     </button>
                   )
                 })}
               </div>
             </div>
-          )}
 
-          {/* Etapa 4: Horário */}
-          {etapa === 'horario' && (
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Escolha o horário</h2>
-              <p className="text-zinc-400 mb-6">
-                {dataSelecionada?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
+            {/* Horários */}
+            {dataSelecionada && (
+              <div>
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-500" />
+                  Escolha o Horário
+                </h2>
+                {todosHorarios.length === 0 ? (
+                  <p className="text-zinc-400 text-center py-8">
+                    Nenhum horário disponível para esta data.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2">
+                    {todosHorarios.map((h) => (
+                      <button
+                        key={h.horario}
+                        onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
+                        disabled={!h.disponivel}
+                        className={`py-3 px-2 rounded-lg text-sm font-medium transition-all ${
+                          !h.disponivel
+                            ? 'bg-zinc-900/50 text-zinc-600 cursor-not-allowed line-through'
+                            : horarioSelecionado === h.horario
+                            ? 'bg-amber-500 text-black'
+                            : 'bg-zinc-900 text-white border border-zinc-800 hover:border-zinc-700'
+                        }`}
+                      >
+                        {h.horario}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Etapa 3: Dados do Cliente */}
+        {etapa === 3 && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
+          >
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <User className="w-5 h-5 text-amber-500" />
+              Seus Dados
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">Nome completo</label>
+                <input
+                  type="text"
+                  value={nomeCliente}
+                  onChange={(e) => setNomeCliente(e.target.value)}
+                  placeholder="Seu nome"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">WhatsApp</label>
+                <input
+                  type="tel"
+                  value={telefoneCliente}
+                  onChange={(e) => setTelefoneCliente(formatarTelefone(e.target.value))}
+                  placeholder="(00) 00000-0000"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">Observações (opcional)</label>
+                <textarea
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Alguma observação especial?"
+                  rows={3}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Etapa 4: Confirmação */}
+        {etapa === 4 && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
+          >
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Check className="w-5 h-5 text-amber-500" />
+              Confirme seu Agendamento
+            </h2>
+
+            <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6 space-y-4">
+              <div className="flex justify-between items-center pb-4 border-b border-zinc-800">
+                <span className="text-zinc-400">Serviço</span>
+                <span className="text-white font-semibold">
+                  {servicos.find(s => s.id === servicoSelecionado)?.nome}
+                </span>
+              </div>
               
-              {carregandoHorarios ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-                </div>
-              ) : horariosDisponiveis.length === 0 ? (
-                <div className="text-center py-8">
-                  <AlertCircle className="w-12 h-12 mx-auto text-zinc-500 mb-4" />
-                  <p className="text-zinc-400">Nenhum horário disponível</p>
-                  <button onClick={() => setEtapa('data')} className="mt-4 text-amber-500 hover:underline">
-                    Escolher outra data
-                  </button>
-                </div>
+              <div className="flex justify-between items-center pb-4 border-b border-zinc-800">
+                <span className="text-zinc-400">Profissional</span>
+                <span className="text-white font-semibold">
+                  {barbeiros.find(b => b.id === barbeiroSelecionado)?.nome}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center pb-4 border-b border-zinc-800">
+                <span className="text-zinc-400">Data</span>
+                <span className="text-white font-semibold">
+                  {dataSelecionada && format(parse(dataSelecionada, 'yyyy-MM-dd', new Date()), "dd 'de' MMMM", { locale: ptBR })}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center pb-4 border-b border-zinc-800">
+                <span className="text-zinc-400">Horário</span>
+                <span className="text-white font-semibold">{horarioSelecionado}</span>
+              </div>
+              
+              <div className="flex justify-between items-center pb-4 border-b border-zinc-800">
+                <span className="text-zinc-400">Cliente</span>
+                <span className="text-white font-semibold">{nomeCliente}</span>
+              </div>
+              
+              <div className="flex justify-between items-center pb-4 border-b border-zinc-800">
+                <span className="text-zinc-400">WhatsApp</span>
+                <span className="text-white font-semibold">{telefoneCliente}</span>
+              </div>
+              
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-zinc-400 text-lg">Total</span>
+                <span className="text-amber-500 font-bold text-2xl">
+                  R$ {servicos.find(s => s.id === servicoSelecionado)?.preco.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Botões de navegação */}
+        <div className="flex gap-3 mt-8">
+          {etapa > 1 && (
+            <button
+              onClick={voltarEtapa}
+              className="flex-1 py-3 bg-zinc-800 text-white font-semibold rounded-lg hover:bg-zinc-700 transition-colors"
+            >
+              Voltar
+            </button>
+          )}
+          
+          {etapa < 4 ? (
+            <button
+              onClick={avancarEtapa}
+              disabled={!etapaCompleta()}
+              className={`flex-1 py-3 font-semibold rounded-lg transition-colors ${
+                etapaCompleta()
+                  ? 'bg-amber-500 text-black hover:bg-amber-400'
+                  : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+              }`}
+            >
+              Continuar
+            </button>
+          ) : (
+            <button
+              onClick={finalizarAgendamento}
+              disabled={enviando}
+              className="flex-1 py-3 bg-amber-500 text-black font-semibold rounded-lg hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {enviando ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Agendando...
+                </>
               ) : (
-                <div className="grid grid-cols-4 gap-3">
-                  {horariosDisponiveis.map(horario => (
-                    <button
-                      key={horario}
-                      onClick={() => { setHorarioSelecionado(horario); setEtapa('dados') }}
-                      className={`p-3 rounded-lg text-center transition-colors ${
-                        horarioSelecionado === horario ? 'bg-amber-500 text-black font-bold' : 'bg-zinc-800 hover:bg-zinc-700'
-                      }`}
-                    >
-                      {horario}
-                    </button>
-                  ))}
-                </div>
+                'Confirmar Agendamento'
               )}
-            </div>
-          )}
-
-          {/* Etapa 5: Dados */}
-          {etapa === 'dados' && (
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Seus dados</h2>
-              
-              {erro && (
-                <div className="flex items-center gap-2 mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-400 text-sm">
-                  <AlertCircle className="w-4 h-4" />
-                  {erro}
-                </div>
-              )}
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Nome *</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
-                    <input
-                      type="text"
-                      value={formDados.nome}
-                      onChange={e => setFormDados({ ...formDados, nome: e.target.value })}
-                      placeholder="Seu nome"
-                      className="w-full bg-zinc-800 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Telefone *</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
-                    <input
-                      type="tel"
-                      value={formDados.telefone}
-                      onChange={e => setFormDados({ ...formDados, telefone: formatarTelefone(e.target.value) })}
-                      placeholder="(00) 00000-0000"
-                      maxLength={15}
-                      className="w-full bg-zinc-800 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Observações</label>
-                  <textarea
-                    value={formDados.observacoes}
-                    onChange={e => setFormDados({ ...formDados, observacoes: e.target.value })}
-                    placeholder="Alguma observação?"
-                    rows={3}
-                    className="w-full bg-zinc-800 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-8 bg-zinc-800 rounded-xl p-4">
-                <h3 className="font-semibold mb-3">Resumo</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-zinc-400">Serviço:</span><span>{servicoSelecionado?.nome}</span></div>
-                  <div className="flex justify-between"><span className="text-zinc-400">Profissional:</span><span>{barbeiroSelecionado?.nome}</span></div>
-                  <div className="flex justify-between"><span className="text-zinc-400">Data:</span><span>{dataSelecionada?.toLocaleDateString('pt-BR')}</span></div>
-                  <div className="flex justify-between"><span className="text-zinc-400">Horário:</span><span>{horarioSelecionado}</span></div>
-                  <div className="flex justify-between pt-2 border-t border-zinc-700">
-                    <span className="text-zinc-400">Valor:</span>
-                    <span className="text-amber-500 font-bold">R$ {servicoSelecionado?.preco.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <Botao
-                onClick={handleSubmit}
-                disabled={enviando || !formDados.nome || !formDados.telefone}
-                className="w-full mt-6"
-              >
-                {enviando ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Agendando...</> : <><Calendar className="w-5 h-5 mr-2" /> Confirmar Agendamento</>}
-              </Botao>
-            </div>
+            </button>
           )}
         </div>
       </main>
