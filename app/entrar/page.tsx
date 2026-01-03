@@ -39,14 +39,19 @@ export default function EntrarPage() {
     setCarregando(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('[Login] Tentando login com:', form.email)
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.senha,
       })
 
       if (error) {
+        console.error('[Login] Erro de autenticação:', error.message, error.status)
         if (error.message.includes('Invalid login credentials')) {
           setErro('E-mail ou senha incorretos')
+        } else if (error.message.includes('Email not confirmed')) {
+          setErro('E-mail não confirmado. Verifique sua caixa de entrada.')
         } else {
           setErro(error.message)
         }
@@ -54,11 +59,18 @@ export default function EntrarPage() {
         return
       }
 
+      console.log('[Login] Login bem-sucedido! User ID:', data.user?.id)
+      console.log('[Login] Sessão criada:', data.session ? 'Sim' : 'Não')
+
+      // Aguardar um momento para o AuthContext processar a sessão
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       // Sucesso! Redirecionar para o painel
+      console.log('[Login] Redirecionando para /admin...')
       router.push('/admin')
 
     } catch (error) {
-      console.error('Erro:', error)
+      console.error('[Login] Erro inesperado:', error)
       setErro('Erro ao fazer login. Tente novamente.')
     } finally {
       setCarregando(false)

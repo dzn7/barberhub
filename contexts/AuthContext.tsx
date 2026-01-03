@@ -26,8 +26,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [carregando, setCarregando] = useState(true)
 
-  const carregarDadosProprietario = async (userId: string) => {
+  const carregarDadosProprietario = async (userId: string): Promise<boolean> => {
     try {
+      console.log('[AuthContext] Buscando proprietário para user_id:', userId)
+      
       // Buscar proprietário
       const { data: propData, error: propError } = await supabase
         .from('proprietarios')
@@ -35,11 +37,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('user_id', userId)
         .single()
 
-      if (propError || !propData) {
-        console.error('Erro ao buscar proprietário:', propError)
-        return
+      if (propError) {
+        console.error('[AuthContext] Erro ao buscar proprietário:', propError.message, propError.code)
+        return false
+      }
+      
+      if (!propData) {
+        console.error('[AuthContext] Proprietário não encontrado para user_id:', userId)
+        return false
       }
 
+      console.log('[AuthContext] Proprietário encontrado:', propData.id, 'tenant_id:', propData.tenant_id)
       setProprietario(propData)
 
       // Buscar tenant
@@ -50,30 +58,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (tenantError) {
-        console.error('Erro ao buscar tenant:', tenantError)
-        return
+        console.error('[AuthContext] Erro ao buscar tenant:', tenantError.message, tenantError.code)
+        return false
+      }
+      
+      if (!tenantData) {
+        console.error('[AuthContext] Tenant não encontrado para id:', propData.tenant_id)
+        return false
       }
 
+      console.log('[AuthContext] Tenant encontrado:', tenantData.nome, 'slug:', tenantData.slug)
       setTenant(tenantData)
+      return true
     } catch (error) {
-      console.error('Erro ao carregar dados:', error)
+      console.error('[AuthContext] Erro ao carregar dados:', error)
+      return false
     }
   }
 
   useEffect(() => {
     // Verificar sessão existente
     const inicializar = async () => {
+      console.log('[AuthContext] Inicializando autenticação...')
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('[AuthContext] Erro ao obter sessão:', sessionError.message)
+        }
+        
+        console.log('[AuthContext] Sessão obtida:', session ? 'Sim' : 'Não', session?.user?.email)
+        
         setSession(session)
         setUser(session?.user ?? null)
         
         if (session?.user) {
-          await carregarDadosProprietario(session.user.id)
+          console.log('[AuthContext] Usuário autenticado, carregando dados...')
+          const sucesso = await carregarDadosProprietario(session.user.id)
+          if (!sucesso) {
+            console.error('[AuthContext] Falha ao carregar dados do proprietário')
+          }
+        } else {
+          console.log('[AuthContext] Nenhum usuário autenticado')
         }
       } catch (error) {
-        console.error('Erro ao inicializar autenticação:', error)
+        console.error('[AuthContext] Erro ao inicializar autenticação:', error)
       } finally {
+        console.log('[AuthContext] Inicialização concluída')
         setCarregando(false)
       }
     }

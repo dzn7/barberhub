@@ -319,13 +319,58 @@ export default function DashboardCompleto() {
     return Object.entries(dados).map(([nome, total]) => ({ nome, total }));
   };
 
-  // Verificar se não está autenticado (mostra tela vazia enquanto redireciona)
-  if (carregandoAuth || !user || !tenant) {
+  // Estado de carregamento
+  if (carregandoAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-900 dark:border-white mb-4"></div>
           <p className="text-zinc-600 dark:text-zinc-400">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Usuário não autenticado - será redirecionado pelo useEffect
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-900 dark:border-white mb-4"></div>
+          <p className="text-zinc-600 dark:text-zinc-400">Redirecionando para login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Usuário autenticado mas sem tenant (erro de configuração)
+  if (!tenant) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="text-center max-w-md p-6">
+          <div className="text-red-500 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Erro ao carregar dados</h2>
+          <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+            Não foi possível carregar os dados da sua barbearia. Isso pode acontecer se sua conta não está vinculada a uma barbearia.
+          </p>
+          <div className="space-y-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-4 py-2 bg-amber-500 text-black font-semibold rounded-lg hover:bg-amber-400 transition-colors"
+            >
+              Tentar novamente
+            </button>
+            <button
+              onClick={() => sair().then(() => router.push('/entrar'))}
+              className="w-full px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white font-semibold rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+            >
+              Fazer logout
+            </button>
+          </div>
         </div>
       </div>
     );
