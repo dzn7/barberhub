@@ -146,7 +146,8 @@ export default function RegistrarPage() {
         options: {
           data: {
             nome: form.nome_proprietario,
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/configurar`
         }
       })
 
@@ -160,8 +161,10 @@ export default function RegistrarPage() {
         return
       }
 
-      if (!authData.user) {
-        setErro('Erro ao criar conta')
+      // Mesmo sem confirmação de email, temos o user.id
+      const userId = authData.user?.id
+      if (!userId) {
+        setErro('Erro ao criar conta. Tente novamente.')
         setCarregando(false)
         return
       }
@@ -173,7 +176,7 @@ export default function RegistrarPage() {
           p_nome: form.nome_barbearia,
           p_email: form.email,
           p_telefone: form.telefone,
-          p_user_id: authData.user.id
+          p_user_id: userId
         })
 
       if (tenantError) {
@@ -182,6 +185,12 @@ export default function RegistrarPage() {
         setCarregando(false)
         return
       }
+
+      // Fazer login automático (ignora confirmação de email para dev)
+      await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.senha
+      })
 
       // Sucesso!
       setTenantSlug(form.slug)
