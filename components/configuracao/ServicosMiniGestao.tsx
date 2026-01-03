@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { useToast } from '@/hooks/useToast'
 import {
   Scissors,
   Plus,
@@ -58,6 +59,7 @@ export function ServicosMiniGestao({
   limiteServicos = 10,
   onTotalChange
 }: ServicosMiniGestaoProps) {
+  const { toast } = useToast()
   const [servicos, setServicos] = useState<Servico[]>([])
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -91,7 +93,7 @@ export function ServicosMiniGestao({
       if (error) throw error
       setServicos(data || [])
     } catch (erro) {
-      console.error('Erro ao buscar serviços:', erro)
+      toast({ tipo: 'erro', mensagem: 'Erro ao buscar serviços' })
     } finally {
       setCarregando(false)
     }
@@ -99,15 +101,15 @@ export function ServicosMiniGestao({
 
   const adicionarServico = async () => {
     if (!formulario.nome.trim()) {
-      alert('Digite o nome do serviço')
+      toast({ tipo: 'erro', mensagem: 'Digite o nome do serviço' })
       return
     }
     if (formulario.preco <= 0) {
-      alert('O preço deve ser maior que zero')
+      toast({ tipo: 'erro', mensagem: 'O preço deve ser maior que zero' })
       return
     }
     if (servicos.length >= limiteServicos) {
-      alert(`Limite de ${limiteServicos} serviços atingido`)
+      toast({ tipo: 'aviso', mensagem: `Limite de ${limiteServicos} serviços atingido` })
       return
     }
 
@@ -137,9 +139,8 @@ export function ServicosMiniGestao({
       setServicos([...servicos, data])
       setFormulario({ nome: '', descricao: '', preco: 0, duracao: 30, categoria: 'corte' })
       setMostrarFormulario(false)
-    } catch (erro: any) {
-      console.error('Erro ao adicionar serviço:', erro)
-      alert('Erro ao adicionar serviço')
+    } catch (erro) {
+      toast({ tipo: 'erro', mensagem: 'Erro ao adicionar serviço' })
     } finally {
       setSalvando(false)
     }
@@ -169,8 +170,7 @@ export function ServicosMiniGestao({
       setEditando(null)
       setFormulario({ nome: '', descricao: '', preco: 0, duracao: 30, categoria: 'corte' })
     } catch (erro) {
-      console.error('Erro ao atualizar serviço:', erro)
-      alert('Erro ao atualizar serviço')
+      toast({ tipo: 'erro', mensagem: 'Erro ao atualizar serviço' })
     } finally {
       setSalvando(false)
     }
@@ -189,8 +189,7 @@ export function ServicosMiniGestao({
 
       setServicos(servicos.filter(s => s.id !== id))
     } catch (erro) {
-      console.error('Erro ao remover serviço:', erro)
-      alert('Erro ao remover serviço')
+      toast({ tipo: 'erro', mensagem: 'Erro ao remover serviço' })
     }
   }
 
@@ -213,13 +212,13 @@ export function ServicosMiniGestao({
 
   const adicionarSugerido = async (sugerido: typeof SERVICOS_SUGERIDOS[0]) => {
     if (servicos.length >= limiteServicos) {
-      alert(`Limite de ${limiteServicos} serviços atingido`)
+      toast({ tipo: 'aviso', mensagem: `Limite de ${limiteServicos} serviços atingido` })
       return
     }
 
     // Verificar se já existe
     if (servicos.some(s => s.nome.toLowerCase() === sugerido.nome.toLowerCase())) {
-      alert('Este serviço já existe')
+      toast({ tipo: 'aviso', mensagem: 'Este serviço já existe' })
       return
     }
 

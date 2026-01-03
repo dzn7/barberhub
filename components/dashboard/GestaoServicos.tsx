@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scissors, Edit2, Save, X, DollarSign, Clock, TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button, TextField, TextArea, Dialog } from "@radix-ui/themes";
+import { useToast } from "@/hooks/useToast";
 
 interface Servico {
   id: string;
@@ -32,6 +34,8 @@ interface NovoServicoForm {
  * Permite criar, editar e gerenciar serviços
  */
 export function GestaoServicos() {
+  const { tenant } = useAuth();
+  const { toast } = useToast();
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [editando, setEditando] = useState<string | null>(null);
@@ -46,25 +50,28 @@ export function GestaoServicos() {
     categoria: "geral",
   });
 
-  useEffect(() => {
-    buscarServicos();
-  }, []);
-
-  const buscarServicos = async () => {
+  const buscarServicos = useCallback(async () => {
+    if (!tenant?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from("servicos")
         .select("*")
+        .eq("tenant_id", tenant.id)
         .order("nome");
 
       if (error) throw error;
       setServicos(data || []);
     } catch (error) {
-      console.error("Erro ao buscar serviços:", error);
+      toast({ tipo: "erro", mensagem: "Erro ao buscar serviços" });
     } finally {
       setCarregando(false);
     }
-  };
+  }, [tenant?.id, toast]);
+
+  useEffect(() => {
+    buscarServicos();
+  }, [buscarServicos]);
 
   const iniciarEdicao = (servico: Servico) => {
     setEditando(servico.id);
@@ -110,19 +117,18 @@ export function GestaoServicos() {
       const { error } = await supabase
         .from("servicos")
         .update(dadosAtualizacao)
-        .eq("id", servicoId);
+        .eq("id", servicoId)
+        .eq("tenant_id", tenant?.id);
 
       if (error) throw error;
 
-      // Atualizar lista local
       await buscarServicos();
       setEditando(null);
       setValores({});
 
-      alert("✅ Serviço atualizado com sucesso!");
+      toast({ tipo: "sucesso", mensagem: "Serviço atualizado com sucesso!" });
     } catch (error) {
-      console.error("Erro ao salvar serviço:", error);
-      alert("❌ Erro ao salvar serviço");
+      toast({ tipo: "erro", mensagem: "Erro ao salvar serviço" });
     } finally {
       setSalvando(false);
     }
@@ -135,28 +141,32 @@ export function GestaoServicos() {
   };
 
   const criarNovoServico = async () => {
-    // Validações
+    if (!tenant?.id) {
+      toast({ tipo: "erro", mensagem: "Erro: tenant não encontrado" });
+      return;
+    }
+
     if (!novoServico.nome.trim()) {
-      alert("❌ Nome do serviço é obrigatório");
+      toast({ tipo: "erro", mensagem: "Nome do serviço é obrigatório" });
       return;
     }
 
     if (novoServico.preco <= 0) {
-      alert("❌ Preço deve ser maior que zero");
+      toast({ tipo: "erro", mensagem: "Preço deve ser maior que zero" });
       return;
     }
 
     if (novoServico.duracao <= 0) {
-      alert("❌ Duração deve ser maior que zero");
+      toast({ tipo: "erro", mensagem: "Duração deve ser maior que zero" });
       return;
     }
 
     setSalvando(true);
     try {
-      // Buscar maior ordem de exibição atual
       const { data: servicosExistentes } = await supabase
         .from("servicos")
         .select("ordem_exibicao")
+        .eq("tenant_id", tenant.id)
         .order("ordem_exibicao", { ascending: false })
         .limit(1);
 
@@ -164,10 +174,10 @@ export function GestaoServicos() {
         ? (servicosExistentes[0].ordem_exibicao || 0) + 1 
         : 1;
 
-      // Inserir novo serviço
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("servicos")
         .insert([{
+          tenant_id: tenant.id,
           nome: novoServico.nome.trim(),
           descricao: novoServico.descricao.trim() || novoServico.nome.trim(),
           preco: novoServico.preco,
@@ -181,12 +191,8 @@ export function GestaoServicos() {
 
       if (error) throw error;
 
-      console.log("✅ Serviço criado:", data);
-
-      // Atualizar lista
       await buscarServicos();
 
-      // Resetar formulário e fechar modal
       setNovoServico({
         nome: "",
         descricao: "",
@@ -196,10 +202,9 @@ export function GestaoServicos() {
       });
       setModalNovoAberto(false);
 
-      alert("✅ Serviço criado com sucesso!");
-    } catch (error: any) {
-      console.error("❌ Erro ao criar serviço:", error);
-      alert(`❌ Erro ao criar serviço: ${error.message || "Erro desconhecido"}`);
+      toast({ tipo: "sucesso", mensagem: "Serviço criado com sucesso!" });
+    } catch (error) {
+      toast({ tipo: "erro", mensagem: "Erro ao criar serviço" });
     } finally {
       setSalvando(false);
     }

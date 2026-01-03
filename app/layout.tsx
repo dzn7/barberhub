@@ -5,6 +5,7 @@ import '@radix-ui/themes/styles.css'
 import { Theme } from '@radix-ui/themes'
 import { ProvedorTema } from '@/components/provedores/provedor-tema'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ToastProvider } from '@/hooks/useToast'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -58,7 +59,9 @@ export default function RootLayout({
         >
           <Theme appearance="dark" accentColor="amber" grayColor="slate" radius="medium">
             <AuthProvider>
-              {children}
+              <ToastProvider>
+                {children}
+              </ToastProvider>
             </AuthProvider>
           </Theme>
         </ProvedorTema>

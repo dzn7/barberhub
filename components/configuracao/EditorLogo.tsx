@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import Cropper, { Area, Point } from 'react-easy-crop'
+import Cropper, { Area } from 'react-easy-crop'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useToast } from '@/hooks/useToast'
 import {
   Upload,
   Trash2,
@@ -30,22 +31,24 @@ interface EditorLogoProps {
  */
 export function EditorLogo({
   logoUrl,
-  tenantId,
   onLogoChange,
+  tenantId,
   corPrimaria = '#18181b',
-  corSecundaria = '#fafafa'
+  corSecundaria = '#ffffff'
 }: EditorLogoProps) {
-  const [uploadando, setUploadando] = useState(false)
+  const { toast } = useToast()
   const [imagemParaCrop, setImagemParaCrop] = useState<string | null>(null)
-  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 })
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [rotacao, setRotacao] = useState(0)
-  const [areaCropada, setAreaCropada] = useState<Area | null>(null)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
   const [processando, setProcessando] = useState(false)
+  const [uploadando, setUploadando] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Callback quando o crop é completado
-  const onCropComplete = useCallback((_: Area, areaCropadaPixels: Area) => {
-    setAreaCropada(areaCropadaPixels)
+  const onCropComplete = useCallback((_: Area, areaPixels: Area) => {
+    setCroppedAreaPixels(areaPixels)
   }, [])
 
   // Selecionar arquivo
@@ -55,13 +58,13 @@ export function EditorLogo({
 
     // Validar tipo
     if (!arquivo.type.startsWith('image/')) {
-      alert('Por favor, selecione uma imagem válida')
+      toast({ tipo: 'erro', mensagem: 'Por favor, selecione uma imagem válida' })
       return
     }
 
     // Validar tamanho (5MB)
     if (arquivo.size > 5 * 1024 * 1024) {
-      alert('A imagem deve ter no máximo 5MB')
+      toast({ tipo: 'erro', mensagem: 'A imagem deve ter no máximo 5MB' })
       return
     }
 
@@ -75,7 +78,7 @@ export function EditorLogo({
 
   // Criar imagem cropada
   const criarImagemCropada = async (): Promise<Blob | null> => {
-    if (!imagemParaCrop || !areaCropada) return null
+    if (!imagemParaCrop || !croppedAreaPixels) return null
 
     return new Promise((resolve) => {
       const imagem = document.createElement('img')
@@ -105,10 +108,10 @@ export function EditorLogo({
         // Desenhar a área cropada
         ctx.drawImage(
           imagem,
-          areaCropada.x,
-          areaCropada.y,
-          areaCropada.width,
-          areaCropada.height,
+          croppedAreaPixels.x,
+          croppedAreaPixels.y,
+          croppedAreaPixels.width,
+          croppedAreaPixels.height,
           0,
           0,
           tamanhoFinal,
@@ -135,7 +138,7 @@ export function EditorLogo({
 
   // Confirmar crop e fazer upload
   const handleConfirmarCrop = async () => {
-    if (!areaCropada) return
+    if (!croppedAreaPixels) return
 
     setProcessando(true)
 
@@ -172,9 +175,8 @@ export function EditorLogo({
 
       onLogoChange(dados.url)
       setImagemParaCrop(null)
-    } catch (erro: any) {
-      console.error('Erro ao fazer upload:', erro)
-      alert('Erro ao salvar logo. Tente novamente.')
+    } catch (erro) {
+      toast({ tipo: 'erro', mensagem: 'Erro ao salvar logo. Tente novamente.' })
     } finally {
       setProcessando(false)
     }

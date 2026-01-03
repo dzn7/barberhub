@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { useToast } from '@/hooks/useToast'
 import {
   User,
   Plus,
@@ -54,6 +55,7 @@ export function BarbeirosMiniGestao({
   limiteBarbeiros = 2,
   onTotalChange
 }: BarbeirosMiniGestaoProps) {
+  const { toast } = useToast()
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -90,7 +92,7 @@ export function BarbeirosMiniGestao({
       if (error) throw error
       setBarbeiros(data || [])
     } catch (erro) {
-      console.error('Erro ao buscar barbeiros:', erro)
+      toast({ tipo: 'erro', mensagem: 'Erro ao buscar barbeiros' })
     } finally {
       setCarregando(false)
     }
@@ -108,12 +110,12 @@ export function BarbeirosMiniGestao({
     if (!arquivo) return
 
     if (!arquivo.type.startsWith('image/')) {
-      alert('Selecione uma imagem válida')
+      toast({ tipo: 'erro', mensagem: 'Selecione uma imagem válida' })
       return
     }
 
     if (arquivo.size > 5 * 1024 * 1024) {
-      alert('A imagem deve ter no máximo 5MB')
+      toast({ tipo: 'erro', mensagem: 'A imagem deve ter no máximo 5MB' })
       return
     }
 
@@ -134,8 +136,7 @@ export function BarbeirosMiniGestao({
 
       setFormulario({ ...formulario, foto_url: dados.url })
     } catch (erro) {
-      console.error('Erro ao fazer upload:', erro)
-      alert('Erro ao enviar foto')
+      toast({ tipo: 'erro', mensagem: 'Erro ao enviar foto' })
     } finally {
       setUploadandoFoto(false)
       if (inputFotoRef.current) {
@@ -155,15 +156,15 @@ export function BarbeirosMiniGestao({
 
   const adicionarBarbeiro = async () => {
     if (!formulario.nome.trim()) {
-      alert('Digite o nome do barbeiro')
+      toast({ tipo: 'erro', mensagem: 'Digite o nome do barbeiro' })
       return
     }
     if (!formulario.telefone.trim()) {
-      alert('Digite o telefone do barbeiro')
+      toast({ tipo: 'erro', mensagem: 'Digite o telefone do barbeiro' })
       return
     }
     if (barbeiros.length >= limiteBarbeiros) {
-      alert(`Limite de ${limiteBarbeiros} barbeiros atingido no seu plano`)
+      toast({ tipo: 'aviso', mensagem: `Limite de ${limiteBarbeiros} barbeiros atingido` })
       return
     }
 
@@ -189,9 +190,8 @@ export function BarbeirosMiniGestao({
       setBarbeiros([...barbeiros, data])
       resetarFormulario()
       setMostrarFormulario(false)
-    } catch (erro: any) {
-      console.error('Erro ao adicionar barbeiro:', erro)
-      alert('Erro ao adicionar barbeiro')
+    } catch (erro) {
+      toast({ tipo: 'erro', mensagem: 'Erro ao adicionar barbeiro' })
     } finally {
       setSalvando(false)
     }
@@ -222,8 +222,7 @@ export function BarbeirosMiniGestao({
       setEditando(null)
       resetarFormulario()
     } catch (erro) {
-      console.error('Erro ao atualizar barbeiro:', erro)
-      alert('Erro ao atualizar barbeiro')
+      toast({ tipo: 'erro', mensagem: 'Erro ao atualizar barbeiro' })
     } finally {
       setSalvando(false)
     }
@@ -242,8 +241,7 @@ export function BarbeirosMiniGestao({
 
       setBarbeiros(barbeiros.filter(b => b.id !== id))
     } catch (erro) {
-      console.error('Erro ao remover barbeiro:', erro)
-      alert('Erro ao remover barbeiro')
+      toast({ tipo: 'erro', mensagem: 'Erro ao remover barbeiro' })
     }
   }
 
