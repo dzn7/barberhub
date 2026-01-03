@@ -7,6 +7,7 @@ import { Button } from "@radix-ui/themes";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { ModalRemarcacao } from "./ModalRemarcacao";
 import { Modal } from "@/components/Modal";
 
@@ -37,6 +38,7 @@ interface Agendamento {
  * Permite alterar data/hora e notifica o cliente via WhatsApp
  */
 export function RemarcacaoAgendamento() {
+  const { tenant } = useAuth();
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
@@ -54,10 +56,14 @@ export function RemarcacaoAgendamento() {
   });
 
   useEffect(() => {
-    buscarAgendamentos();
-  }, []);
+    if (tenant) {
+      buscarAgendamentos();
+    }
+  }, [tenant]);
 
   const buscarAgendamentos = async () => {
+    if (!tenant) return;
+    
     try {
       // Buscar agendamentos com informação de remarcação
       const { data, error } = await supabase
@@ -70,6 +76,7 @@ export function RemarcacaoAgendamento() {
           barbeiros (id, nome),
           servicos (nome, preco, duracao)
         `)
+        .eq("tenant_id", tenant.id)
         .in("status", ["pendente", "confirmado"])
         .gte("data_hora", new Date().toISOString())
         .order("data_hora");

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Clock, Save, CheckCircle, XCircle, AlertCircle, Ban, Calendar as CalendarIcon } from "lucide-react";
 import { Button, Switch, Dialog, Select, TextField, TextArea } from "@radix-ui/themes";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -46,6 +47,7 @@ const diasSemana = [
  * Permite configurar horário de funcionamento da barbearia
  */
 export function GestaoHorarios() {
+  const { tenant } = useAuth();
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [modalBloqueioAberto, setModalBloqueioAberto] = useState(false);
@@ -71,15 +73,20 @@ export function GestaoHorarios() {
   });
 
   useEffect(() => {
-    buscarHorarios();
-    buscarBarbeiros();
-  }, []);
+    if (tenant) {
+      buscarHorarios();
+      buscarBarbeiros();
+    }
+  }, [tenant]);
 
   const buscarBarbeiros = async () => {
+    if (!tenant) return;
+    
     try {
       const { data, error } = await supabase
         .from('barbeiros')
         .select('id, nome')
+        .eq('tenant_id', tenant.id)
         .eq('ativo', true);
 
       if (error) throw error;
@@ -90,14 +97,17 @@ export function GestaoHorarios() {
   };
 
   const buscarHorarios = async () => {
+    if (!tenant) return;
+    
     try {
       const { data, error } = await supabase
         .from('configuracoes')
         .select('valor')
+        .eq('tenant_id', tenant.id)
         .eq('chave', 'horario_funcionamento')
         .single();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') throw error;
 
       if (data?.valor) {
         setHorarios(data.valor as HorarioSemana);

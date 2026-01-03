@@ -21,6 +21,7 @@ import {
 import { format, addDays, isSameDay, parseISO, startOfDay, isToday, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { Badge, Button, TextField, Select } from "@radix-ui/themes";
 
@@ -71,6 +72,7 @@ const STATUS_CONFIG = {
 };
 
 export function CalendarioAgendamentos() {
+  const { tenant } = useAuth();
   const [dataInicio, setDataInicio] = useState(new Date());
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -107,8 +109,10 @@ export function CalendarioAgendamentos() {
 
   // Buscar agendamentos
   useEffect(() => {
-    buscarAgendamentos();
-  }, [dataInicio]);
+    if (tenant) {
+      buscarAgendamentos();
+    }
+  }, [dataInicio, tenant]);
 
   // Bloquear scroll quando modal está aberto
   useEffect(() => {
@@ -130,15 +134,19 @@ export function CalendarioAgendamentos() {
 
   // Carregar barbeiros, serviços e clientes
   useEffect(() => {
-    carregarDadosFormulario();
-  }, []);
+    if (tenant) {
+      carregarDadosFormulario();
+    }
+  }, [tenant]);
 
   const carregarDadosFormulario = async () => {
+    if (!tenant) return;
+    
     try {
       const [barbeirosRes, servicosRes, clientesRes] = await Promise.all([
-        supabase.from('barbeiros').select('id, nome').eq('ativo', true),
-        supabase.from('servicos').select('id, nome, preco').eq('ativo', true),
-        supabase.from('clientes').select('id, nome').order('nome')
+        supabase.from('barbeiros').select('id, nome').eq('tenant_id', tenant.id).eq('ativo', true),
+        supabase.from('servicos').select('id, nome, preco').eq('tenant_id', tenant.id).eq('ativo', true),
+        supabase.from('clientes').select('id, nome').eq('tenant_id', tenant.id).order('nome')
       ]);
 
       if (barbeirosRes.data) {
@@ -160,6 +168,8 @@ export function CalendarioAgendamentos() {
   };
 
   const buscarAgendamentos = async () => {
+    if (!tenant) return;
+    
     try {
       setCarregando(true);
       const inicio = startOfDay(dataInicio);
@@ -173,6 +183,7 @@ export function CalendarioAgendamentos() {
           barbeiros (nome),
           servicos (nome, preco, duracao)
         `)
+        .eq('tenant_id', tenant.id)
         .gte('data_hora', inicio.toISOString())
         .lt('data_hora', fim.toISOString())
         .order('data_hora', { ascending: true });

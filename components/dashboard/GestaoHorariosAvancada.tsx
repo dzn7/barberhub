@@ -10,6 +10,7 @@ import { Button, TextField, Select, Switch, Badge, Dialog, TextArea } from "@rad
 import { format, parse, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { Modal } from "@/components/Modal";
 import { CalendarioInterativo } from "./CalendarioInterativo";
 import { SeletorHorarioInterativo } from "./SeletorHorarioInterativo";
@@ -57,6 +58,7 @@ interface HorarioBloqueado {
 }
 
 export function GestaoHorariosAvancada() {
+  const { tenant } = useAuth();
   const [config, setConfig] = useState<ConfiguracaoBarbearia | null>(null);
   const [bloqueios, setBloqueios] = useState<HorarioBloqueado[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -82,6 +84,8 @@ export function GestaoHorariosAvancada() {
   });
 
   useEffect(() => {
+    if (!tenant) return;
+    
     carregarDados();
     carregarBarbeiros();
     carregarBloqueios();
@@ -92,7 +96,8 @@ export function GestaoHorariosAvancada() {
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'configuracoes_barbearia'
+        table: 'configuracoes_barbearia',
+        filter: `tenant_id=eq.${tenant.id}`
       }, () => {
         carregarDados();
       })
@@ -104,7 +109,8 @@ export function GestaoHorariosAvancada() {
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'horarios_bloqueados'
+        table: 'horarios_bloqueados',
+        filter: `tenant_id=eq.${tenant.id}`
       }, () => {
         carregarBloqueios();
       })
@@ -114,13 +120,16 @@ export function GestaoHorariosAvancada() {
       supabase.removeChannel(channelConfig);
       supabase.removeChannel(channelBloqueios);
     };
-  }, []);
+  }, [tenant]);
 
   const carregarDados = async () => {
+    if (!tenant) return;
+    
     try {
       const { data, error } = await supabase
         .from('configuracoes_barbearia')
         .select('*')
+        .eq('tenant_id', tenant.id)
         .single();
 
       if (error) throw error;
@@ -135,6 +144,8 @@ export function GestaoHorariosAvancada() {
   };
 
   const carregarBloqueios = async () => {
+    if (!tenant) return;
+    
     try {
       const { data, error } = await supabase
         .from('horarios_bloqueados')
@@ -142,6 +153,7 @@ export function GestaoHorariosAvancada() {
           *,
           barbeiros (nome)
         `)
+        .eq('tenant_id', tenant.id)
         .gte('data', format(new Date(), 'yyyy-MM-dd'))
         .order('data', { ascending: true });
 
@@ -153,10 +165,13 @@ export function GestaoHorariosAvancada() {
   };
 
   const carregarBarbeiros = async () => {
+    if (!tenant) return;
+    
     try {
       const { data, error } = await supabase
         .from('barbeiros')
         .select('id, nome')
+        .eq('tenant_id', tenant.id)
         .eq('ativo', true);
 
       if (error) throw error;
@@ -262,21 +277,18 @@ export function GestaoHorariosAvancada() {
   };
 
   const criarBloqueio = async () => {
+    if (!tenant) return;
+    
     setSalvando(true);
     try {
       // Usar diretamente os valores simples de data e horário
       const horarioInicioFormatado = novoBloqueio.horario_inicio + ':00';
       const horarioFimFormatado = novoBloqueio.horario_fim + ':00';
 
-      console.log('[Bloqueio] Salvando:', {
-        data: novoBloqueio.data,
-        horario_inicio: horarioInicioFormatado,
-        horario_fim: horarioFimFormatado
-      });
-
       const { error } = await supabase
         .from('horarios_bloqueados')
         .insert([{
+          tenant_id: tenant.id,
           barbeiro_id: novoBloqueio.barbeiro_id || null,
           data: novoBloqueio.data,
           horario_inicio: horarioInicioFormatado,

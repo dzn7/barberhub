@@ -7,6 +7,7 @@ import { format, addDays, startOfWeek, isSameDay, parseISO, subDays } from "date
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { TextField, Select, Button } from "@radix-ui/themes";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
@@ -42,6 +43,7 @@ const CORES_STATUS = {
 };
 
 export function CalendarioSemanal() {
+  const { tenant } = useAuth();
   const [diaSelecionado, setDiaSelecionado] = useState(new Date());
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -78,13 +80,17 @@ export function CalendarioSemanal() {
 
   // Buscar agendamentos do dia selecionado
   useEffect(() => {
-    buscarAgendamentos();
-  }, [diaSelecionado]);
+    if (tenant) {
+      buscarAgendamentos();
+    }
+  }, [diaSelecionado, tenant]);
 
   // Carregar dados do formulário
   useEffect(() => {
-    carregarDadosFormulario();
-  }, []);
+    if (tenant) {
+      carregarDadosFormulario();
+    }
+  }, [tenant]);
 
   // Configurar subscription em tempo real para agendamentos
   useEffect(() => {
@@ -130,6 +136,8 @@ export function CalendarioSemanal() {
 
   // Buscar agendamentos da data selecionada no modal (para verificar horários ocupados)
   const buscarAgendamentosDataModal = useCallback(async (data: string) => {
+    if (!tenant) return;
+    
     try {
       // Converter para UTC considerando timezone de Brasília
       const inicioDiaLocal = `${data}T00:00:00`;
@@ -145,6 +153,7 @@ export function CalendarioSemanal() {
           status,
           servicos (duracao)
         `)
+        .eq('tenant_id', tenant.id)
         .gte('data_hora', inicioDiaUTC.toISOString())
         .lte('data_hora', fimDiaUTC.toISOString())
         .not('status', 'eq', 'cancelado');
@@ -164,11 +173,13 @@ export function CalendarioSemanal() {
   }, [modalNovoAberto, novoAgendamento.data, buscarAgendamentosDataModal]);
 
   const carregarDadosFormulario = async () => {
+    if (!tenant) return;
+    
     try {
       const [barbeirosRes, servicosRes, clientesRes] = await Promise.all([
-        supabase.from('barbeiros').select('id, nome').eq('ativo', true),
-        supabase.from('servicos').select('id, nome, preco').eq('ativo', true),
-        supabase.from('clientes').select('id, nome, telefone').eq('ativo', true),
+        supabase.from('barbeiros').select('id, nome').eq('tenant_id', tenant.id).eq('ativo', true),
+        supabase.from('servicos').select('id, nome, preco').eq('tenant_id', tenant.id).eq('ativo', true),
+        supabase.from('clientes').select('id, nome, telefone').eq('tenant_id', tenant.id).eq('ativo', true),
       ]);
 
       if (barbeirosRes.data) setBarbeiros(barbeirosRes.data);
@@ -296,6 +307,11 @@ export function CalendarioSemanal() {
       const inicioUTC = fromZonedTime(inicioLocal, TIMEZONE_BRASILIA);
       const fimUTC = fromZonedTime(fimLocal, TIMEZONE_BRASILIA);
 
+      if (!tenant) {
+        setCarregando(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -304,6 +320,7 @@ export function CalendarioSemanal() {
           barbeiros (nome),
           servicos (nome, preco, duracao)
         `)
+        .eq('tenant_id', tenant.id)
         .gte('data_hora', inicioUTC.toISOString())
         .lte('data_hora', fimUTC.toISOString())
         .order('data_hora', { ascending: true });
