@@ -155,7 +155,7 @@ export default function PaginaBarbearia() {
   }
 
   const whatsappLink = tenant.whatsapp 
-    ? \`https://wa.me/55\${tenant.whatsapp.replace(/\\D/g, '')}\` 
+    ? `https://wa.me/55\${tenant.whatsapp.replace(/\\D/g, '')}` 
     : null
 
   return (
@@ -169,7 +169,7 @@ export default function PaginaBarbearia() {
         <div 
           className="absolute inset-0 opacity-50"
           style={{
-            background: \`radial-gradient(ellipse at top, \${cores.destaque}15 0%, transparent 50%)\`
+            background: `radial-gradient(ellipse at top, \${cores.destaque}15 0%, transparent 50%)`
           }}
         />
         
@@ -213,8 +213,8 @@ export default function PaginaBarbearia() {
               >
                 <MapPin className="w-4 h-4" />
                 {tenant.endereco}
-                {tenant.cidade && \`, \${tenant.cidade}\`}
-                {tenant.estado && \` - \${tenant.estado}\`}
+                {tenant.cidade && `, \${tenant.cidade}`}
+                {tenant.estado && ` - \${tenant.estado}`}
               </p>
             )}
           </motion.div>
@@ -227,7 +227,7 @@ export default function PaginaBarbearia() {
             className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto"
           >
             <Link
-              href={\`/\${tenant.slug}/agendar\`}
+              href={`/\${tenant.slug}/agendar`}
               className="group flex-1 inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
               style={{ 
                 backgroundColor: cores.secundaria,
@@ -336,7 +336,7 @@ export default function PaginaBarbearia() {
                 </h2>
               </div>
               <Link 
-                href={\`/\${tenant.slug}/agendar\`}
+                href={`/\${tenant.slug}/agendar`}
                 className="hidden sm:flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-80"
                 style={{ color: cores.secundaria }}
               >
@@ -392,7 +392,7 @@ export default function PaginaBarbearia() {
               className="mt-8 text-center sm:hidden"
             >
               <Link 
-                href={\`/\${tenant.slug}/agendar\`}
+                href={`/\${tenant.slug}/agendar`}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-[1.02]"
                 style={{ 
                   backgroundColor: cores.secundaria,
@@ -497,7 +497,7 @@ export default function PaginaBarbearia() {
             </p>
             
             <Link
-              href={\`/\${tenant.slug}/agendar\`}
+              href={`/\${tenant.slug}/agendar`}
               className="group inline-flex items-center gap-2 px-8 py-4 font-semibold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
               style={{ 
                 backgroundColor: cores.secundaria,
@@ -521,7 +521,7 @@ export default function PaginaBarbearia() {
           <div className="flex flex-wrap justify-center gap-6">
             {tenant.telefone && (
               <a 
-                href={\`tel:\${tenant.telefone}\`}
+                href={`tel:\${tenant.telefone}`}
                 className="flex items-center gap-2 transition-opacity hover:opacity-80"
                 style={{ color: cores.destaque }}
               >
@@ -532,7 +532,7 @@ export default function PaginaBarbearia() {
             
             {tenant.instagram && (
               <a
-                href={\`https://instagram.com/\${tenant.instagram.replace('@', '')}\`}
+                href={`https://instagram.com/\${tenant.instagram.replace('@', '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 transition-opacity hover:opacity-80"
@@ -546,7 +546,7 @@ export default function PaginaBarbearia() {
             {tenant.endereco && (
               <span className="flex items-center gap-2" style={{ color: cores.destaque }}>
                 <MapPin className="w-4 h-4" />
-                {tenant.cidade}{tenant.estado && \`, \${tenant.estado}\`}
+                {tenant.cidade}{tenant.estado && `, \${tenant.estado}`}
               </span>
             )}
           </div>
