@@ -195,45 +195,12 @@ export default function RegistrarPage() {
     }
   }
 
-  // Tela de sucesso após criar conta
-  if (contaCriada) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
-          <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-white" />
-          </div>
-          
-          <h1 className="text-3xl font-bold text-white mb-4">Conta Criada com Sucesso</h1>
-          
-          <p className="text-zinc-400 mb-8">
-            Sua barbearia <span className="text-primary font-semibold">{form.nome_barbearia}</span> está pronta.
-            Você tem 14 dias de teste grátis para explorar todas as funcionalidades.
-          </p>
-          
-          <div className="bg-zinc-800/50 rounded-2xl p-6 border border-zinc-700/50 mb-6">
-            <p className="text-sm text-zinc-400 mb-3">Link da sua página de agendamentos:</p>
-            <div className="bg-zinc-900 rounded-lg p-3">
-              <code className="text-primary">barberhub.online/{tenantSlug}</code>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <Link href="/entrar" className="block">
-              <Botao className="w-full">
-                Acessar Painel Administrativo
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Botao>
-            </Link>
-            
-            <p className="text-xs text-zinc-500">
-              Use o e-mail e senha cadastrados para fazer login
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // Redirecionar para configuração após criar conta
+  useEffect(() => {
+    if (contaCriada) {
+      router.push('/configurar')
+    }
+  }, [contaCriada, router])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 flex items-center justify-center p-4">
