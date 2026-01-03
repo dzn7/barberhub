@@ -30,12 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[AuthContext] Buscando proprietário para user_id:', userId)
       
-      // Buscar proprietário
-      const { data: propData, error: propError } = await supabase
+      // Buscar proprietário com timeout
+      const propPromise = supabase
         .from('proprietarios')
         .select('*')
         .eq('user_id', userId)
         .single()
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout ao buscar proprietário')), 10000)
+      )
+      
+      const { data: propData, error: propError } = await Promise.race([propPromise, timeoutPromise]) as any
+
+      console.log('[AuthContext] Resposta proprietário:', { propData, propError })
 
       if (propError) {
         console.error('[AuthContext] Erro ao buscar proprietário:', propError.message, propError.code)
@@ -51,11 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProprietario(propData)
 
       // Buscar tenant
+      console.log('[AuthContext] Buscando tenant para id:', propData.tenant_id)
+      
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
         .select('*')
         .eq('id', propData.tenant_id)
         .single()
+
+      console.log('[AuthContext] Resposta tenant:', { tenantData, tenantError })
 
       if (tenantError) {
         console.error('[AuthContext] Erro ao buscar tenant:', tenantError.message, tenantError.code)
