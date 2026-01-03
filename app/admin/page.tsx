@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { 
-  Calendar, DollarSign, Users, TrendingUp, TrendingDown, Package, Percent, LogOut, Scissors, Edit3, Clock, Menu, X, Settings, BarChart3, Filter, ChevronDown, Image as ImageIcon, MessageCircle, Store
+  Calendar, DollarSign, Users, TrendingUp, TrendingDown, Package, Percent, LogOut, Scissors, Edit3, Clock, Menu, X, Settings, BarChart3, Filter, ChevronDown, Image as ImageIcon, MessageCircle, Store, Palette
 } from "lucide-react";
 import { Tabs } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,7 @@ import { GestaoHorariosAvancada } from "@/components/dashboard/GestaoHorariosAva
 import { Relatorios } from "@/components/dashboard/Relatorios";
 import { GestaoTrabalhos } from "@/components/dashboard/GestaoTrabalhos";
 import { GestaoComentarios } from "@/components/dashboard/GestaoComentarios";
+import { ConfiguracaoBarbearia } from "@/components/dashboard/ConfiguracaoBarbearia";
 import { AlternadorTema } from "@/components/AlternadorTema";
 // PWA removido temporariamente
 // import { NotificationPermission } from "@/components/NotificationPermission";
@@ -784,12 +785,32 @@ export default function DashboardCompleto() {
                     Configurações da Barbearia
                   </h2>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Gerencie horários, bloqueios e funcionamento da barbearia
+                    Personalize sua barbearia: logo, cores, dados e horários
                   </p>
                 </div>
               </div>
               
-              <GestaoHorariosAvancada />
+              {/* Tabs internas para configurações */}
+              <Tabs.Root defaultValue="personalizacao">
+                <Tabs.List className="mb-6">
+                  <Tabs.Trigger value="personalizacao">
+                    <Palette className="w-4 h-4 mr-2" />
+                    Personalização
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="horarios">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Horários e Bloqueios
+                  </Tabs.Trigger>
+                </Tabs.List>
+
+                <Tabs.Content value="personalizacao">
+                  <ConfiguracaoBarbearia />
+                </Tabs.Content>
+
+                <Tabs.Content value="horarios">
+                  <GestaoHorariosAvancada />
+                </Tabs.Content>
+              </Tabs.Root>
             </div>
           </Tabs.Content>
         </Tabs.Root>

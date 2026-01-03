@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 
 const R2 = new S3Client({
   region: 'auto',
@@ -65,5 +65,37 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erro no upload:', error)
     return NextResponse.json({ error: 'Erro ao fazer upload' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const url = searchParams.get('url')
+
+    if (!url) {
+      return NextResponse.json({ error: 'URL não fornecida' }, { status: 400 })
+    }
+
+    // Extrair key da URL pública
+    const publicUrlBase = process.env.CLOUDFLARE_R2_PUBLIC_URL
+    if (!publicUrlBase || !url.startsWith(publicUrlBase)) {
+      return NextResponse.json({ error: 'URL inválida' }, { status: 400 })
+    }
+
+    const key = url.replace(`${publicUrlBase}/`, '')
+
+    // Deletar do R2
+    await R2.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+        Key: key,
+      })
+    )
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Erro ao deletar arquivo:', error)
+    return NextResponse.json({ error: 'Erro ao deletar arquivo' }, { status: 500 })
   }
 }

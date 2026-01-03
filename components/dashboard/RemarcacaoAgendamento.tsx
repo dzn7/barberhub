@@ -4,12 +4,16 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Clock, User, Phone, Edit2, Scissors, AlertCircle } from "lucide-react";
 import { Button } from "@radix-ui/themes";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfDay } from "date-fns";
+import { fromZonedTime } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { ModalRemarcacao } from "./ModalRemarcacao";
 import { Modal } from "@/components/Modal";
+
+const TIMEZONE_BRASILIA = "America/Sao_Paulo";
 
 interface Agendamento {
   id: string;
@@ -78,7 +82,7 @@ export function RemarcacaoAgendamento() {
         `)
         .eq("tenant_id", tenant.id)
         .in("status", ["pendente", "confirmado"])
-        .gte("data_hora", new Date().toISOString())
+        .gte("data_hora", fromZonedTime(startOfDay(new Date()), TIMEZONE_BRASILIA).toISOString())
         .order("data_hora");
 
       if (error) throw error;
