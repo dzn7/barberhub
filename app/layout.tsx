@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import '@radix-ui/themes/styles.css'
+import { Theme } from '@radix-ui/themes'
 import { ProvedorTema } from '@/components/provedores/provedor-tema'
 import { AuthProvider } from '@/contexts/AuthContext'
 
@@ -54,9 +56,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <Theme appearance="dark" accentColor="amber" grayColor="slate" radius="medium">
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </Theme>
         </ProvedorTema>
       </body>
     </html>

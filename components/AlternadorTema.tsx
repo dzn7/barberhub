@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useTema } from "@/contexts/TemaContext";
+import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 
 /**
@@ -10,7 +10,11 @@ import { motion } from "framer-motion";
  * Utiliza animações suaves com Framer Motion
  */
 export function AlternadorTema() {
-  const { tema, alternarTema } = useTema();
+  const { theme, setTheme } = useTheme();
+
+  const alternarTema = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
     <motion.button
@@ -23,8 +27,8 @@ export function AlternadorTema() {
       <motion.div
         initial={false}
         animate={{
-          rotate: tema === "dark" ? 180 : 0,
-          scale: tema === "dark" ? 1 : 0,
+          rotate: theme === "dark" ? 180 : 0,
+          scale: theme === "dark" ? 1 : 0,
         }}
         transition={{ duration: 0.3 }}
         className="absolute"
@@ -35,8 +39,8 @@ export function AlternadorTema() {
       <motion.div
         initial={false}
         animate={{
-          rotate: tema === "light" ? 0 : -180,
-          scale: tema === "light" ? 1 : 0,
+          rotate: theme === "light" ? 0 : -180,
+          scale: theme === "light" ? 1 : 0,
         }}
         transition={{ duration: 0.3 }}
         className="absolute"
