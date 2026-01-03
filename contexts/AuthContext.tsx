@@ -25,8 +25,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [proprietario, setProprietario] = useState<Proprietario | null>(null)
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [carregando, setCarregando] = useState(true)
+  const [carregandoDados, setCarregandoDados] = useState(false)
 
   const carregarDadosProprietario = async (userId: string): Promise<boolean> => {
+    // Evitar chamadas duplicadas
+    if (carregandoDados) {
+      console.log('[AuthContext] Já está carregando dados, ignorando chamada duplicada')
+      return false
+    }
+    setCarregandoDados(true)
     try {
       console.log('[AuthContext] Buscando proprietário para user_id:', userId)
       
@@ -85,6 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('[AuthContext] Erro ao carregar dados:', error)
       return false
+    } finally {
+      setCarregandoDados(false)
     }
   }
 
