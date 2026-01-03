@@ -77,6 +77,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    let mounted = true
+    
+    // Escutar mudanças de autenticação PRIMEIRO
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('[AuthContext] onAuthStateChange:', event, session?.user?.email)
+        
+        if (!mounted) return
+        
+        setSession(session)
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          console.log('[AuthContext] Sessão ativa, carregando dados...')
+          const sucesso = await carregarDadosProprietario(session.user.id)
+          if (!sucesso) {
+            console.error('[AuthContext] Falha ao carregar dados')
+          }
+          if (mounted) setCarregando(false)
+        } else {
+          console.log('[AuthContext] Sem sessão ativa')
+          setProprietario(null)
+          setTenant(null)
+          if (mounted) setCarregando(false)
+        }
+      }
+    )
+
     // Verificar sessão existente
     const inicializar = async () => {
       console.log('[AuthContext] Inicializando autenticação...')
@@ -85,57 +113,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (sessionError) {
           console.error('[AuthContext] Erro ao obter sessão:', sessionError.message)
+          if (mounted) setCarregando(false)
+          return
         }
         
         console.log('[AuthContext] Sessão obtida:', session ? 'Sim' : 'Não', session?.user?.email)
         
-        setSession(session)
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          console.log('[AuthContext] Usuário autenticado, carregando dados...')
-          const sucesso = await carregarDadosProprietario(session.user.id)
-          if (!sucesso) {
-            console.error('[AuthContext] Falha ao carregar dados do proprietário')
-          }
-        } else {
+        // Se não há sessão, finalizar carregamento
+        if (!session?.user) {
           console.log('[AuthContext] Nenhum usuário autenticado')
+          if (mounted) setCarregando(false)
+          return
         }
+        
+        // Se há sessão, o onAuthStateChange vai cuidar de carregar os dados
+        // Mas vamos garantir que os dados sejam carregados
+        setSession(session)
+        setUser(session.user)
+        
+        console.log('[AuthContext] Usuário autenticado, carregando dados...')
+        const sucesso = await carregarDadosProprietario(session.user.id)
+        if (!sucesso) {
+          console.error('[AuthContext] Falha ao carregar dados do proprietário')
+        }
+        
+        console.log('[AuthContext] Inicialização concluída')
+        if (mounted) setCarregando(false)
       } catch (error) {
         console.error('[AuthContext] Erro ao inicializar autenticação:', error)
-      } finally {
-        console.log('[AuthContext] Inicialização concluída')
-        setCarregando(false)
+        if (mounted) setCarregando(false)
       }
     }
     
     inicializar()
 
-    // Escutar mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('[AuthContext] onAuthStateChange:', event, session?.user?.email)
-        
-        setSession(session)
-        setUser(session?.user ?? null)
-        
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('[AuthContext] Usuário fez login, carregando dados...')
-          const sucesso = await carregarDadosProprietario(session.user.id)
-          if (!sucesso) {
-            console.error('[AuthContext] Falha ao carregar dados após login')
-          }
-        } else if (event === 'SIGNED_OUT') {
-          console.log('[AuthContext] Usuário fez logout')
-          setProprietario(null)
-          setTenant(null)
-        } else if (event === 'TOKEN_REFRESHED') {
-          console.log('[AuthContext] Token atualizado')
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const entrar = async (email: string, senha: string) => {
