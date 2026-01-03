@@ -113,15 +113,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        console.log('[AuthContext] onAuthStateChange:', event, session?.user?.email)
+        
         setSession(session)
         setUser(session?.user ?? null)
         
-        if (session?.user) {
-          await carregarDadosProprietario(session.user.id)
-        } else {
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('[AuthContext] Usuário fez login, carregando dados...')
+          const sucesso = await carregarDadosProprietario(session.user.id)
+          if (!sucesso) {
+            console.error('[AuthContext] Falha ao carregar dados após login')
+          }
+        } else if (event === 'SIGNED_OUT') {
+          console.log('[AuthContext] Usuário fez logout')
           setProprietario(null)
           setTenant(null)
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('[AuthContext] Token atualizado')
         }
       }
     )

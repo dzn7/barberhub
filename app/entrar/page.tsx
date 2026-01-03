@@ -62,12 +62,10 @@ export default function EntrarPage() {
       console.log('[Login] Login bem-sucedido! User ID:', data.user?.id)
       console.log('[Login] Sessão criada:', data.session ? 'Sim' : 'Não')
 
-      // Aguardar um momento para o AuthContext processar a sessão
-      await new Promise(resolve => setTimeout(resolve, 500))
-
-      // Sucesso! Redirecionar para o painel
+      // Forçar redirecionamento com reload completo da página
+      // Isso garante que o AuthContext será reinicializado com a nova sessão
       console.log('[Login] Redirecionando para /admin...')
-      router.push('/admin')
+      window.location.href = '/admin'
 
     } catch (error) {
       console.error('[Login] Erro inesperado:', error)
