@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/hooks/useToast'
 import { LogoMarca } from '@/components/ui/logo-marca'
 import { Botao } from '@/components/ui/botao'
 import {
@@ -30,7 +31,8 @@ import {
   Sparkles,
   ExternalLink,
   PartyPopper,
-  Rocket
+  Rocket,
+  X
 } from 'lucide-react'
 
 const PALETAS_SOFISTICADAS = [
@@ -56,6 +58,7 @@ const TOTAL_ETAPAS = ETAPAS.length
 export default function ConfigurarPage() {
   const router = useRouter()
   const { user, tenant, carregando: carregandoAuth, atualizarTenant } = useAuth()
+  const { toast } = useToast()
   
   const [etapaAtual, setEtapaAtual] = useState(1)
   const [salvando, setSalvando] = useState(false)
@@ -164,8 +167,7 @@ export default function ConfigurarPage() {
       setConcluido(true)
       setTimeout(() => { router.push('/admin') }, 3000)
     } catch (error) {
-      console.error('Erro ao salvar:', error)
-      alert('Erro ao finalizar configuração')
+      toast({ tipo: 'erro', mensagem: 'Erro ao finalizar configuração' })
     } finally {
       setSalvando(false)
     }
@@ -334,6 +336,41 @@ export default function ConfigurarPage() {
           </div>
           <div className="hidden lg:block lg:col-span-2">
             <div className="sticky top-8"><PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} /></div>
+          </div>
+        </div>
+
+        {/* Preview Mobile - Botão flutuante */}
+        <div className="lg:hidden fixed bottom-20 right-4 z-50">
+          <button
+            onClick={() => {
+              const modal = document.getElementById('preview-modal')
+              if (modal) modal.classList.toggle('hidden')
+            }}
+            className="flex items-center gap-2 px-4 py-3 bg-white text-black rounded-full shadow-lg hover:bg-zinc-200 transition-colors"
+          >
+            <Phone className="w-4 h-4" />
+            <span className="text-sm font-medium">Ver Preview</span>
+          </button>
+        </div>
+
+        {/* Modal de Preview Mobile */}
+        <div id="preview-modal" className="hidden lg:hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm">
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+              <span className="text-white font-medium">Preview do Site</span>
+              <button
+                onClick={() => {
+                  const modal = document.getElementById('preview-modal')
+                  if (modal) modal.classList.add('hidden')
+                }}
+                className="p-2 text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} />
+            </div>
           </div>
         </div>
       </div>

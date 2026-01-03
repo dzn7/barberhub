@@ -521,7 +521,7 @@ export function ServicosMiniGestao({
 
       {/* Dica quando tem serviços */}
       {servicos.length > 0 && servicos.length < limiteServicos && !mostrarFormulario && !editando && (
-        <p className="text-xs text-zinc-600 text-center">
+        <p className="text-xs text-zinc-600 text-center hidden sm:block">
           Passe o mouse sobre um serviço para editar ou remover
         </p>
       )}

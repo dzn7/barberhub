@@ -187,29 +187,28 @@ export default function RegistrarPage() {
       }
 
       // Fazer login automático (ignora confirmação de email para dev)
-      await supabase.auth.signInWithPassword({
+      const { error: loginError } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.senha
       })
 
-      // Sucesso!
+      if (loginError) {
+        throw loginError
+      }
+
+      // Sucesso! Redirecionar com reload completo para garantir que AuthContext carregue
       setTenantSlug(form.slug)
       setContaCriada(true)
+      
+      // Usar window.location para forçar reload completo do AuthContext
+      window.location.href = '/configurar'
 
     } catch (error) {
-      console.error('Erro:', error)
       setErro('Erro ao criar conta. Tente novamente.')
     } finally {
       setCarregando(false)
     }
   }
-
-  // Redirecionar para configuração após criar conta
-  useEffect(() => {
-    if (contaCriada) {
-      router.push('/configurar')
-    }
-  }, [contaCriada, router])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 flex items-center justify-center p-4">
