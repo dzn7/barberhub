@@ -276,7 +276,7 @@ export function GestaoBarbeiros() {
         // Gerar token de acesso para o novo barbeiro
         const novoToken = gerarTokenAcesso();
         
-        const { error } = await supabase.from("barbeiros").insert({
+        const { data: novoBarbeiro, error } = await supabase.from("barbeiros").insert({
           tenant_id: tenant.id,
           nome: form.nome.trim(),
           email: emailFinal,
@@ -286,9 +286,25 @@ export function GestaoBarbeiros() {
           foto_url: form.foto_url || null,
           token_acesso: novoToken,
           token_ativo: true,
-        });
+        }).select().single();
 
         if (error) throw error;
+        
+        // Enviar mensagem de boas-vindas via WhatsApp (bot)
+        if (novoBarbeiro && telefoneNumeros) {
+          try {
+            const BOT_URL = process.env.NEXT_PUBLIC_BOT_URL || 'https://bot-barberhub.fly.dev';
+            await fetch(`${BOT_URL}/api/mensagens/boas-vindas-barbeiro`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ barbeiro_id: novoBarbeiro.id }),
+            });
+            console.log('[GestaoBarbeiros] Mensagem de boas-vindas enviada ao barbeiro');
+          } catch (erroBot) {
+            console.warn('[GestaoBarbeiros] Não foi possível enviar WhatsApp (bot offline?):', erroBot);
+            // Não interrompe o fluxo se o bot estiver offline
+          }
+        }
         
         // Exibir modal com o token gerado
         setTokenGerado(novoToken);

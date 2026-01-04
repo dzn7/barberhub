@@ -11,7 +11,8 @@ import {
   templateLembreteCliente,
   templateCancelamentoCliente,
   templateRemarcacaoCliente,
-  templateBoasVindasTenant
+  templateBoasVindasTenant,
+  templateBoasVindasBarbeiro
 } from '../utils/templates.js';
 import logger from '../utils/logger.js';
 
@@ -317,7 +318,9 @@ export async function enviarNotificacaoRemarcacao(agendamentoId, dataHoraAntiga)
       preco: servicos?.preco,
       dataHoraAntiga,
       dataHoraNova: agendamento.data_hora,
-      endereco
+      endereco,
+      telefone: tenants?.whatsapp || tenants?.telefone,
+      slug: tenants?.slug
     });
 
     const resultado = await enviarMensagem(clientes.telefone, mensagem);
@@ -385,10 +388,63 @@ export async function enviarBoasVindasTenant(tenantId) {
   }
 }
 
+/**
+ * Envia boas-vindas para novo barbeiro cadastrado
+ */
+export async function enviarBoasVindasBarbeiro(barbeiroId) {
+  try {
+    logger.info(`📤 Enviando boas-vindas barbeiro: ${barbeiroId}`);
+
+    // Buscar dados do barbeiro com tenant
+    const { data: barbeiro, error } = await supabase
+      .from('barbeiros')
+      .select(`
+        *,
+        tenants (id, nome, slug, whatsapp, telefone)
+      `)
+      .eq('id', barbeiroId)
+      .single();
+
+    if (error || !barbeiro) {
+      logger.error('Barbeiro não encontrado:', error);
+      return { sucesso: false, erro: 'Barbeiro não encontrado' };
+    }
+
+    if (!barbeiro.telefone) {
+      logger.warn('Barbeiro sem telefone cadastrado');
+      return { sucesso: false, erro: 'Barbeiro sem telefone' };
+    }
+
+    if (!barbeiro.token_acesso) {
+      logger.warn('Barbeiro sem token de acesso');
+      return { sucesso: false, erro: 'Barbeiro sem token' };
+    }
+
+    const mensagem = templateBoasVindasBarbeiro({
+      nomeBarbeiro: barbeiro.nome,
+      nomeBarbearia: barbeiro.tenants?.nome || 'Barbearia',
+      tokenAcesso: barbeiro.token_acesso,
+      slug: barbeiro.tenants?.slug
+    });
+
+    const resultado = await enviarMensagem(barbeiro.telefone, mensagem);
+
+    if (resultado.sucesso) {
+      logger.info('✅ Boas-vindas enviadas ao barbeiro');
+    }
+
+    return resultado;
+  } catch (error) {
+    logger.error('❌ Erro ao enviar boas-vindas barbeiro:', error);
+    return { sucesso: false, erro: error.message };
+  }
+}
+
 export default {
   enviarConfirmacaoAgendamento,
   enviarLembreteAgendamento,
   enviarNotificacaoCancelamento,
   enviarNotificacaoRemarcacao,
-  enviarBoasVindasTenant
+  enviarBoasVindasTenant,
+  enviarBoasVindasBarbeiro
 };

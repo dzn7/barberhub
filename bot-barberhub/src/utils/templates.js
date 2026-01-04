@@ -18,29 +18,45 @@ function formatarDataHora(dataHora, formato = "dd 'de' MMMM 'às' HH:mm") {
 }
 
 /**
- * Template de boas-vindas para novo tenant
+ * Template de boas-vindas para novo tenant (admin/proprietário)
  */
 export function templateBoasVindasTenant({ nomeBarbearia, nomeProprietario, slug }) {
-  return `🎉 *Bem-vindo ao BarberHub!*
+  return `🎉 *Parabéns! Sua barbearia está online!*
 
-Olá, *${nomeProprietario}*!
+Olá, *${nomeProprietario}*! 👋
 
-Sua barbearia *${nomeBarbearia}* foi cadastrada com sucesso! 🎊
+Sua barbearia *${nomeBarbearia}* foi cadastrada com sucesso no BarberHub! 🎊
 
-📱 *Seu site está pronto:*
-🌐 barberhub.com.br/${slug}
+━━━━━━━━━━━━━━━━━━━
+🌐 *SEU SITE DE AGENDAMENTOS:*
+barberhub.online/${slug}
+━━━━━━━━━━━━━━━━━━━
 
-*O que você pode fazer agora:*
-• Cadastrar seus serviços
-• Adicionar barbeiros
-• Configurar horários
-• Receber agendamentos online
+📋 *PRÓXIMOS PASSOS:*
 
-📲 *Notificações automáticas:*
-Seus clientes receberão confirmações e lembretes por WhatsApp!
+1️⃣ *Acesse o painel admin:*
+   barberhub.online/entrar
 
-Precisa de ajuda? Estamos aqui!
-*Equipe BarberHub* 💈`;
+2️⃣ *Configure sua barbearia:*
+   • Cadastre seus serviços e preços
+   • Adicione seus barbeiros
+   • Configure os horários de funcionamento
+   • Personalize com sua logo
+
+3️⃣ *Compartilhe com seus clientes:*
+   Envie o link do seu site para seus clientes agendarem!
+
+✨ *RECURSOS INCLUSOS:*
+• Agendamentos online 24h
+• Notificações automáticas no WhatsApp
+• Lembretes 1h antes do horário
+• Controle de comissões dos barbeiros
+• Relatórios e métricas
+
+💡 *Dica:* Adicione o link do seu site na bio do Instagram!
+
+Precisa de ajuda? Responda esta mensagem!
+*Equipe BarberHub* 💈✨`;
 }
 
 /**
@@ -240,7 +256,9 @@ export function templateRemarcacaoCliente({
   preco,
   dataHoraAntiga,
   dataHoraNova,
-  endereco
+  endereco,
+  telefone,
+  slug
 }) {
   const dataAntigaFormatada = formatarDataHora(dataHoraAntiga);
   const dataNovaFormatada = formatarDataHora(dataHoraNova);
@@ -251,15 +269,17 @@ Olá, *${nomeCliente}*!
 
 Seu agendamento na *${nomeBarbearia}* foi remarcado:
 
-📅 *Data Anterior:*
-${dataAntigaFormatada}
+❌ *Data Anterior:*
+~${dataAntigaFormatada}~
 
-📅 *Nova Data:*
-${dataNovaFormatada}
+✅ *Nova Data:*
+*${dataNovaFormatada}*
 
+━━━━━━━━━━━━━━━━━━━
 👨‍💼 *Barbeiro:* ${nomeBarbeiro}
 ✂️ *Serviço:* ${nomeServico}
-💰 *Valor:* R$ ${preco?.toFixed(2) || '0.00'}`;
+💰 *Valor:* R$ ${preco?.toFixed(2) || '0.00'}
+━━━━━━━━━━━━━━━━━━━`;
 
   if (endereco) {
     mensagem += `
@@ -270,12 +290,70 @@ ${endereco}`;
 
   mensagem += `
 
-⏰ Por favor, chegue com 5 minutos de antecedência.
+⏰ Por favor, chegue com 5 minutos de antecedência.`;
+
+  if (telefone) {
+    mensagem += `
+
+📞 *Contato da barbearia:*
+${telefone}`;
+  }
+
+  if (slug) {
+    mensagem += `
+
+🌐 *Reagendar online:*
+barberhub.online/${slug}`;
+  }
+
+  mensagem += `
 
 Nos vemos em breve! 💈
 *${nomeBarbearia}*`;
 
   return mensagem;
+}
+
+/**
+ * Template de boas-vindas para novo barbeiro cadastrado
+ */
+export function templateBoasVindasBarbeiro({ 
+  nomeBarbeiro, 
+  nomeBarbearia,
+  tokenAcesso,
+  slug
+}) {
+  return `👋 *Bem-vindo à equipe, ${nomeBarbeiro}!*
+
+Você foi cadastrado como barbeiro na *${nomeBarbearia}*! 🎉
+
+━━━━━━━━━━━━━━━━━━━
+🔐 *ACESSE SEU PAINEL:*
+━━━━━━━━━━━━━━━━━━━
+
+1️⃣ *Acesse o link:*
+barberhub.online/barbeiro/entrar
+
+2️⃣ *Digite seu token de acesso:*
+*${tokenAcesso}*
+
+━━━━━━━━━━━━━━━━━━━
+
+📱 *NO SEU PAINEL VOCÊ PODE:*
+• Ver sua agenda de atendimentos
+• Acompanhar suas comissões
+• Personalizar preços dos serviços
+• Atualizar seus dados e foto
+
+💡 *Dica:* Salve o link nos favoritos para acesso rápido!
+
+🔔 *Notificações:*
+Você receberá alertas de novos agendamentos diretamente aqui no WhatsApp!
+
+Qualquer dúvida, fale com o proprietário da barbearia.
+
+Bom trabalho! 💈✨
+*${nomeBarbearia}*`;
 }
 
 export default {
@@ -284,5 +362,6 @@ export default {
   templateNotificacaoBarbeiro,
   templateLembreteCliente,
   templateCancelamentoCliente,
-  templateRemarcacaoCliente
+  templateRemarcacaoCliente,
+  templateBoasVindasBarbeiro
 };
