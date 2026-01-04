@@ -40,7 +40,7 @@ import { format, formatDistanceToNow, parseISO, differenceInDays } from 'date-fn
 import { ptBR } from 'date-fns/locale'
 
 // Credenciais hardcoded do administrador do SaaS
-const ADMIN_USUARIO = 'admin'
+const ADMIN_USUARIO = 'dzndev'
 const ADMIN_SENHA = '1503'
 
 interface Tenant {
