@@ -13,7 +13,10 @@ import {
   CheckCircle,
   AlertCircle,
   Star,
-  Upload
+  Upload,
+  Pencil,
+  Save,
+  X
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useBarbeiroAuth } from '@/contexts/BarbeiroAuthContext'
@@ -28,9 +31,21 @@ interface Servico {
   ativo: boolean
 }
 
+const ESPECIALIDADES_SUGERIDAS = [
+  "Corte Masculino",
+  "Degradê",
+  "Barba",
+  "Pigmentação",
+  "Química",
+  "Corte Infantil",
+  "Tratamento Capilar",
+  "Sobrancelha",
+  "Relaxamento",
+]
+
 /**
  * Configurações do Barbeiro
- * Visualização de dados pessoais e serviços
+ * Edição de dados pessoais e visualização de serviços
  */
 export function ConfiguracoesBarbeiro() {
   const { barbeiro, tenant, recarregar } = useBarbeiroAuth()
@@ -43,10 +58,26 @@ export function ConfiguracoesBarbeiro() {
   const [arquivoOriginal, setArquivoOriginal] = useState<File | null>(null)
   const [fotoAtual, setFotoAtual] = useState<string | null>(null)
   const inputFotoRef = useRef<HTMLInputElement>(null)
+  
+  // Estados de edição
+  const [editando, setEditando] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+  const [formDados, setFormDados] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    especialidades: [] as string[]
+  })
 
   useEffect(() => {
     if (barbeiro) {
       setFotoAtual(barbeiro.foto_url)
+      setFormDados({
+        nome: barbeiro.nome || '',
+        email: barbeiro.email || '',
+        telefone: formatarTelefone(barbeiro.telefone || ''),
+        especialidades: barbeiro.especialidades || []
+      })
     }
   }, [barbeiro])
 
@@ -55,6 +86,89 @@ export function ConfiguracoesBarbeiro() {
       carregarServicos()
     }
   }, [tenant])
+
+  const formatarTelefone = (valor: string) => {
+    const numeros = valor.replace(/\D/g, '')
+    if (numeros.length <= 2) return numeros
+    if (numeros.length <= 7) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`
+  }
+
+  const iniciarEdicao = () => {
+    if (barbeiro) {
+      setFormDados({
+        nome: barbeiro.nome || '',
+        email: barbeiro.email || '',
+        telefone: formatarTelefone(barbeiro.telefone || ''),
+        especialidades: barbeiro.especialidades || []
+      })
+      setEditando(true)
+    }
+  }
+
+  const cancelarEdicao = () => {
+    setEditando(false)
+    if (barbeiro) {
+      setFormDados({
+        nome: barbeiro.nome || '',
+        email: barbeiro.email || '',
+        telefone: formatarTelefone(barbeiro.telefone || ''),
+        especialidades: barbeiro.especialidades || []
+      })
+    }
+  }
+
+  const toggleEspecialidade = (especialidade: string) => {
+    setFormDados(prev => ({
+      ...prev,
+      especialidades: prev.especialidades.includes(especialidade)
+        ? prev.especialidades.filter(e => e !== especialidade)
+        : [...prev.especialidades, especialidade]
+    }))
+  }
+
+  const salvarDados = async () => {
+    if (!barbeiro) return
+
+    if (!formDados.nome.trim()) {
+      toast({ tipo: 'erro', mensagem: 'Digite seu nome' })
+      return
+    }
+    if (!formDados.telefone.trim()) {
+      toast({ tipo: 'erro', mensagem: 'Digite seu telefone' })
+      return
+    }
+
+    setSalvando(true)
+    try {
+      const telefoneNumeros = formDados.telefone.replace(/\D/g, '')
+      
+      const { error } = await supabase
+        .from('barbeiros')
+        .update({
+          nome: formDados.nome.trim(),
+          email: formDados.email.trim() || null,
+          telefone: telefoneNumeros,
+          especialidades: formDados.especialidades
+        })
+        .eq('id', barbeiro.id)
+
+      if (error) throw error
+
+      setMensagem({ tipo: 'sucesso', texto: 'Dados atualizados com sucesso!' })
+      setTimeout(() => setMensagem(null), 3000)
+      setEditando(false)
+      
+      if (recarregar) {
+        await recarregar()
+      }
+    } catch (erro) {
+      console.error('Erro ao salvar:', erro)
+      setMensagem({ tipo: 'erro', texto: 'Erro ao atualizar dados' })
+    } finally {
+      setSalvando(false)
+    }
+  }
 
   const carregarServicos = async () => {
     if (!tenant) return
@@ -209,10 +323,40 @@ export function ConfiguracoesBarbeiro() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6"
       >
-        <h3 className="font-semibold text-zinc-900 dark:text-white mb-6 flex items-center gap-2">
-          <User className="w-5 h-5 text-zinc-500" />
-          Meu Perfil
-        </h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+            <User className="w-5 h-5 text-zinc-500" />
+            Meu Perfil
+          </h3>
+          {!editando ? (
+            <button
+              onClick={iniciarEdicao}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={cancelarEdicao}
+                disabled={salvando}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Cancelar
+              </button>
+              <button
+                onClick={salvarDados}
+                disabled={salvando}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Salvar
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col sm:flex-row items-start gap-6">
           {/* Foto com opção de alterar */}
@@ -258,48 +402,117 @@ export function ConfiguracoesBarbeiro() {
             </p>
           </div>
 
-          {/* Dados */}
-          <div className="flex-1 space-y-4">
-            <div>
-              <label className="block text-sm text-zinc-500 mb-1">Nome</label>
-              <p className="font-medium text-zinc-900 dark:text-white">
-                {barbeiro.nome}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Dados - Modo Visualização ou Edição */}
+          {editando ? (
+            <div className="flex-1 space-y-4">
+              {/* Nome */}
               <div>
-                <label className="block text-sm text-zinc-500 mb-1">E-mail</label>
-                <p className="text-zinc-900 dark:text-white flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-zinc-400" />
-                  {barbeiro.email}
-                </p>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  Nome <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formDados.nome}
+                  onChange={(e) => setFormDados({ ...formDados, nome: e.target.value })}
+                  placeholder="Seu nome completo"
+                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
               </div>
-              <div>
-                <label className="block text-sm text-zinc-500 mb-1">Telefone</label>
-                <p className="text-zinc-900 dark:text-white flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-zinc-400" />
-                  {barbeiro.telefone}
-                </p>
-              </div>
-            </div>
 
-            {barbeiro.especialidades && barbeiro.especialidades.length > 0 && (
+              {/* Telefone e Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                    Telefone/WhatsApp <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={formDados.telefone}
+                    onChange={(e) => setFormDados({ ...formDados, telefone: formatarTelefone(e.target.value) })}
+                    placeholder="(00) 00000-0000"
+                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                    E-mail <span className="text-zinc-500 font-normal">(opcional)</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={formDados.email}
+                    onChange={(e) => setFormDados({ ...formDados, email: e.target.value })}
+                    placeholder="seu@email.com"
+                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {/* Especialidades */}
               <div>
-                <label className="block text-sm text-zinc-500 mb-2">Especialidades</label>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Especialidades
+                </label>
                 <div className="flex flex-wrap gap-2">
-                  {barbeiro.especialidades.map((esp, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-sm text-zinc-700 dark:text-zinc-300"
+                  {ESPECIALIDADES_SUGERIDAS.map((esp) => (
+                    <button
+                      key={esp}
+                      type="button"
+                      onClick={() => toggleEspecialidade(esp)}
+                      className={`px-3 py-1.5 text-sm rounded-full transition-all ${
+                        formDados.especialidades.includes(esp)
+                          ? 'bg-emerald-600 text-white font-medium'
+                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                      }`}
                     >
                       {esp}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex-1 space-y-4">
+              <div>
+                <label className="block text-sm text-zinc-500 mb-1">Nome</label>
+                <p className="font-medium text-zinc-900 dark:text-white">
+                  {barbeiro.nome}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-zinc-500 mb-1">E-mail</label>
+                  <p className="text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-zinc-400" />
+                    {barbeiro.email || '-'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm text-zinc-500 mb-1">Telefone</label>
+                  <p className="text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-zinc-400" />
+                    {formatarTelefone(barbeiro.telefone || '')}
+                  </p>
+                </div>
+              </div>
+
+              {barbeiro.especialidades && barbeiro.especialidades.length > 0 && (
+                <div>
+                  <label className="block text-sm text-zinc-500 mb-2">Especialidades</label>
+                  <div className="flex flex-wrap gap-2">
+                    {barbeiro.especialidades.map((esp, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-sm text-zinc-700 dark:text-zinc-300"
+                      >
+                        {esp}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -408,7 +621,7 @@ export function ConfiguracoesBarbeiro() {
       {/* Info */}
       <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
         <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center">
-          Para alterar seus dados (exceto foto), entre em contato com o proprietário da barbearia.
+          💡 Clique em "Editar" para atualizar seus dados pessoais. A comissão só pode ser alterada pelo administrador.
         </p>
       </div>
 

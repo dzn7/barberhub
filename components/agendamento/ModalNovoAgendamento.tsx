@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   X, 
@@ -251,25 +252,33 @@ export function ModalNovoAgendamento({
 
   const servicoSelecionado = servicos.find(s => s.id === form.servicoId)
 
+  // Não renderizar no servidor
+  if (typeof window === 'undefined') return null
   if (!aberto) return null
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
-        onClick={() => !processando && onFechar()}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 100, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 100, scale: 0.95 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="bg-zinc-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
+      {aberto && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm"
+            onClick={() => !processando && onFechar()}
+          />
+          
+          {/* Container do Modal */}
+          <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, y: 100, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 100, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-zinc-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-zinc-800">
             <div>
@@ -460,8 +469,11 @@ export function ModalNovoAgendamento({
               )}
             </div>
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body
   )
 }

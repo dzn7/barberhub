@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { DollarSign, CheckCircle, Clock, Loader2, User, Calendar, ChevronDown } from "lucide-react";
+import { DollarSign, CheckCircle, Clock, Loader2, User, Calendar, ChevronDown, Trash2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, parseISO } from "date-fns";
@@ -49,6 +49,8 @@ export function GestaoComissoes() {
   const [comissoes, setComissoes] = useState<ComissaoCompleta[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [processando, setProcessando] = useState<string | null>(null);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
+  const [confirmarExclusao, setConfirmarExclusao] = useState<string | null>(null);
 
   const carregarComissoes = useCallback(async () => {
     if (!tenant) return;
@@ -96,6 +98,28 @@ export function GestaoComissoes() {
       console.error('Erro ao marcar como pago:', error);
     } finally {
       setProcessando(null);
+    }
+  };
+
+  const excluirComissao = async (comissaoId: string) => {
+    if (!tenant) return;
+    
+    setExcluindo(comissaoId);
+    try {
+      const { error } = await supabase
+        .from('comissoes')
+        .delete()
+        .eq('id', comissaoId)
+        .eq('tenant_id', tenant.id);
+
+      if (error) throw error;
+      
+      setComissoes(prev => prev.filter(c => c.id !== comissaoId));
+      setConfirmarExclusao(null);
+    } catch (error) {
+      console.error('Erro ao excluir comissão:', error);
+    } finally {
+      setExcluindo(null);
     }
   };
 
@@ -276,20 +300,47 @@ export function GestaoComissoes() {
                     </div>
                   </div>
                   
-                  {!comissao.pago && (
-                    <button
-                      onClick={() => marcarComoPago(comissao.id)}
-                      disabled={processando === comissao.id}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-                    >
-                      {processando === comissao.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4" />
-                      )}
-                      Marcar como Pago
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    {!comissao.pago && (
+                      <button
+                        onClick={() => marcarComoPago(comissao.id)}
+                        disabled={processando === comissao.id}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                      >
+                        {processando === comissao.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4" />
+                        )}
+                        Marcar como Pago
+                      </button>
+                    )}
+                    
+                    {confirmarExclusao === comissao.id ? (
+                      <div className="flex gap-2 flex-1">
+                        <button
+                          onClick={() => excluirComissao(comissao.id)}
+                          disabled={excluindo === comissao.id}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                        >
+                          {excluindo === comissao.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmarExclusao(null)}
+                          className="px-3 py-2.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmarExclusao(comissao.id)}
+                        className="p-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -355,20 +406,48 @@ export function GestaoComissoes() {
                         </span>
                       </td>
                       <td className="px-4 lg:px-6 py-4 text-sm">
-                        {!comissao.pago && (
-                          <button
-                            onClick={() => marcarComoPago(comissao.id)}
-                            disabled={processando === comissao.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium disabled:opacity-50"
-                          >
-                            {processando === comissao.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <CheckCircle className="w-3 h-3" />
-                            )}
-                            Pagar
-                          </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {!comissao.pago && (
+                            <button
+                              onClick={() => marcarComoPago(comissao.id)}
+                              disabled={processando === comissao.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+                            >
+                              {processando === comissao.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-3 h-3" />
+                              )}
+                              Pagar
+                            </button>
+                          )}
+                          
+                          {confirmarExclusao === comissao.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => excluirComissao(comissao.id)}
+                                disabled={excluindo === comissao.id}
+                                className="px-2 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded text-xs font-medium disabled:opacity-50"
+                              >
+                                {excluindo === comissao.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sim'}
+                              </button>
+                              <button
+                                onClick={() => setConfirmarExclusao(null)}
+                                className="px-2 py-1.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded text-xs"
+                              >
+                                Não
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmarExclusao(comissao.id)}
+                              className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              title="Excluir comissão"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

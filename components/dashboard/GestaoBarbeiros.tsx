@@ -27,6 +27,8 @@ import {
   Copy,
   Check,
   RefreshCw,
+  MessageCircle,
+  ExternalLink,
 } from "lucide-react";
 
 /**
@@ -69,8 +71,10 @@ export function GestaoBarbeiros() {
   const [uploadandoFoto, setUploadandoFoto] = useState(false);
   const [busca, setBusca] = useState("");
   const [tokenGerado, setTokenGerado] = useState<string | null>(null);
+  const [nomeBarbeiroToken, setNomeBarbeiroToken] = useState<string>('');
   const [modalTokenAberto, setModalTokenAberto] = useState(false);
   const [tokenCopiado, setTokenCopiado] = useState(false);
+  const [mensagemCopiada, setMensagemCopiada] = useState(false);
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
   // Estados para recorte de imagem
@@ -288,6 +292,7 @@ export function GestaoBarbeiros() {
         
         // Exibir modal com o token gerado
         setTokenGerado(novoToken);
+        setNomeBarbeiroToken(form.nome.trim());
         setModalTokenAberto(true);
         toast({ tipo: "sucesso", mensagem: "Profissional adicionado com sucesso!" });
       }
@@ -733,7 +738,7 @@ export function GestaoBarbeiros() {
         />
       )}
 
-      {/* Modal de Token de Acesso */}
+      {/* Modal de Token de Acesso com Mensagem WhatsApp */}
       <AnimatePresence>
         {modalTokenAberto && tokenGerado && (
           <motion.div
@@ -746,61 +751,124 @@ export function GestaoBarbeiros() {
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
-              className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden"
+              className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden max-h-[90vh] flex flex-col"
             >
               {/* Header */}
-              <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-emerald-50 dark:bg-emerald-900/20">
+              <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl">
-                    <Key className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  <div className="p-3 bg-zinc-900 dark:bg-white rounded-xl">
+                    <Key className="w-6 h-6 text-white dark:text-zinc-900" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                      Token de Acesso Gerado!
+                      Barbeiro Criado com Sucesso!
                     </h3>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                      Envie este código para o barbeiro
+                      Envie as instruções de acesso para {nomeBarbeiroToken}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Conteúdo */}
-              <div className="p-6 space-y-4">
-                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4">
-                  <p className="text-center text-3xl font-mono font-bold tracking-[0.3em] text-zinc-900 dark:text-white">
-                    {tokenGerado}
-                  </p>
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                {/* Token */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Token de Acesso
+                  </label>
+                  <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 flex items-center justify-between">
+                    <p className="text-2xl font-mono font-bold tracking-[0.2em] text-zinc-900 dark:text-white">
+                      {tokenGerado}
+                    </p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(tokenGerado);
+                        setTokenCopiado(true);
+                        setTimeout(() => setTokenCopiado(false), 2000);
+                      }}
+                      className="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                    >
+                      {tokenCopiado ? (
+                        <Check className="w-5 h-5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-5 h-5 text-zinc-500" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
+                {/* Mensagem WhatsApp */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Mensagem para WhatsApp
+                  </label>
+                  <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
+{`Olá ${nomeBarbeiroToken}! 👋
+
+Você foi cadastrado como barbeiro na *${tenant?.nome || 'nossa barbearia'}*! 🎉
+
+Para acessar seu painel de barbeiro, siga os passos:
+
+1️⃣ Acesse o link:
+${typeof window !== 'undefined' ? window.location.origin : ''}/barbeiro/entrar
+
+2️⃣ Digite seu token de acesso:
+*${tokenGerado}*
+
+No painel você poderá:
+✅ Ver sua agenda de atendimentos
+✅ Acompanhar suas comissões
+✅ Gerenciar seus serviços
+
+Qualquer dúvida, estamos à disposição! 💈`}
+                  </div>
+                </div>
+
+                {/* Botão Copiar Mensagem */}
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(tokenGerado);
-                    setTokenCopiado(true);
-                    setTimeout(() => setTokenCopiado(false), 2000);
+                    const mensagem = `Olá ${nomeBarbeiroToken}! 👋
+
+Você foi cadastrado como barbeiro na *${tenant?.nome || 'nossa barbearia'}*! 🎉
+
+Para acessar seu painel de barbeiro, siga os passos:
+
+1️⃣ Acesse o link:
+${typeof window !== 'undefined' ? window.location.origin : ''}/barbeiro/entrar
+
+2️⃣ Digite seu token de acesso:
+*${tokenGerado}*
+
+No painel você poderá:
+✅ Ver sua agenda de atendimentos
+✅ Acompanhar suas comissões
+✅ Gerenciar seus serviços
+
+Qualquer dúvida, estamos à disposição! 💈`;
+                    navigator.clipboard.writeText(mensagem);
+                    setMensagemCopiada(true);
+                    setTimeout(() => setMensagemCopiada(false), 2000);
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-all"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20BD5A] text-white rounded-xl font-medium transition-all"
                 >
-                  {tokenCopiado ? (
+                  {mensagemCopiada ? (
                     <>
-                      <Check className="w-5 h-5 text-emerald-500" />
-                      Copiado!
+                      <Check className="w-5 h-5" />
+                      Mensagem Copiada!
                     </>
                   ) : (
                     <>
-                      <Copy className="w-5 h-5" />
-                      Copiar Código
+                      <MessageCircle className="w-5 h-5" />
+                      Copiar Mensagem para WhatsApp
                     </>
                   )}
                 </button>
 
-                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-                  <p className="text-sm text-amber-800 dark:text-amber-200">
-                    <strong>Importante:</strong> O barbeiro deve acessar{" "}
-                    <span className="font-mono bg-amber-100 dark:bg-amber-900/50 px-1 rounded">
-                      /barbeiro/entrar
-                    </span>{" "}
-                    e inserir este código para acessar o painel.
+                {/* Info */}
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    💡 <strong>Dica:</strong> Cole esta mensagem diretamente no WhatsApp do barbeiro para facilitar o acesso.
                   </p>
                 </div>
               </div>
@@ -811,9 +879,11 @@ export function GestaoBarbeiros() {
                   onClick={() => {
                     setModalTokenAberto(false);
                     setTokenGerado(null);
+                    setNomeBarbeiroToken('');
                     setTokenCopiado(false);
+                    setMensagemCopiada(false);
                   }}
-                  className="w-full px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors font-medium"
+                  className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-colors font-medium"
                 >
                   Fechar
                 </button>

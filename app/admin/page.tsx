@@ -530,10 +530,6 @@ export default function DashboardCompleto() {
               <Clock className="w-4 h-4 mr-2" />
               Remarcação
             </Tabs.Trigger>
-            <Tabs.Trigger value="horarios">
-              <Clock className="w-4 h-4 mr-2" />
-              Horários
-            </Tabs.Trigger>
             <Tabs.Trigger value="relatorios">
               <BarChart3 className="w-4 h-4 mr-2" />
               Relatórios
@@ -564,7 +560,6 @@ export default function DashboardCompleto() {
                   { value: "servicos", icon: Edit3, label: "Serviços" },
                   { value: "barbeiros", icon: Scissors, label: "Barbeiros" },
                   { value: "remarcacao", icon: Clock, label: "Remarcação" },
-                  { value: "horarios", icon: Clock, label: "Horários" },
                   { value: "relatorios", icon: BarChart3, label: "Relatórios" },
                   { value: "configuracoes", icon: Settings, label: "Configurações" },
                 ].map((item) => {
