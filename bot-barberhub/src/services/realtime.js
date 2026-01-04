@@ -339,11 +339,11 @@ async function verificarNovosAgendamentos() {
   }
 }
 
-// Cache de status para detectar mudanças
-const statusCache = new Map();
+// Cache de status e data_hora para detectar mudanças
+const agendamentosCache = new Map();
 
 /**
- * Verifica agendamentos atualizados (UPDATE - cancelamentos)
+ * Verifica agendamentos atualizados (UPDATE - cancelamentos e remarcações)
  */
 async function verificarAgendamentosAtualizados() {
   try {
@@ -353,7 +353,7 @@ async function verificarAgendamentosAtualizados() {
     
     const { data: agendamentos, error } = await supabase
       .from('agendamentos')
-      .select('id, status, atualizado_em')
+      .select('id, status, data_hora, atualizado_em')
       .gte('data_hora', ontem.toISOString())
       .order('atualizado_em', { ascending: false })
       .limit(50);
@@ -362,10 +362,13 @@ async function verificarAgendamentosAtualizados() {
     
     for (const ag of agendamentos || []) {
       const cacheKey = `${ag.id}`;
-      const statusAnterior = statusCache.get(cacheKey);
+      const dadosAnteriores = agendamentosCache.get(cacheKey);
       
-      if (statusAnterior && statusAnterior !== ag.status) {
-        // Status mudou!
+      if (dadosAnteriores) {
+        const statusAnterior = dadosAnteriores.status;
+        const dataHoraAnterior = dadosAnteriores.data_hora;
+        
+        // Detectar cancelamento
         if (ag.status === 'cancelado' && statusAnterior !== 'cancelado') {
           logger.info(`❌ Cancelamento detectado: ${ag.id}`);
           try {
@@ -375,16 +378,33 @@ async function verificarAgendamentosAtualizados() {
             logger.error('❌ Erro ao enviar cancelamento:', err.message);
           }
         }
+        
+        // Detectar remarcação (data/hora mudou e não foi cancelado)
+        if (dataHoraAnterior && dataHoraAnterior !== ag.data_hora && ag.status !== 'cancelado') {
+          logger.info(`🔄 Remarcação detectada: ${ag.id}`);
+          logger.info(`   De: ${dataHoraAnterior}`);
+          logger.info(`   Para: ${ag.data_hora}`);
+          try {
+            await enviarNotificacaoRemarcacao(ag.id, dataHoraAnterior);
+            logger.info('✅ Notificação de remarcação enviada!');
+          } catch (err) {
+            logger.error('❌ Erro ao enviar remarcação:', err.message);
+          }
+        }
       }
       
-      statusCache.set(cacheKey, ag.status);
+      // Atualizar cache com status e data_hora
+      agendamentosCache.set(cacheKey, {
+        status: ag.status,
+        data_hora: ag.data_hora
+      });
     }
     
     // Limpar cache antigo
-    if (statusCache.size > 500) {
-      const entries = Array.from(statusCache.entries());
-      statusCache.clear();
-      entries.slice(-250).forEach(([k, v]) => statusCache.set(k, v));
+    if (agendamentosCache.size > 500) {
+      const entries = Array.from(agendamentosCache.entries());
+      agendamentosCache.clear();
+      entries.slice(-250).forEach(([k, v]) => agendamentosCache.set(k, v));
     }
   } catch (err) {
     logger.error('❌ Erro no polling de updates:', err.message);

@@ -16,6 +16,7 @@ import { GestaoEstoque } from "@/components/dashboard/GestaoEstoque";
 import { GestaoComissoes } from "@/components/dashboard/GestaoComissoes";
 import { GestaoUsuarios } from "@/components/dashboard/GestaoUsuarios";
 import { GestaoServicos } from "@/components/dashboard/GestaoServicos";
+import { GestaoBarbeiros } from "@/components/dashboard/GestaoBarbeiros";
 import { RemarcacaoAgendamento } from "@/components/dashboard/RemarcacaoAgendamento";
 import { GestaoHorarios } from "@/components/dashboard/GestaoHorarios";
 import { GestaoHorariosAvancada } from "@/components/dashboard/GestaoHorariosAvancada";
@@ -475,7 +476,11 @@ export default function DashboardCompleto() {
               <Edit3 className="w-4 h-4 mr-2" />
               Serviços
             </Tabs.Trigger>
-                        <Tabs.Trigger value="remarcacao">
+            <Tabs.Trigger value="barbeiros">
+              <Scissors className="w-4 h-4 mr-2" />
+              Barbeiros
+            </Tabs.Trigger>
+            <Tabs.Trigger value="remarcacao">
               <Clock className="w-4 h-4 mr-2" />
               Remarcação
             </Tabs.Trigger>

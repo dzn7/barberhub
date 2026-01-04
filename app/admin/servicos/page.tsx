@@ -30,8 +30,8 @@ export default function ServicosPage() {
   const [form, setForm] = useState({
     nome: '',
     descricao: '',
-    duracao: 30,
-    preco: 0,
+    duracao: '30',
+    preco: '',
     categoria: 'geral'
   })
 
@@ -59,8 +59,8 @@ export default function ServicosPage() {
       setForm({
         nome: servico.nome,
         descricao: servico.descricao || '',
-        duracao: servico.duracao,
-        preco: servico.preco,
+        duracao: String(servico.duracao),
+        preco: String(servico.preco),
         categoria: servico.categoria
       })
     } else {
@@ -68,8 +68,8 @@ export default function ServicosPage() {
       setForm({
         nome: '',
         descricao: '',
-        duracao: 30,
-        preco: 0,
+        duracao: '30',
+        preco: '',
         categoria: 'geral'
       })
     }
@@ -261,11 +261,14 @@ export default function ServicosPage() {
                 <div>
                   <label className="block text-sm text-zinc-400 mb-2">Duração (min) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={form.duracao}
-                    onChange={e => setForm({ ...form, duracao: parseInt(e.target.value) || 0 })}
-                    min={5}
-                    step={5}
+                    onChange={e => {
+                      const valor = e.target.value.replace(/[^0-9]/g, '')
+                      setForm({ ...form, duracao: valor })
+                    }}
+                    placeholder="30"
                     className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -273,11 +276,14 @@ export default function ServicosPage() {
                 <div>
                   <label className="block text-sm text-zinc-400 mb-2">Preço (R$) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={form.preco}
-                    onChange={e => setForm({ ...form, preco: parseFloat(e.target.value) || 0 })}
-                    min={0}
-                    step={0.01}
+                    onChange={e => {
+                      const valor = e.target.value.replace(/[^0-9.,]/g, '')
+                      setForm({ ...form, preco: valor })
+                    }}
+                    placeholder="0,00"
                     className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>

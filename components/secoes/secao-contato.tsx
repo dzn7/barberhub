@@ -17,24 +17,24 @@ export function SecaoContato() {
   const estaVisivel = useInView(ref, { once: true, amount: 0.2 })
 
   return (
-    <section id="contato" ref={ref} className="py-20 md:py-32 bg-black">
+    <section id="contato" ref={ref} className="py-20 md:py-32 bg-zinc-50 dark:bg-black">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={estaVisivel ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 p-8 md:p-12 lg:p-16"
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-100 to-white dark:from-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800 p-8 md:p-12 lg:p-16"
           >
             {/* Gradiente decorativo */}
-            <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-white/5 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-zinc-200/50 dark:from-white/5 to-transparent pointer-events-none" />
             
             <div className="relative z-10 text-center space-y-8">
               <div className="space-y-4">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white">
                   Comece agora mesmo
                 </h2>
-                <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
+                <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
                   Crie sua conta em 2 minutos e veja como é fácil organizar sua barbearia. 
                   Se não gostar, é só cancelar. Sem burocracia.
                 </p>
@@ -43,8 +43,8 @@ export function SecaoContato() {
               {/* Garantias */}
               <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
                 {garantias.map((garantia) => (
-                  <div key={garantia} className="flex items-center gap-2 text-zinc-300">
-                    <Check className="w-4 h-4 text-green-500" />
+                  <div key={garantia} className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                    <Check className="w-4 h-4 text-green-600 dark:text-green-500" />
                     <span className="text-sm">{garantia}</span>
                   </div>
                 ))}
@@ -67,7 +67,7 @@ export function SecaoContato() {
                   href="https://wa.me/5563981053014" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-white hover:underline"
+                  className="text-zinc-900 dark:text-white hover:underline font-medium"
                 >
                   Chame no WhatsApp
                 </a>

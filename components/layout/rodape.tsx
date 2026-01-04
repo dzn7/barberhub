@@ -125,7 +125,7 @@ export function Rodape() {
               © {anoAtual} Barber Hub. Todos os direitos reservados.
             </p>
             <p className="text-sm text-muted-foreground text-center md:text-right">
-              Desenvolvido com dedicação para barbearias modernas
+              Desenvolvido para barbearias modernas
             </p>
           </div>
         </div>

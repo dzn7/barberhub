@@ -20,48 +20,72 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 10%;
+    /* Light Mode - Design Sofisticado Inspirado em Vercel/Stripe */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 240 10% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
-    --primary: 0 0% 10%;
+    --popover-foreground: 240 10% 4%;
+    --primary: 240 6% 10%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 0 0% 10%;
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 40%;
-    --accent: 0 0% 95%;
-    --accent-foreground: 0 0% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 85%;
-    --input: 0 0% 85%;
-    --ring: 0 0% 10%;
-    --radius: 0.5rem;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 240 6% 10%;
+    --radius: 0.625rem;
+    
+    /* Cores customizadas para light mode */
+    --surface: 0 0% 99%;
+    --surface-elevated: 0 0% 100%;
+    --surface-hover: 240 5% 97%;
+    --text-primary: 240 10% 4%;
+    --text-secondary: 240 4% 46%;
+    --text-tertiary: 240 4% 65%;
+    --divider: 240 6% 92%;
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
   }
 
   .dark {
+    /* Dark Mode - Elegante e Profundo */
     --background: 0 0% 0%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 5%;
+    --card: 0 0% 4%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 5%;
+    --popover: 0 0% 4%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 10%;
+    --primary-foreground: 0 0% 4%;
     --secondary: 0 0% 10%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 60%;
+    --muted-foreground: 0 0% 64%;
     --accent: 0 0% 10%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 83.1%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 0 0% 83%;
+    
+    /* Cores customizadas para dark mode */
+    --surface: 0 0% 4%;
+    --surface-elevated: 0 0% 7%;
+    --surface-hover: 0 0% 10%;
+    --text-primary: 0 0% 98%;
+    --text-secondary: 0 0% 64%;
+    --text-tertiary: 0 0% 45%;
+    --divider: 0 0% 14%;
+    --success: 142 76% 46%;
+    --warning: 38 92% 50%;
   }
 }
 
@@ -69,10 +93,111 @@
   * {
     @apply border-border;
   }
+  
+  html {
+    color-scheme: light;
+  }
+  
+  html.dark {
+    color-scheme: dark;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* ========================================
+   Sobrescrever estilos do Radix UI Themes
+   para garantir que o light mode funcione
+   ======================================== */
+
+/* Forçar background correto no root */
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Sobrescrever backgrounds do Radix Themes */
+.radix-themes {
+  --color-background: hsl(var(--background)) !important;
+  background-color: hsl(var(--background)) !important;
+}
+
+/* Light mode - garantir que elementos usem cores claras */
+:root:not(.dark) .radix-themes,
+html:not(.dark) .radix-themes {
+  --gray-1: hsl(0 0% 99%);
+  --gray-2: hsl(0 0% 98%);
+  --gray-3: hsl(0 0% 96%);
+  --gray-4: hsl(0 0% 94%);
+  --gray-5: hsl(0 0% 92%);
+  --gray-6: hsl(0 0% 90%);
+  --gray-7: hsl(0 0% 85%);
+  --gray-8: hsl(0 0% 78%);
+  --gray-9: hsl(0 0% 56%);
+  --gray-10: hsl(0 0% 52%);
+  --gray-11: hsl(0 0% 43%);
+  --gray-12: hsl(0 0% 9%);
+}
+
+/* ========================================
+   Classes utilitárias para temas
+   Substituem bg-black, bg-zinc-900, etc.
+   ======================================== */
+
+/* Background principal da página */
+.bg-page {
+  background-color: hsl(var(--background));
+}
+
+/* Background de cards/containers */
+.bg-surface {
+  background-color: white;
+}
+
+.dark .bg-surface {
+  background-color: hsl(0 0% 4%);
+}
+
+/* Background elevado (modais, dropdowns) */
+.bg-surface-elevated {
+  background-color: white;
+}
+
+.dark .bg-surface-elevated {
+  background-color: hsl(0 0% 7%);
+}
+
+/* Texto primário */
+.text-primary-content {
+  color: hsl(240 10% 4%);
+}
+
+.dark .text-primary-content {
+  color: hsl(0 0% 98%);
+}
+
+/* Texto secundário */
+.text-secondary-content {
+  color: hsl(240 4% 46%);
+}
+
+.dark .text-secondary-content {
+  color: hsl(0 0% 64%);
+}
+
+/* Bordas */
+.border-subtle {
+  border-color: hsl(240 6% 90%);
+}
+
+.dark .border-subtle {
+  border-color: hsl(0 0% 14%);
 }
 
 @layer utilities {
@@ -107,4 +232,95 @@ body {
     linear-gradient(to right, hsl(var(--foreground) / 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, hsl(var(--foreground) / 0.05) 1px, transparent 1px);
   background-size: 4rem 4rem;
+}
+
+/* ========================================
+   Radix UI Tabs - Estilos Customizados
+   ======================================== */
+
+/* Container das tabs */
+.rt-TabsList {
+  background-color: hsl(var(--muted));
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+  gap: 0.25rem;
+}
+
+/* Trigger das tabs - estado padrão */
+.rt-TabsTrigger {
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+/* Trigger das tabs - hover */
+.rt-TabsTrigger:hover {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background) / 0.5);
+}
+
+/* Trigger das tabs - estado ativo */
+.rt-TabsTrigger[data-state="active"] {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Dark mode específico para tabs */
+.dark .rt-TabsList {
+  background-color: hsl(0 0% 10%);
+}
+
+.dark .rt-TabsTrigger {
+  color: hsl(0 0% 60%);
+}
+
+.dark .rt-TabsTrigger:hover {
+  color: hsl(0 0% 90%);
+  background-color: hsl(0 0% 15%);
+}
+
+.dark .rt-TabsTrigger[data-state="active"] {
+  background-color: hsl(0 0% 98%);
+  color: hsl(0 0% 4%);
+}
+
+/* ========================================
+   Scrollbar Customizada
+   ======================================== */
+
+/* Light mode */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: hsl(0 0% 10%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 30%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(0 0% 40%);
 }

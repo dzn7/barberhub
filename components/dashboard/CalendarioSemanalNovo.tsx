@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, ChevronLeft, ChevronRight, Calendar, User, Scissors, 
   CheckCircle, XCircle, Trash2, X, Clock, 
-  Phone, DollarSign, MoreVertical, Search, Filter
+  Phone, DollarSign, MoreVertical, Search, Filter, RefreshCw
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+import { PortalModal } from "@/components/ui/PortalModal";
+import { ModalRemarcacao } from "./ModalRemarcacao";
 import { format, addDays, startOfWeek, isSameDay, parseISO, subDays, isToday } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
@@ -22,11 +24,13 @@ interface Agendamento {
   data_hora: string;
   status: string;
   observacoes?: string;
+  barbeiro_id: string;
   clientes: {
     nome: string;
     telefone: string;
   };
   barbeiros: {
+    id: string;
     nome: string;
   };
   servicos: {
@@ -81,6 +85,7 @@ export function CalendarioSemanalNovo() {
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [mensagemErro, setMensagemErro] = useState("");
+  const [modalRemarcacaoAberto, setModalRemarcacaoAberto] = useState(false);
   
   const [novoAgendamento, setNovoAgendamento] = useState({
     clienteNome: "",
@@ -203,7 +208,7 @@ export function CalendarioSemanalNovo() {
         .select(`
           *,
           clientes (nome, telefone),
-          barbeiros (nome),
+          barbeiros (id, nome),
           servicos (nome, preco, duracao)
         `)
         .eq('tenant_id', tenant.id)
@@ -655,143 +660,173 @@ export function CalendarioSemanalNovo() {
       </div>
 
       {/* Modal de Detalhes */}
-      <AnimatePresence>
-        {modalDetalhesAberto && agendamentoSelecionado && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            onClick={() => setModalDetalhesAberto(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header do Modal */}
-              <div className="relative p-6 pb-4">
-                <button
-                  onClick={() => setModalDetalhesAberto(false)}
-                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  <X className="w-5 h-5 text-zinc-500" />
-                </button>
-                
-                <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 rounded-xl ${STATUS_CONFIG[agendamentoSelecionado.status as keyof typeof STATUS_CONFIG]?.bg} flex items-center justify-center`}>
-                    <Calendar className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
-                      {agendamentoSelecionado.clientes?.nome || 'Cliente'}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_CONFIG[agendamentoSelecionado.status as keyof typeof STATUS_CONFIG]?.badge}`}>
-                        {agendamentoSelecionado.status}
-                      </span>
-                    </div>
+      <PortalModal
+        aberto={modalDetalhesAberto && !!agendamentoSelecionado}
+        onFechar={() => setModalDetalhesAberto(false)}
+        tamanho="md"
+      >
+        {agendamentoSelecionado && (
+          <>
+            {/* Header do Modal */}
+            <div className="p-6 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-start gap-4">
+                <div className={`w-14 h-14 rounded-2xl ${STATUS_CONFIG[agendamentoSelecionado.status as keyof typeof STATUS_CONFIG]?.bg} flex items-center justify-center shadow-lg`}>
+                  <Calendar className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white truncate">
+                    {agendamentoSelecionado.clientes?.nome || 'Cliente'}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${STATUS_CONFIG[agendamentoSelecionado.status as keyof typeof STATUS_CONFIG]?.badge}`}>
+                      {agendamentoSelecionado.status}
+                    </span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Detalhes */}
-              <div className="px-6 pb-4 space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-                  <Clock className="w-5 h-5 text-zinc-400" />
-                  <div>
-                    <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                      {format(toZonedTime(parseISO(agendamentoSelecionado.data_hora), TIMEZONE_BRASILIA), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                    </p>
-                    <p className="text-sm text-zinc-500">
-                      {format(toZonedTime(parseISO(agendamentoSelecionado.data_hora), TIMEZONE_BRASILIA), "HH:mm", { locale: ptBR })} - {agendamentoSelecionado.servicos?.duracao}min
-                    </p>
-                  </div>
+            {/* Detalhes */}
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl">
+                <div className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
                 </div>
-
-                <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-                  <Scissors className="w-5 h-5 text-zinc-400" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                      {agendamentoSelecionado.servicos?.nome}
-                    </p>
-                    <p className="text-sm text-zinc-500">
-                      com {agendamentoSelecionado.barbeiros?.nome}
-                    </p>
-                  </div>
-                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                    R$ {agendamentoSelecionado.servicos?.preco?.toFixed(2)}
-                  </span>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    {format(toZonedTime(parseISO(agendamentoSelecionado.data_hora), TIMEZONE_BRASILIA), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                  </p>
+                  <p className="text-sm text-zinc-500">
+                    às {format(toZonedTime(parseISO(agendamentoSelecionado.data_hora), TIMEZONE_BRASILIA), "HH:mm", { locale: ptBR })} • {agendamentoSelecionado.servicos?.duracao} minutos
+                  </p>
                 </div>
+              </div>
 
+              <div className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl">
+                <div className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
+                  <Scissors className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
+                    {agendamentoSelecionado.servicos?.nome}
+                  </p>
+                  <p className="text-sm text-zinc-500">
+                    com {agendamentoSelecionado.barbeiros?.nome}
+                  </p>
+                </div>
+                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  R$ {agendamentoSelecionado.servicos?.preco?.toFixed(2)}
+                </span>
+              </div>
+
+              {agendamentoSelecionado.clientes?.telefone && (
+                <div className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    {agendamentoSelecionado.clientes.telefone}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Ações */}
+            <div className="p-6 pt-0 space-y-3">
+              {/* Ações principais */}
+              <div className="grid grid-cols-2 gap-2">
+                {agendamentoSelecionado.status !== 'concluido' && (
+                  <button
+                    onClick={() => atualizarStatus(agendamentoSelecionado.id, 'concluido')}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-medium text-sm active:scale-[0.98]"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Concluir
+                  </button>
+                )}
+                {agendamentoSelecionado.status !== 'confirmado' && agendamentoSelecionado.status !== 'concluido' && (
+                  <button
+                    onClick={() => atualizarStatus(agendamentoSelecionado.id, 'confirmado')}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl transition-all font-medium text-sm active:scale-[0.98]"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Confirmar
+                  </button>
+                )}
                 {agendamentoSelecionado.clientes?.telefone && (
-                  <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-                    <Phone className="w-5 h-5 text-zinc-400" />
-                    <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                      {agendamentoSelecionado.clientes.telefone}
-                    </p>
-                  </div>
+                  <button
+                    onClick={() => enviarWhatsApp(
+                      agendamentoSelecionado.clientes.telefone,
+                      agendamentoSelecionado.clientes.nome,
+                      agendamentoSelecionado.data_hora
+                    )}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all font-medium text-sm active:scale-[0.98]"
+                  >
+                    <WhatsAppIcon className="w-4 h-4" />
+                    WhatsApp
+                  </button>
+                )}
+                {/* Botão Remarcar */}
+                {agendamentoSelecionado.status !== 'concluido' && agendamentoSelecionado.status !== 'cancelado' && (
+                  <button
+                    onClick={() => {
+                      setModalDetalhesAberto(false);
+                      setTimeout(() => setModalRemarcacaoAberto(true), 150);
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-zinc-600 hover:bg-zinc-500 text-white rounded-xl transition-all font-medium text-sm active:scale-[0.98]"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Remarcar
+                  </button>
                 )}
               </div>
 
-              {/* Ações */}
-              <div className="p-6 pt-2 space-y-3 border-t border-zinc-100 dark:border-zinc-800">
-                <div className="grid grid-cols-2 gap-2">
-                  {agendamentoSelecionado.status !== 'concluido' && (
-                    <button
-                      onClick={() => atualizarStatus(agendamentoSelecionado.id, 'concluido')}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors font-medium text-sm"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      Concluir
-                    </button>
-                  )}
-                  {agendamentoSelecionado.status !== 'confirmado' && agendamentoSelecionado.status !== 'concluido' && (
-                    <button
-                      onClick={() => atualizarStatus(agendamentoSelecionado.id, 'confirmado')}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl transition-colors font-medium text-sm"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      Confirmar
-                    </button>
-                  )}
-                  {agendamentoSelecionado.clientes?.telefone && (
-                    <button
-                      onClick={() => enviarWhatsApp(
-                        agendamentoSelecionado.clientes.telefone,
-                        agendamentoSelecionado.clientes.nome,
-                        agendamentoSelecionado.data_hora
-                      )}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors font-medium text-sm"
-                    >
-                      <WhatsAppIcon className="w-4 h-4" />
-                      WhatsApp
-                    </button>
-                  )}
-                  {agendamentoSelecionado.status !== 'cancelado' && (
-                    <button
-                      onClick={() => atualizarStatus(agendamentoSelecionado.id, 'cancelado')}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl transition-colors font-medium text-sm"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Cancelar
-                    </button>
-                  )}
-                </div>
+              {/* Ações secundárias */}
+              <div className="flex gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                {agendamentoSelecionado.status !== 'cancelado' && (
+                  <button
+                    onClick={() => atualizarStatus(agendamentoSelecionado.id, 'cancelado')}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl transition-all font-medium text-sm"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Cancelar
+                  </button>
+                )}
                 <button
                   onClick={() => deletarAgendamento(agendamentoSelecionado.id)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-colors font-medium text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all font-medium text-sm border border-rose-200 dark:border-rose-800"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Excluir Agendamento
+                  Excluir
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </>
         )}
-      </AnimatePresence>
+      </PortalModal>
+
+      {/* Modal de Remarcação */}
+      {agendamentoSelecionado && (
+        <ModalRemarcacao
+          agendamento={{
+            id: agendamentoSelecionado.id,
+            data_hora: agendamentoSelecionado.data_hora,
+            status: agendamentoSelecionado.status,
+            clientes: agendamentoSelecionado.clientes,
+            barbeiros: {
+              id: agendamentoSelecionado.barbeiros?.id || agendamentoSelecionado.barbeiro_id,
+              nome: agendamentoSelecionado.barbeiros?.nome || ''
+            },
+            servicos: agendamentoSelecionado.servicos
+          }}
+          aberto={modalRemarcacaoAberto}
+          onFechar={() => setModalRemarcacaoAberto(false)}
+          onSucesso={() => {
+            buscarAgendamentosSemana();
+            setModalRemarcacaoAberto(false);
+          }}
+        />
+      )}
 
       {/* Modal de Novo Agendamento */}
       <AnimatePresence>

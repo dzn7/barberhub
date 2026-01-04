@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Barbeiro } from '@/lib/types'
 import { Botao } from '@/components/ui/botao'
+import { RecorteImagem } from '@/components/ui/recorte-imagem'
+import { useToast } from '@/hooks/useToast'
 import { 
   ArrowLeft,
   Plus,
@@ -18,22 +20,42 @@ import {
   Loader2,
   X,
   Save,
-  Upload
+  Camera,
+  Percent
 } from 'lucide-react'
+
+const ESPECIALIDADES_SUGERIDAS = [
+  'Corte Masculino',
+  'Degradê',
+  'Barba',
+  'Pigmentação',
+  'Química',
+  'Corte Infantil',
+  'Tratamento Capilar',
+  'Sobrancelha',
+  'Relaxamento'
+]
 
 export default function BarbeirosPage() {
   const { tenant } = useAuth()
+  const { toast } = useToast()
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
   const [carregando, setCarregando] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
   const [editando, setEditando] = useState<Barbeiro | null>(null)
   const [salvando, setSalvando] = useState(false)
+  const [uploadandoFoto, setUploadandoFoto] = useState(false)
+  const inputFotoRef = useRef<HTMLInputElement>(null)
+  
+  // Estados para recorte de imagem
+  const [imagemParaRecortar, setImagemParaRecortar] = useState<string | null>(null)
+  const [arquivoOriginal, setArquivoOriginal] = useState<File | null>(null)
   
   const [form, setForm] = useState({
     nome: '',
     email: '',
     telefone: '',
-    especialidades: '',
+    especialidades: [] as string[],
     comissao_percentual: 40,
     foto_url: ''
   })
@@ -56,14 +78,21 @@ export default function BarbeirosPage() {
     carregarBarbeiros()
   }, [tenant])
 
+  const formatarTelefone = (valor: string) => {
+    const numeros = valor.replace(/\D/g, '')
+    if (numeros.length <= 2) return numeros
+    if (numeros.length <= 7) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`
+  }
+
   const abrirModal = (barbeiro?: Barbeiro) => {
     if (barbeiro) {
       setEditando(barbeiro)
       setForm({
         nome: barbeiro.nome,
         email: barbeiro.email,
-        telefone: barbeiro.telefone,
-        especialidades: barbeiro.especialidades.join(', '),
+        telefone: formatarTelefone(barbeiro.telefone),
+        especialidades: barbeiro.especialidades || [],
         comissao_percentual: barbeiro.comissao_percentual,
         foto_url: barbeiro.foto_url || ''
       })
@@ -73,7 +102,7 @@ export default function BarbeirosPage() {
         nome: '',
         email: '',
         telefone: '',
-        especialidades: '',
+        especialidades: [],
         comissao_percentual: 40,
         foto_url: ''
       })
@@ -84,73 +113,153 @@ export default function BarbeirosPage() {
   const fecharModal = () => {
     setModalAberto(false)
     setEditando(null)
+    setImagemParaRecortar(null)
+    setArquivoOriginal(null)
   }
 
-  const handleUploadFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !tenant) return
+  /**
+   * Abre o seletor de arquivo e prepara a imagem para recorte
+   */
+  const handleSelecionarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0]
+    if (!arquivo) return
 
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('tenant_id', tenant.id)
-    formData.append('tipo', 'barbeiro')
+    if (!arquivo.type.startsWith('image/')) {
+      toast({ tipo: 'erro', mensagem: 'Selecione uma imagem válida' })
+      return
+    }
 
-    try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      })
+    if (arquivo.size > 10 * 1024 * 1024) {
+      toast({ tipo: 'erro', mensagem: 'A imagem deve ter no máximo 10MB' })
+      return
+    }
 
-      const data = await res.json()
-      if (data.url) {
-        setForm({ ...form, foto_url: data.url })
-      }
-    } catch (error) {
-      console.error('Erro ao fazer upload:', error)
+    // Criar URL temporária para preview e recorte
+    const urlTemporaria = URL.createObjectURL(arquivo)
+    setImagemParaRecortar(urlTemporaria)
+    setArquivoOriginal(arquivo)
+    
+    // Limpar input para permitir selecionar o mesmo arquivo novamente
+    if (inputFotoRef.current) {
+      inputFotoRef.current.value = ''
     }
   }
 
+  /**
+   * Processa a imagem recortada e faz upload
+   */
+  const handleRecorteConcluido = async (imagemRecortada: Blob) => {
+    if (!tenant) return
+    
+    setUploadandoFoto(true)
+    setImagemParaRecortar(null)
+    
+    try {
+      // Criar arquivo a partir do blob recortado
+      const arquivoRecortado = new File(
+        [imagemRecortada], 
+        arquivoOriginal?.name || 'foto-barbeiro.jpg',
+        { type: 'image/jpeg' }
+      )
+
+      const formData = new FormData()
+      formData.append('file', arquivoRecortado)
+      formData.append('tenant_id', tenant.id)
+      formData.append('tipo', 'barbeiro')
+
+      const resposta = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const dados = await resposta.json()
+      if (dados.error) throw new Error(dados.error)
+
+      setForm({ ...form, foto_url: dados.url })
+      toast({ tipo: 'sucesso', mensagem: 'Foto atualizada com sucesso' })
+    } catch (erro) {
+      toast({ tipo: 'erro', mensagem: 'Erro ao enviar foto' })
+    } finally {
+      setUploadandoFoto(false)
+      setArquivoOriginal(null)
+    }
+  }
+
+  /**
+   * Cancela o recorte e limpa os estados
+   */
+  const handleCancelarRecorte = () => {
+    if (imagemParaRecortar) {
+      URL.revokeObjectURL(imagemParaRecortar)
+    }
+    setImagemParaRecortar(null)
+    setArquivoOriginal(null)
+  }
+
+  const toggleEspecialidade = (especialidade: string) => {
+    setForm(prev => ({
+      ...prev,
+      especialidades: prev.especialidades.includes(especialidade)
+        ? prev.especialidades.filter(e => e !== especialidade)
+        : [...prev.especialidades, especialidade]
+    }))
+  }
+
   const handleSalvar = async () => {
-    if (!tenant || !form.nome || !form.email || !form.telefone) return
+    if (!tenant) return
+    
+    if (!form.nome.trim()) {
+      toast({ tipo: 'erro', mensagem: 'Digite o nome do profissional' })
+      return
+    }
+    if (!form.telefone.trim()) {
+      toast({ tipo: 'erro', mensagem: 'Digite o telefone do profissional' })
+      return
+    }
     
     setSalvando(true)
     
-    const especialidadesArray = form.especialidades
-      .split(',')
-      .map(e => e.trim())
-      .filter(e => e)
-    
     try {
+      const telefoneNumeros = form.telefone.replace(/\D/g, '')
+      const emailFinal = form.email.trim() || `${form.nome.toLowerCase().replace(/\s/g, '.')}@temp.com`
+      
       if (editando) {
-        await supabase
+        const { error } = await supabase
           .from('barbeiros')
           .update({
-            nome: form.nome,
-            email: form.email,
-            telefone: form.telefone,
-            especialidades: especialidadesArray,
+            nome: form.nome.trim(),
+            email: emailFinal,
+            telefone: telefoneNumeros,
+            especialidades: form.especialidades,
             comissao_percentual: form.comissao_percentual,
             foto_url: form.foto_url || null
           })
           .eq('id', editando.id)
+        
+        if (error) throw error
+        toast({ tipo: 'sucesso', mensagem: 'Profissional atualizado com sucesso!' })
       } else {
-        await supabase
+        const { error } = await supabase
           .from('barbeiros')
           .insert({
             tenant_id: tenant.id,
-            nome: form.nome,
-            email: form.email,
-            telefone: form.telefone,
-            especialidades: especialidadesArray,
+            nome: form.nome.trim(),
+            email: emailFinal,
+            telefone: telefoneNumeros,
+            especialidades: form.especialidades,
             comissao_percentual: form.comissao_percentual,
             foto_url: form.foto_url || null
           })
+        
+        if (error) throw error
+        toast({ tipo: 'sucesso', mensagem: 'Profissional adicionado com sucesso!' })
       }
       
       await carregarBarbeiros()
       fecharModal()
     } catch (error) {
       console.error('Erro ao salvar:', error)
+      toast({ tipo: 'erro', mensagem: 'Erro ao salvar profissional' })
     } finally {
       setSalvando(false)
     }
@@ -275,125 +384,196 @@ export default function BarbeirosPage() {
         )}
       </main>
 
-      {/* Modal */}
+      {/* Modal Profissional */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-zinc-800 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-white">
-                {editando ? 'Editar Barbeiro' : 'Novo Barbeiro'}
-              </h2>
-              <button onClick={fecharModal} className="text-zinc-400 hover:text-white">
+          <div className="bg-zinc-900 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  {editando ? 'Editar Profissional' : 'Novo Profissional'}
+                </h2>
+                <p className="text-sm text-zinc-500 mt-1">
+                  {editando ? 'Atualize os dados do profissional' : 'Adicione um novo membro à equipe'}
+                </p>
+              </div>
+              <button 
+                onClick={fecharModal} 
+                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              {/* Foto */}
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-zinc-700 rounded-xl flex items-center justify-center overflow-hidden">
-                  {form.foto_url ? (
-                    <Image
-                      src={form.foto_url}
-                      alt="Foto"
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover"
+            {/* Conteúdo scrollável */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Foto com Crop */}
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative">
+                  <div className="w-28 h-28 bg-zinc-800 rounded-full flex items-center justify-center overflow-hidden border-4 border-zinc-700">
+                    {uploadandoFoto ? (
+                      <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
+                    ) : form.foto_url ? (
+                      <Image
+                        src={form.foto_url}
+                        alt="Foto"
+                        width={112}
+                        height={112}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Users className="w-12 h-12 text-zinc-600" />
+                    )}
+                  </div>
+                  <label className="absolute bottom-0 right-0 p-2 bg-white text-zinc-900 rounded-full cursor-pointer hover:bg-zinc-200 transition-colors shadow-lg">
+                    <input
+                      ref={inputFotoRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSelecionarFoto}
+                      className="hidden"
                     />
-                  ) : (
-                    <Users className="w-10 h-10 text-zinc-500" />
-                  )}
+                    <Camera className="w-5 h-5" />
+                  </label>
                 </div>
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleUploadFoto}
-                    className="hidden"
-                  />
-                  <span className="inline-flex items-center gap-2 px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-sm rounded-lg">
-                    <Upload className="w-4 h-4" />
-                    Foto
-                  </span>
-                </label>
+                <p className="text-xs text-zinc-500">Clique para adicionar foto</p>
               </div>
 
+              {/* Nome */}
               <div>
-                <label className="block text-sm text-zinc-400 mb-2">Nome *</label>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Nome do Profissional <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={form.nome}
                   onChange={e => setForm({ ...form, nome: e.target.value })}
-                  placeholder="Nome do barbeiro"
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Ex: João Silva"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-600 transition-all"
                 />
               </div>
 
+              {/* Telefone */}
               <div>
-                <label className="block text-sm text-zinc-400 mb-2">E-mail *</label>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Telefone/WhatsApp <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={form.telefone}
+                  onChange={e => setForm({ ...form, telefone: formatarTelefone(e.target.value) })}
+                  placeholder="(00) 00000-0000"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-600 transition-all"
+                />
+              </div>
+
+              {/* E-mail */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  E-mail <span className="text-zinc-500 font-normal">(opcional)</span>
+                </label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   placeholder="email@exemplo.com"
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-600 transition-all"
                 />
               </div>
 
+              {/* Especialidades */}
               <div>
-                <label className="block text-sm text-zinc-400 mb-2">Telefone *</label>
-                <input
-                  type="tel"
-                  value={form.telefone}
-                  onChange={e => setForm({ ...form, telefone: e.target.value })}
-                  placeholder="(00) 00000-0000"
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                <label className="block text-sm font-medium text-zinc-300 mb-3">
+                  Especialidades
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {ESPECIALIDADES_SUGERIDAS.map((esp) => (
+                    <button
+                      key={esp}
+                      type="button"
+                      onClick={() => toggleEspecialidade(esp)}
+                      className={`px-3 py-1.5 text-sm rounded-full transition-all ${
+                        form.especialidades.includes(esp)
+                          ? 'bg-white text-zinc-900 font-medium'
+                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white border border-zinc-700'
+                      }`}
+                    >
+                      {esp}
+                    </button>
+                  ))}
+                </div>
+                {form.especialidades.length > 0 && (
+                  <p className="text-xs text-zinc-500 mt-2">
+                    {form.especialidades.length} especialidade(s) selecionada(s)
+                  </p>
+                )}
               </div>
 
+              {/* Comissão */}
               <div>
-                <label className="block text-sm text-zinc-400 mb-2">Especialidades</label>
-                <input
-                  type="text"
-                  value={form.especialidades}
-                  onChange={e => setForm({ ...form, especialidades: e.target.value })}
-                  placeholder="Corte, Barba, Degradê (separar por vírgula)"
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-zinc-400 mb-2">Comissão (%)</label>
-                <input
-                  type="number"
-                  value={form.comissao_percentual}
-                  onChange={e => setForm({ ...form, comissao_percentual: parseFloat(e.target.value) || 0 })}
-                  min={0}
-                  max={100}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Comissão
+                </label>
+                <div className="relative">
+                  <Percent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <input
+                    type="number"
+                    value={form.comissao_percentual || ''}
+                    onChange={e => {
+                      const valor = e.target.value;
+                      setForm({ ...form, comissao_percentual: valor === '' ? 0 : parseFloat(valor) });
+                    }}
+                    min={0}
+                    max={100}
+                    placeholder="40"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-600 transition-all"
+                  />
+                </div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Percentual de comissão por atendimento
+                </p>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-6">
-              <Botao variante="contorno" onClick={fecharModal} className="flex-1">
+            {/* Footer */}
+            <div className="flex gap-3 p-6 border-t border-zinc-800">
+              <button
+                onClick={fecharModal}
+                className="flex-1 px-4 py-3 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl transition-colors font-medium"
+              >
                 Cancelar
-              </Botao>
-              <Botao 
-                onClick={handleSalvar} 
-                disabled={salvando || !form.nome || !form.email || !form.telefone} 
-                className="flex-1"
+              </button>
+              <button
+                onClick={handleSalvar}
+                disabled={salvando || !form.nome.trim() || !form.telefone.trim()}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-zinc-900 rounded-xl font-medium hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {salvando ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Salvando...
+                  </>
                 ) : (
-                  <Save className="w-4 h-4 mr-2" />
+                  <>
+                    {editando ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    {editando ? 'Salvar' : 'Adicionar'}
+                  </>
                 )}
-                Salvar
-              </Botao>
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Recorte de Imagem */}
+      {imagemParaRecortar && (
+        <RecorteImagem
+          imagemOriginal={imagemParaRecortar}
+          onRecorteConcluido={handleRecorteConcluido}
+          onCancelar={handleCancelarRecorte}
+          formatoCircular={true}
+        />
       )}
     </div>
   )

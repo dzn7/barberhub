@@ -69,8 +69,8 @@ export function ServicosMiniGestao({
   const [formulario, setFormulario] = useState({
     nome: '',
     descricao: '',
-    preco: 0,
-    duracao: 30,
+    preco: '',
+    duracao: '30',
     categoria: 'corte'
   })
 
@@ -104,7 +104,9 @@ export function ServicosMiniGestao({
       toast({ tipo: 'erro', mensagem: 'Digite o nome do serviço' })
       return
     }
-    if (formulario.preco <= 0) {
+    const precoNumerico = parseFloat(String(formulario.preco).replace(',', '.')) || 0
+    const duracaoNumerica = parseInt(String(formulario.duracao)) || 30
+    if (precoNumerico <= 0) {
       toast({ tipo: 'erro', mensagem: 'O preço deve ser maior que zero' })
       return
     }
@@ -125,8 +127,8 @@ export function ServicosMiniGestao({
           tenant_id: tenantId,
           nome: formulario.nome.trim(),
           descricao: formulario.descricao.trim() || null,
-          preco: formulario.preco,
-          duracao: formulario.duracao,
+          preco: precoNumerico,
+          duracao: duracaoNumerica,
           categoria: formulario.categoria,
           ordem_exibicao: proximaOrdem,
           ativo: true
@@ -137,7 +139,7 @@ export function ServicosMiniGestao({
       if (error) throw error
 
       setServicos([...servicos, data])
-      setFormulario({ nome: '', descricao: '', preco: 0, duracao: 30, categoria: 'corte' })
+      setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
       setMostrarFormulario(false)
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao adicionar serviço' })
@@ -147,6 +149,8 @@ export function ServicosMiniGestao({
   }
 
   const atualizarServico = async (id: string) => {
+    const precoNumerico = parseFloat(String(formulario.preco).replace(',', '.')) || 0
+    const duracaoNumerica = parseInt(String(formulario.duracao)) || 30
     setSalvando(true)
     try {
       const { error } = await supabase
@@ -154,8 +158,8 @@ export function ServicosMiniGestao({
         .update({
           nome: formulario.nome.trim(),
           descricao: formulario.descricao.trim() || null,
-          preco: formulario.preco,
-          duracao: formulario.duracao,
+          preco: precoNumerico,
+          duracao: duracaoNumerica,
           categoria: formulario.categoria
         })
         .eq('id', id)
@@ -164,11 +168,11 @@ export function ServicosMiniGestao({
 
       setServicos(servicos.map(s => 
         s.id === id 
-          ? { ...s, ...formulario }
+          ? { ...s, nome: formulario.nome, descricao: formulario.descricao, preco: precoNumerico, duracao: duracaoNumerica, categoria: formulario.categoria }
           : s
       ))
       setEditando(null)
-      setFormulario({ nome: '', descricao: '', preco: 0, duracao: 30, categoria: 'corte' })
+      setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao atualizar serviço' })
     } finally {
@@ -198,8 +202,8 @@ export function ServicosMiniGestao({
     setFormulario({
       nome: servico.nome,
       descricao: servico.descricao || '',
-      preco: servico.preco,
-      duracao: servico.duracao,
+      preco: String(servico.preco),
+      duracao: String(servico.duracao),
       categoria: servico.categoria || 'corte'
     })
     setMostrarFormulario(false)
@@ -207,7 +211,7 @@ export function ServicosMiniGestao({
 
   const cancelarEdicao = () => {
     setEditando(null)
-    setFormulario({ nome: '', descricao: '', preco: 0, duracao: 30, categoria: 'corte' })
+    setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
   }
 
   const adicionarSugerido = async (sugerido: typeof SERVICOS_SUGERIDOS[0]) => {
@@ -330,11 +334,13 @@ export function ServicosMiniGestao({
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                     <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formulario.preco || ''}
-                      onChange={(e) => setFormulario({ ...formulario, preco: parseFloat(e.target.value) || 0 })}
+                      type="text"
+                      inputMode="decimal"
+                      value={formulario.preco}
+                      onChange={(e) => {
+                        const valor = e.target.value.replace(/[^0-9.,]/g, '')
+                        setFormulario({ ...formulario, preco: valor })
+                      }}
                       placeholder="0,00"
                       className="w-full pl-10 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
                     />
@@ -348,11 +354,14 @@ export function ServicosMiniGestao({
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                     <input
-                      type="number"
-                      min="5"
-                      step="5"
+                      type="text"
+                      inputMode="numeric"
                       value={formulario.duracao}
-                      onChange={(e) => setFormulario({ ...formulario, duracao: parseInt(e.target.value) || 30 })}
+                      onChange={(e) => {
+                        const valor = e.target.value.replace(/[^0-9]/g, '')
+                        setFormulario({ ...formulario, duracao: valor })
+                      }}
+                      placeholder="30"
                       className="w-full pl-10 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
                     />
                   </div>
@@ -380,7 +389,7 @@ export function ServicosMiniGestao({
                 <button
                   onClick={() => {
                     setMostrarFormulario(false)
-                    setFormulario({ nome: '', descricao: '', preco: 0, duracao: 30, categoria: 'corte' })
+                    setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
                   }}
                   className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
                 >
@@ -431,21 +440,28 @@ export function ServicosMiniGestao({
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                       <input
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         value={formulario.preco}
-                        onChange={(e) => setFormulario({ ...formulario, preco: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) => {
+                          const valor = e.target.value.replace(/[^0-9.,]/g, '')
+                          setFormulario({ ...formulario, preco: valor })
+                        }}
+                        placeholder="0,00"
                         className="w-full pl-10 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-zinc-500"
                       />
                     </div>
                     <div className="relative">
                       <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                       <input
-                        type="number"
-                        min="5"
-                        step="5"
+                        type="text"
+                        inputMode="numeric"
                         value={formulario.duracao}
-                        onChange={(e) => setFormulario({ ...formulario, duracao: parseInt(e.target.value) || 30 })}
+                        onChange={(e) => {
+                          const valor = e.target.value.replace(/[^0-9]/g, '')
+                          setFormulario({ ...formulario, duracao: valor })
+                        }}
+                        placeholder="30"
                         className="w-full pl-10 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-zinc-500"
                       />
                     </div>

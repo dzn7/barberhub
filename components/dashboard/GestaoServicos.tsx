@@ -25,8 +25,8 @@ interface Servico {
 interface NovoServicoForm {
   nome: string;
   descricao: string;
-  preco: number;
-  duracao: number;
+  preco: string;
+  duracao: string;
   categoria: string;
 }
 
@@ -46,8 +46,8 @@ export function GestaoServicos() {
   const [novoServico, setNovoServico] = useState<NovoServicoForm>({
     nome: "",
     descricao: "",
-    preco: 0,
-    duracao: 30,
+    preco: "",
+    duracao: "30",
     categoria: "geral",
   });
 
@@ -152,12 +152,15 @@ export function GestaoServicos() {
       return;
     }
 
-    if (novoServico.preco <= 0) {
+    const precoNumerico = parseFloat(novoServico.preco.replace(',', '.')) || 0;
+    const duracaoNumerica = parseInt(novoServico.duracao) || 0;
+
+    if (precoNumerico <= 0) {
       toast({ tipo: "erro", mensagem: "Preço deve ser maior que zero" });
       return;
     }
 
-    if (novoServico.duracao <= 0) {
+    if (duracaoNumerica <= 0) {
       toast({ tipo: "erro", mensagem: "Duração deve ser maior que zero" });
       return;
     }
@@ -181,8 +184,8 @@ export function GestaoServicos() {
           tenant_id: tenant.id,
           nome: novoServico.nome.trim(),
           descricao: novoServico.descricao.trim() || novoServico.nome.trim(),
-          preco: novoServico.preco,
-          duracao: novoServico.duracao,
+          preco: precoNumerico,
+          duracao: duracaoNumerica,
           categoria: novoServico.categoria,
           ordem_exibicao: proximaOrdem,
           ativo: true,
@@ -197,8 +200,8 @@ export function GestaoServicos() {
       setNovoServico({
         nome: "",
         descricao: "",
-        preco: 0,
-        duracao: 30,
+        preco: "",
+        duracao: "30",
         categoria: "geral",
       });
       setModalNovoAberto(false);
@@ -248,43 +251,53 @@ export function GestaoServicos() {
 
       {/* Modal de Novo Serviço */}
       <ModalPortal aberto={modalNovoAberto} onFechar={() => setModalNovoAberto(false)}>
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">Criar Novo Serviço</h2>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-zinc-900 to-zinc-800 dark:from-zinc-800 dark:to-zinc-900 p-6">
             <button
               onClick={() => setModalNovoAberto(false)}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+              className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors"
             >
-              <X className="w-5 h-5 text-zinc-500" />
+              <X className="w-5 h-5 text-white/70" />
             </button>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                <Scissors className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Novo Serviço</h2>
+                <p className="text-sm text-white/60">Adicione um serviço à sua barbearia</p>
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-            Preencha as informações do novo serviço
-          </p>
 
-          <div className="space-y-4">
+          {/* Conteúdo */}
+          <div className="p-6 space-y-5">
             {/* Nome */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Nome do Serviço <span className="text-red-500">*</span>
               </label>
-              <TextField.Root
+              <input
+                type="text"
                 value={novoServico.nome}
                 onChange={(e) => setNovoServico({ ...novoServico, nome: e.target.value })}
                 placeholder="Ex: Corte Degradê"
+                className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
               />
             </div>
 
             {/* Descrição */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Descrição
+                Descrição <span className="text-zinc-400 font-normal">(opcional)</span>
               </label>
-              <TextArea
+              <textarea
                 value={novoServico.descricao}
                 onChange={(e) => setNovoServico({ ...novoServico, descricao: e.target.value })}
-                placeholder="Descreva o serviço..."
+                placeholder="Descreva o serviço para seus clientes..."
                 rows={3}
+                className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all resize-none"
               />
             </div>
 
@@ -292,34 +305,42 @@ export function GestaoServicos() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Preço (R$) <span className="text-red-500">*</span>
+                  Preço <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                  <TextField.Root
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">R$</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
                     value={novoServico.preco}
-                    onChange={(e) => setNovoServico({ ...novoServico, preco: parseFloat(e.target.value) || 0 })}
-                    className="pl-10"
+                    onChange={(e) => {
+                      const valor = e.target.value.replace(/[^0-9.,]/g, '');
+                      setNovoServico({ ...novoServico, preco: valor });
+                    }}
+                    placeholder="0,00"
+                    className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Duração (min) <span className="text-red-500">*</span>
+                  Duração <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                  <TextField.Root
-                    type="number"
-                    min="1"
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
                     value={novoServico.duracao}
-                    onChange={(e) => setNovoServico({ ...novoServico, duracao: parseInt(e.target.value) || 30 })}
-                    className="pl-10"
+                    onChange={(e) => {
+                      const valor = e.target.value.replace(/[^0-9]/g, '');
+                      setNovoServico({ ...novoServico, duracao: valor });
+                    }}
+                    placeholder="30"
+                    className="w-full pl-12 pr-12 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
                   />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">min</span>
                 </div>
               </div>
             </div>
@@ -329,32 +350,55 @@ export function GestaoServicos() {
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Categoria
               </label>
-              <select
-                value={novoServico.categoria}
-                onChange={(e) => setNovoServico({ ...novoServico, categoria: e.target.value })}
-                className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
-              >
-                <option value="geral">Geral</option>
-                <option value="popular">Popular</option>
-                <option value="premium">Premium</option>
-                <option value="outros">Outros</option>
-              </select>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { valor: 'geral', label: 'Geral', emoji: '✂️' },
+                  { valor: 'popular', label: 'Popular', emoji: '⭐' },
+                  { valor: 'premium', label: 'Premium', emoji: '👑' },
+                  { valor: 'outros', label: 'Outros', emoji: '📦' },
+                ].map((cat) => (
+                  <button
+                    key={cat.valor}
+                    type="button"
+                    onClick={() => setNovoServico({ ...novoServico, categoria: cat.valor })}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
+                      novoServico.categoria === cat.valor
+                        ? 'border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                        : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 text-zinc-600 dark:text-zinc-400'
+                    }`}
+                  >
+                    <span className="text-lg">{cat.emoji}</span>
+                    <span className="text-xs font-medium">{cat.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-3 mt-6 justify-end">
+          {/* Footer */}
+          <div className="flex gap-3 p-6 pt-0">
             <button
               onClick={() => setModalNovoAberto(false)}
-              className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+              className="flex-1 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors font-medium"
             >
               Cancelar
             </button>
             <button
               onClick={criarNovoServico}
-              disabled={salvando}
-              className="px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              disabled={salvando || !novoServico.nome.trim()}
+              className="flex-1 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {salvando ? "Criando..." : "Criar Serviço"}
+              {salvando ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Criar Serviço
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -406,16 +450,17 @@ export function GestaoServicos() {
                           <TextField.Root
                             type="number"
                             step="0.01"
-                            value={valoresEdicao.preco}
-                            onChange={(e) =>
+                            value={valoresEdicao.preco || ''}
+                            onChange={(e) => {
+                              const valor = e.target.value;
                               setValores({
                                 ...valores,
                                 [servico.id]: {
                                   ...valoresEdicao,
-                                  preco: parseFloat(e.target.value),
+                                  preco: valor === '' ? 0 : parseFloat(valor),
                                 },
-                              })
-                            }
+                              });
+                            }}
                             className="pl-10"
                           />
                         </div>
@@ -429,16 +474,17 @@ export function GestaoServicos() {
                           <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                           <TextField.Root
                             type="number"
-                            value={valoresEdicao.duracao}
-                            onChange={(e) =>
+                            value={valoresEdicao.duracao || ''}
+                            onChange={(e) => {
+                              const valor = e.target.value;
                               setValores({
                                 ...valores,
                                 [servico.id]: {
                                   ...valoresEdicao,
-                                  duracao: parseInt(e.target.value),
+                                  duracao: valor === '' ? 0 : parseInt(valor),
                                 },
-                              })
-                            }
+                              });
+                            }}
                             className="pl-10"
                           />
                         </div>

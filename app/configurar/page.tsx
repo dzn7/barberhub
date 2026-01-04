@@ -28,11 +28,14 @@ import {
   Palette,
   Scissors,
   Users,
-  Sparkles,
   ExternalLink,
-  PartyPopper,
-  Rocket,
-  Eye
+  Eye,
+  LayoutDashboard,
+  Globe,
+  Calendar,
+  Settings,
+  Copy,
+  CheckCircle2
 } from 'lucide-react'
 
 const PALETAS_SOFISTICADAS = [
@@ -67,6 +70,299 @@ const ETAPAS = [
 ]
 
 const TOTAL_ETAPAS = ETAPAS.length
+
+/**
+ * Componente de tela de sucesso após configuração
+ * Design premium step-by-step sem parecer feito por IA
+ */
+interface TelaSucessoProps {
+  tenant: {
+    id: string
+    slug: string
+    nome: string
+  }
+  dados: {
+    nome: string
+  }
+  totalServicos: number
+  totalBarbeiros: number
+}
+
+function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros }: TelaSucessoProps) {
+  const [linkCopiado, setLinkCopiado] = useState(false)
+  const linkPublico = `barberhub.online/${tenant.slug}`
+  
+  const copiarLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://${linkPublico}`)
+      setLinkCopiado(true)
+      setTimeout(() => setLinkCopiado(false), 2000)
+    } catch {
+      // Fallback para navegadores antigos
+      const input = document.createElement('input')
+      input.value = `https://${linkPublico}`
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+      setLinkCopiado(true)
+      setTimeout(() => setLinkCopiado(false), 2000)
+    }
+  }
+
+  const proximosPassos = [
+    {
+      numero: 1,
+      titulo: 'Acesse o Painel Administrativo',
+      descricao: 'Gerencie agendamentos, veja relatórios e configure sua barbearia',
+      link: '/admin',
+      textoBotao: 'Abrir Painel',
+      icone: LayoutDashboard,
+      destaque: true
+    },
+    {
+      numero: 2,
+      titulo: 'Veja seu Site Público',
+      descricao: 'Confira como seus clientes vão ver sua página de agendamentos',
+      link: `/${tenant.slug}`,
+      textoBotao: 'Ver Site',
+      icone: Globe,
+      externo: true
+    },
+    {
+      numero: 3,
+      titulo: 'Compartilhe com Clientes',
+      descricao: 'Envie o link da sua página para seus clientes agendarem',
+      acao: copiarLink,
+      textoBotao: linkCopiado ? 'Copiado!' : 'Copiar Link',
+      icone: linkCopiado ? CheckCircle2 : Copy
+    }
+  ]
+
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header minimalista */}
+      <header className="border-b border-zinc-800/50">
+        <div className="max-w-3xl mx-auto px-4 py-4">
+          <Link href="/">
+            <LogoMarca className="h-8" />
+          </Link>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-4 py-12 md:py-20">
+        {/* Indicador de sucesso sutil */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+            <span className="text-sm text-emerald-400 font-medium">Configuração concluída</span>
+          </div>
+        </motion.div>
+
+        {/* Título principal */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-12"
+        >
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            {dados.nome || tenant.nome} está no ar
+          </h1>
+          <p className="text-lg text-zinc-400 max-w-xl">
+            Sua barbearia está configurada e pronta para receber agendamentos. 
+            Veja abaixo os próximos passos para começar.
+          </p>
+        </motion.div>
+
+        {/* Resumo da configuração */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-12"
+        >
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+            <h2 className="text-sm font-medium text-zinc-400 mb-4 uppercase tracking-wider">
+              Resumo
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div>
+                <p className="text-2xl font-bold text-white">{totalServicos}</p>
+                <p className="text-sm text-zinc-500">Serviços</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{totalBarbeiros}</p>
+                <p className="text-sm text-zinc-500">Profissionais</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-sm text-zinc-500 mb-1">Seu link</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-white font-mono text-sm bg-zinc-800 px-3 py-1.5 rounded-lg flex-1 truncate">
+                    {linkPublico}
+                  </code>
+                  <button
+                    onClick={copiarLink}
+                    className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                    title="Copiar link"
+                  >
+                    {linkCopiado ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Próximos passos */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h2 className="text-sm font-medium text-zinc-400 mb-6 uppercase tracking-wider">
+            Próximos passos
+          </h2>
+          
+          <div className="space-y-4">
+            {proximosPassos.map((passo, index) => {
+              const Icone = passo.icone
+              
+              return (
+                <motion.div
+                  key={passo.numero}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
+                  className={`group relative bg-zinc-900/50 border rounded-2xl p-6 transition-all hover:bg-zinc-900 ${
+                    passo.destaque 
+                      ? 'border-white/20 hover:border-white/40' 
+                      : 'border-zinc-800 hover:border-zinc-700'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Número */}
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
+                      passo.destaque 
+                        ? 'bg-white text-black' 
+                        : 'bg-zinc-800 text-zinc-400'
+                    }`}>
+                      {passo.numero}
+                    </div>
+                    
+                    {/* Conteúdo */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-white mb-1">
+                        {passo.titulo}
+                      </h3>
+                      <p className="text-zinc-400 text-sm mb-4">
+                        {passo.descricao}
+                      </p>
+                      
+                      {/* Botão de ação */}
+                      {passo.link ? (
+                        <Link
+                          href={passo.link}
+                          target={passo.externo ? '_blank' : undefined}
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                            passo.destaque
+                              ? 'bg-white text-black hover:bg-zinc-200'
+                              : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                          }`}
+                        >
+                          <Icone className="w-4 h-4" />
+                          {passo.textoBotao}
+                          {passo.externo && <ExternalLink className="w-3 h-3 ml-1" />}
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={passo.acao}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 text-white hover:bg-zinc-700 rounded-lg font-medium text-sm transition-colors"
+                        >
+                          <Icone className={`w-4 h-4 ${linkCopiado ? 'text-emerald-500' : ''}`} />
+                          {passo.textoBotao}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Badge de destaque */}
+                  {passo.destaque && (
+                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-white text-black text-xs font-medium rounded-full">
+                      Recomendado
+                    </div>
+                  )}
+                </motion.div>
+              )
+            })}
+          </div>
+        </motion.div>
+
+        {/* Dicas adicionais */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="mt-12 pt-12 border-t border-zinc-800"
+        >
+          <h2 className="text-sm font-medium text-zinc-400 mb-6 uppercase tracking-wider">
+            Dicas para começar
+          </h2>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="flex items-start gap-3 p-4 bg-zinc-900/30 rounded-xl">
+              <Calendar className="w-5 h-5 text-zinc-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-white font-medium mb-1">Configure seus horários</p>
+                <p className="text-xs text-zinc-500">
+                  No painel, defina os dias e horários que sua barbearia funciona
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3 p-4 bg-zinc-900/30 rounded-xl">
+              <Settings className="w-5 h-5 text-zinc-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-white font-medium mb-1">Personalize ainda mais</p>
+                <p className="text-xs text-zinc-500">
+                  Adicione fotos, ajuste preços e configure notificações
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Footer com suporte */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="mt-12 text-center"
+        >
+          <p className="text-sm text-zinc-600">
+            Precisa de ajuda? Entre em contato pelo{' '}
+            <a 
+              href="https://wa.me/5511999999999" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-zinc-400 hover:text-white transition-colors"
+            >
+              WhatsApp
+            </a>
+          </p>
+        </motion.div>
+      </main>
+    </div>
+  )
+}
 
 export default function ConfigurarPage() {
   const router = useRouter()
@@ -204,30 +500,12 @@ export default function ConfigurarPage() {
 
   if (concluido) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-lg w-full text-center">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }} className="relative w-24 h-24 mx-auto mb-8">
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-full animate-pulse" />
-            <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
-              <PartyPopper className="w-10 h-10 text-black" />
-            </div>
-          </motion.div>
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl font-bold text-white mb-3">Parabéns!</motion.h1>
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-lg text-zinc-400 mb-8">Sua barbearia está configurada e pronta para receber clientes!</motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 mb-8">
-            <div className="grid grid-cols-2 gap-4 text-left">
-              <div><p className="text-xs text-zinc-500 mb-1">Barbearia</p><p className="font-medium text-white">{dados.nome || tenant.nome}</p></div>
-              <div><p className="text-xs text-zinc-500 mb-1">Link público</p><p className="font-medium text-white truncate">/{tenant.slug}</p></div>
-              <div><p className="text-xs text-zinc-500 mb-1">Serviços</p><p className="font-medium text-white">{totalServicos} cadastrados</p></div>
-              <div><p className="text-xs text-zinc-500 mb-1">Profissionais</p><p className="font-medium text-white">{totalBarbeiros} cadastrados</p></div>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="space-y-3">
-            <Link href="/admin" className="flex items-center justify-center gap-2 w-full py-3 bg-white text-black font-semibold rounded-xl hover:bg-zinc-200 transition-colors"><Rocket className="w-5 h-5" />Ir para o Painel</Link>
-            <Link href={`/${tenant.slug}`} target="_blank" className="flex items-center justify-center gap-2 w-full py-3 bg-zinc-800 text-white font-medium rounded-xl hover:bg-zinc-700 transition-colors"><ExternalLink className="w-4 h-4" />Ver meu site</Link>
-          </motion.div>
-        </motion.div>
-      </div>
+      <TelaSucessoConfiguracao 
+        tenant={tenant}
+        dados={dados}
+        totalServicos={totalServicos}
+        totalBarbeiros={totalBarbeiros}
+      />
     )
   }
 
@@ -351,7 +629,7 @@ export default function ConfigurarPage() {
                 <Botao type="button" onClick={avancar} className="bg-white text-black hover:bg-zinc-200">Continuar<ArrowRight className="w-4 h-4 ml-2" /></Botao>
               ) : (
                 <Botao type="button" onClick={finalizar} disabled={salvando} className="bg-white text-black hover:bg-zinc-200">
-                  {salvando ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Finalizando...</>) : (<><Sparkles className="w-4 h-4 mr-2" />Finalizar</>)}
+                  {salvando ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Finalizando...</>) : (<><Check className="w-4 h-4 mr-2" />Finalizar</>)}
                 </Botao>
               )}
             </div>

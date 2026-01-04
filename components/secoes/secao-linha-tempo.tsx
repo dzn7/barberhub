@@ -451,7 +451,7 @@ export function SecaoLinhaTempo() {
 
   return (
     <section id="jornada" className="py-20 md:py-32 pb-8 md:pb-12">
-      <div className="relative bg-gray-900 dark:bg-black py-20 md:py-32">
+      <div className="relative bg-zinc-100 dark:bg-black py-20 md:py-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto space-y-8">
             <motion.div
@@ -468,7 +468,7 @@ export function SecaoLinhaTempo() {
                   'Transforme Sua Barbearia'
                 ]}
                 como="h2"
-                className="text-4xl sm:text-5xl md:text-6xl font-bold text-white"
+                className="text-4xl sm:text-5xl md:text-6xl font-bold text-zinc-900 dark:text-white"
                 velocidadeDigitacao={75}
                 duracaoPausa={2000}
                 mostrarCursor={true}
@@ -476,7 +476,7 @@ export function SecaoLinhaTempo() {
                 classeCursor="text-primary"
                 iniciarAoVisivel={true}
               />
-              <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+              <p className="text-lg text-zinc-600 dark:text-gray-400 max-w-3xl mx-auto">
                 Conheça cada funcionalidade do Barber Hub através de capturas reais do sistema
               </p>
             </motion.div>

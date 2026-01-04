@@ -12,7 +12,7 @@ const recursos = [
     descricao: 'Seus clientes agendam pelo celular, a qualquer hora. Você recebe tudo organizado na sua agenda.',
     className: 'md:col-span-1',
     fundo: (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 dark:from-zinc-800/50 via-transparent to-transparent" />
     ),
   },
   {
@@ -21,7 +21,7 @@ const recursos = [
     descricao: 'Veja quanto faturou hoje, quantos clientes atendeu e como está a performance de cada barbeiro. Tudo em uma tela.',
     className: 'md:col-span-2',
     fundo: (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 dark:from-zinc-800/50 via-transparent to-transparent" />
     ),
   },
   {
@@ -30,7 +30,7 @@ const recursos = [
     descricao: 'Registre entradas e saídas em segundos. Saiba exatamente quanto sobra no final do mês.',
     className: 'md:col-span-2',
     fundo: (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 dark:from-zinc-800/50 via-transparent to-transparent" />
     ),
   },
   {
@@ -39,7 +39,7 @@ const recursos = [
     descricao: 'Define o percentual de cada barbeiro e o sistema calcula sozinho. Sem planilha, sem erro.',
     className: 'md:col-span-1',
     fundo: (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 dark:from-zinc-800/50 via-transparent to-transparent" />
     ),
   },
   {
@@ -48,7 +48,7 @@ const recursos = [
     descricao: 'Cliente recebe lembrete automático antes do horário. Menos faltas, mais faturamento.',
     className: 'md:col-span-1',
     fundo: (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 dark:from-zinc-800/50 via-transparent to-transparent" />
     ),
   },
   {
@@ -57,7 +57,7 @@ const recursos = [
     descricao: 'Saiba quais produtos estão acabando e quanto lucra com cada venda. Reponha antes de faltar.',
     className: 'md:col-span-2',
     fundo: (
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 dark:from-zinc-800/50 via-transparent to-transparent" />
     ),
   },
 ]
@@ -67,7 +67,7 @@ export function SecaoRecursos() {
   const estaVisivel = useInView(ref, { once: true, amount: 0.2 })
 
   return (
-    <section id="recursos" ref={ref} className="py-20 md:py-28 bg-black">
+    <section id="recursos" ref={ref} className="py-20 md:py-28 bg-zinc-50 dark:bg-black">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto space-y-12">
           {/* Título */}
@@ -80,10 +80,10 @@ export function SecaoRecursos() {
             <p className="text-center text-sm font-medium tracking-widest text-zinc-500 uppercase">
               Funcionalidades
             </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-white">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-zinc-900 dark:text-white">
               Tudo que sua barbearia precisa
             </h2>
-            <p className="text-lg text-zinc-400 text-center max-w-2xl mx-auto">
+            <p className="text-lg text-zinc-600 dark:text-zinc-400 text-center max-w-2xl mx-auto">
               Sem complicação. Sem funcionalidade inútil. Só o que funciona de verdade no dia a dia.
             </p>
           </motion.div>

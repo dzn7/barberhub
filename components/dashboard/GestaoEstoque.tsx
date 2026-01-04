@@ -315,7 +315,10 @@ export function GestaoEstoque() {
                   step="0.01"
                   min="0"
                   value={novoProduto.precoCompra || ''}
-                  onChange={(e) => setNovoProduto({ ...novoProduto, precoCompra: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    setNovoProduto({ ...novoProduto, precoCompra: valor === '' ? 0 : parseFloat(valor) });
+                  }}
                   placeholder="0.00"
                   className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                 />
@@ -330,7 +333,10 @@ export function GestaoEstoque() {
                   step="0.01"
                   min="0"
                   value={novoProduto.precoVenda || ''}
-                  onChange={(e) => setNovoProduto({ ...novoProduto, precoVenda: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    setNovoProduto({ ...novoProduto, precoVenda: valor === '' ? 0 : parseFloat(valor) });
+                  }}
                   placeholder="0.00"
                   className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                 />
@@ -347,7 +353,10 @@ export function GestaoEstoque() {
                   type="number"
                   min="0"
                   value={novoProduto.quantidadeEstoque || ''}
-                  onChange={(e) => setNovoProduto({ ...novoProduto, quantidadeEstoque: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    setNovoProduto({ ...novoProduto, quantidadeEstoque: valor === '' ? 0 : parseInt(valor) });
+                  }}
                   placeholder="0"
                   className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                 />
@@ -361,7 +370,10 @@ export function GestaoEstoque() {
                   type="number"
                   min="1"
                   value={novoProduto.quantidadeMinima || ''}
-                  onChange={(e) => setNovoProduto({ ...novoProduto, quantidadeMinima: parseInt(e.target.value) || 5 })}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    setNovoProduto({ ...novoProduto, quantidadeMinima: valor === '' ? 5 : parseInt(valor) });
+                  }}
                   placeholder="5"
                   className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                 />
