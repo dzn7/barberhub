@@ -17,10 +17,15 @@ import {
   RotateCw
 } from 'lucide-react'
 
+interface IconesPWA {
+  icone_192: string
+  icone_512: string
+}
+
 interface EditorLogoProps {
   logoUrl: string
   tenantId: string
-  onLogoChange: (url: string) => void
+  onLogoChange: (url: string, iconesPwa?: IconesPWA) => void
   corPrimaria?: string
   corSecundaria?: string
 }
@@ -173,7 +178,26 @@ export function EditorLogo({
 
       if (dados.error) throw new Error(dados.error)
 
-      onLogoChange(dados.url)
+      // Gerar ícones PWA automaticamente a partir da logo
+      let iconesPwa: IconesPWA | undefined
+      try {
+        const formDataPwa = new FormData()
+        formDataPwa.append('file', arquivo)
+        formDataPwa.append('tenant_id', tenantId)
+
+        const respostaPwa = await fetch('/api/gerar-icones-pwa', {
+          method: 'POST',
+          body: formDataPwa,
+        })
+
+        if (respostaPwa.ok) {
+          iconesPwa = await respostaPwa.json()
+        }
+      } catch (erroPwa) {
+        console.warn('Não foi possível gerar ícones PWA:', erroPwa)
+      }
+
+      onLogoChange(dados.url, iconesPwa)
       setImagemParaCrop(null)
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao salvar logo. Tente novamente.' })

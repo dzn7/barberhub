@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { InstalarPWA, RegistrarServiceWorker } from '@/components/pwa'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -29,12 +30,31 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
   }
 
+  const icone192 = tenant.icone_pwa_192 || tenant.logo_url || '/icons/icon-192.png'
+  const icone512 = tenant.icone_pwa_512 || tenant.logo_url || '/icons/icon-512.png'
+
   return {
     title: {
       default: tenant.nome,
       template: `%s | ${tenant.nome}`,
     },
     description: `Agende seu horário na ${tenant.nome}. Atendimento profissional e de qualidade.`,
+    manifest: `/${slug}/manifest.webmanifest`,
+    themeColor: tenant.cor_primaria || '#18181b',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: tenant.nome,
+    },
+    icons: {
+      icon: [
+        { url: icone192, sizes: '192x192', type: 'image/png' },
+        { url: icone512, sizes: '512x512', type: 'image/png' },
+      ],
+      apple: [
+        { url: icone192, sizes: '192x192', type: 'image/png' },
+      ],
+    },
     openGraph: {
       title: tenant.nome,
       description: `Agende seu horário na ${tenant.nome}`,
@@ -62,7 +82,12 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
         '--cor-destaque': tenant.cor_destaque || '#a1a1aa',
       } as React.CSSProperties}
     >
+      <RegistrarServiceWorker />
       {children}
+      <InstalarPWA 
+        nomeBarbearia={tenant.nome} 
+        corPrimaria={tenant.cor_primaria || '#18181b'} 
+      />
     </div>
   )
 }

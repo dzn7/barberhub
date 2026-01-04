@@ -64,13 +64,171 @@ const PALETAS_SOFISTICADAS = [
 ]
 
 const ETAPAS = [
-  { id: 1, titulo: 'Identidade', icone: Store, descricao: 'Nome e logo' },
-  { id: 2, titulo: 'Contato', icone: Phone, descricao: 'Telefone e redes' },
-  { id: 3, titulo: 'Localização', icone: MapPin, descricao: 'Endereço' },
-  { id: 4, titulo: 'Aparência', icone: Palette, descricao: 'Cores do site' },
-  { id: 5, titulo: 'Serviços', icone: Scissors, descricao: 'Seus serviços' },
-  { id: 6, titulo: 'Equipe', icone: Users, descricao: 'Profissionais' },
+  { 
+    id: 1, 
+    titulo: 'Identidade', 
+    icone: Store, 
+    descricao: 'Nome e logo',
+    tituloCompleto: 'Identidade da sua barbearia',
+    subtitulo: 'Vamos começar pelo básico: como seus clientes vão conhecer você',
+    tempoEstimado: '1 min',
+    dicas: [
+      'Use o nome oficial da sua barbearia',
+      'A logo aparecerá no site e nos agendamentos',
+      'Você pode alterar depois a qualquer momento'
+    ]
+  },
+  { 
+    id: 2, 
+    titulo: 'Contato', 
+    icone: Phone, 
+    descricao: 'Telefone e redes',
+    tituloCompleto: 'Informações de contato',
+    subtitulo: 'Como seus clientes podem entrar em contato com você',
+    tempoEstimado: '1 min',
+    dicas: [
+      'O WhatsApp é essencial para receber notificações de agendamentos',
+      'Instagram ajuda clientes a conhecerem seu trabalho',
+      'E-mail é usado para comunicações importantes'
+    ]
+  },
+  { 
+    id: 3, 
+    titulo: 'Localização', 
+    icone: MapPin, 
+    descricao: 'Endereço',
+    tituloCompleto: 'Onde fica sua barbearia',
+    subtitulo: 'Ajude seus clientes a te encontrarem facilmente',
+    tempoEstimado: '30 seg',
+    dicas: [
+      'Endereço completo facilita a navegação GPS',
+      'Inclua referências se necessário',
+      'Cidade e estado ajudam em buscas locais'
+    ]
+  },
+  { 
+    id: 4, 
+    titulo: 'Aparência', 
+    icone: Palette, 
+    descricao: 'Cores do site',
+    tituloCompleto: 'Aparência do seu site',
+    subtitulo: 'Escolha as cores que representam a identidade da sua marca',
+    tempoEstimado: '30 seg',
+    dicas: [
+      'Cores escuras passam sofisticação',
+      'Cores claras são mais leves e modernas',
+      'Veja o preview ao lado para conferir como ficará'
+    ]
+  },
+  { 
+    id: 5, 
+    titulo: 'Serviços', 
+    icone: Scissors, 
+    descricao: 'Seus serviços',
+    tituloCompleto: 'Cadastre seus serviços',
+    subtitulo: 'Defina o que sua barbearia oferece, preços e duração de cada serviço',
+    tempoEstimado: '2-3 min',
+    dicas: [
+      'Adicione nome, preço e duração de cada serviço',
+      'A duração ajuda a organizar a agenda automaticamente',
+      'Você pode adicionar ou editar serviços depois no painel'
+    ]
+  },
+  { 
+    id: 6, 
+    titulo: 'Equipe', 
+    icone: Users, 
+    descricao: 'Profissionais',
+    tituloCompleto: 'Sua equipe de profissionais',
+    subtitulo: 'Cadastre os barbeiros e gere códigos de acesso para cada um',
+    tempoEstimado: '2-3 min',
+    dicas: [
+      'Cada barbeiro recebe um código único de acesso',
+      'Eles poderão ver apenas seus próprios agendamentos',
+      'Você pode gerenciar comissões pelo painel admin'
+    ]
+  },
 ]
+
+interface CabecalhoEtapaProps {
+  etapa: typeof ETAPAS[0]
+  etapaAtual: number
+  totalEtapas: number
+}
+
+function CabecalhoEtapa({ etapa, etapaAtual, totalEtapas }: CabecalhoEtapaProps) {
+  const Icone = etapa.icone
+  
+  return (
+    <div className="mb-8">
+      {/* Indicador de progresso mobile */}
+      <div className="flex items-center gap-2 mb-4 lg:hidden">
+        <div className="flex items-center gap-1">
+          {Array.from({ length: totalEtapas }).map((_, i) => (
+            <div 
+              key={i}
+              className={`h-1.5 rounded-full transition-all ${
+                i + 1 === etapaAtual 
+                  ? 'w-6 bg-zinc-900 dark:bg-white' 
+                  : i + 1 < etapaAtual 
+                    ? 'w-3 bg-zinc-400 dark:bg-zinc-500' 
+                    : 'w-3 bg-zinc-200 dark:bg-zinc-700'
+              }`}
+            />
+          ))}
+        </div>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2">
+          {etapaAtual} de {totalEtapas}
+        </span>
+      </div>
+
+      {/* Cabeçalho principal */}
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+          <Icone className="w-6 h-6 text-zinc-700 dark:text-zinc-300" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white">
+              {etapa.tituloCompleto}
+            </h2>
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-full">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {etapa.tempoEstimado}
+            </span>
+          </div>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm sm:text-base">
+            {etapa.subtitulo}
+          </p>
+        </div>
+      </div>
+
+      {/* Dicas */}
+      <div className="mt-6 p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-xl">
+        <div className="flex items-center gap-2 mb-3">
+          <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wide">
+            Dicas rápidas
+          </span>
+        </div>
+        <ul className="space-y-2">
+          {etapa.dicas.map((dica, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <svg className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {dica}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
 
 const TOTAL_ETAPAS = ETAPAS.length
 
@@ -377,6 +535,8 @@ export default function ConfigurarPage() {
   const [dados, setDados] = useState({
     nome: '',
     logo_url: '',
+    icone_pwa_192: '',
+    icone_pwa_512: '',
     telefone: '',
     whatsapp: '',
     email: '',
@@ -394,6 +554,8 @@ export default function ConfigurarPage() {
       setDados({
         nome: tenant.nome || '',
         logo_url: tenant.logo_url || '',
+        icone_pwa_192: tenant.icone_pwa_192 || '',
+        icone_pwa_512: tenant.icone_pwa_512 || '',
         telefone: tenant.telefone || '',
         whatsapp: tenant.whatsapp || '',
         email: tenant.email || '',
@@ -422,6 +584,8 @@ export default function ConfigurarPage() {
         .update({
           nome: dados.nome || tenant.nome,
           logo_url: dados.logo_url || null,
+          icone_pwa_192: dados.icone_pwa_192 || null,
+          icone_pwa_512: dados.icone_pwa_512 || null,
           cor_primaria: dados.cor_primaria,
           cor_secundaria: dados.cor_secundaria,
           cor_destaque: dados.cor_destaque,
@@ -572,17 +736,17 @@ export default function ConfigurarPage() {
           <div className="lg:col-span-3">
             <AnimatePresence mode="wait">
               {etapaAtual === 1 && (
-                <motion.div key="etapa1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Identidade da sua barbearia</h2><p className="text-zinc-500 dark:text-zinc-400">Como seus clientes vão conhecer você</p></div>
+                <motion.div key="etapa1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <CabecalhoEtapa etapa={ETAPAS[0]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <div className="space-y-6">
                     <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Nome da Barbearia *</label><input type="text" value={dados.nome} onChange={e => setDados({ ...dados, nome: e.target.value })} placeholder="Ex: Barbearia Premium" className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div>
-                    <EditorLogo logoUrl={dados.logo_url} tenantId={tenant.id} onLogoChange={(url) => setDados({ ...dados, logo_url: url })} corPrimaria={dados.cor_primaria} corSecundaria={dados.cor_secundaria} />
+                    <EditorLogo logoUrl={dados.logo_url} tenantId={tenant.id} onLogoChange={(url, iconesPwa) => setDados({ ...dados, logo_url: url, icone_pwa_192: iconesPwa?.icone_192 || '', icone_pwa_512: iconesPwa?.icone_512 || '' })} corPrimaria={dados.cor_primaria} corSecundaria={dados.cor_secundaria} />
                   </div>
                 </motion.div>
               )}
               {etapaAtual === 2 && (
-                <motion.div key="etapa2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Informações de contato</h2><p className="text-zinc-500 dark:text-zinc-400">Como seus clientes podem falar com você</p></div>
+                <motion.div key="etapa2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <CabecalhoEtapa etapa={ETAPAS[1]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Telefone</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.telefone} onChange={e => setDados({ ...dados, telefone: formatarTelefone(e.target.value) })} placeholder="(00) 0000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
@@ -594,8 +758,8 @@ export default function ConfigurarPage() {
                 </motion.div>
               )}
               {etapaAtual === 3 && (
-                <motion.div key="etapa3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Onde fica sua barbearia</h2><p className="text-zinc-500 dark:text-zinc-400">Ajude seus clientes a te encontrar</p></div>
+                <motion.div key="etapa3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <CabecalhoEtapa etapa={ETAPAS[2]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <div className="space-y-4">
                     <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Endereço completo</label><div className="relative"><MapPin className="absolute left-4 top-3.5 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.endereco} onChange={e => setDados({ ...dados, endereco: e.target.value })} placeholder="Rua, número, bairro" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
                     <div className="grid grid-cols-2 gap-4">
@@ -606,8 +770,8 @@ export default function ConfigurarPage() {
                 </motion.div>
               )}
               {etapaAtual === 4 && (
-                <motion.div key="etapa4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Aparência do seu site</h2><p className="text-zinc-500 dark:text-zinc-400">Escolha as cores que representam sua marca</p></div>
+                <motion.div key="etapa4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <CabecalhoEtapa etapa={ETAPAS[3]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {PALETAS_SOFISTICADAS.map((paleta) => {
                       const selecionada = dados.cor_primaria === paleta.primaria
@@ -623,14 +787,14 @@ export default function ConfigurarPage() {
                 </motion.div>
               )}
               {etapaAtual === 5 && (
-                <motion.div key="etapa5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Cadastre seus serviços</h2><p className="text-zinc-500 dark:text-zinc-400">O que sua barbearia oferece aos clientes</p></div>
+                <motion.div key="etapa5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <CabecalhoEtapa etapa={ETAPAS[4]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <ServicosMiniGestao tenantId={tenant.id} limiteServicos={tenant.limite_servicos || 10} onTotalChange={setTotalServicos} />
                 </motion.div>
               )}
               {etapaAtual === 6 && (
-                <motion.div key="etapa6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Sua equipe de profissionais</h2><p className="text-zinc-500 dark:text-zinc-400">Cadastre os barbeiros que trabalham com você e gere os códigos de acesso</p></div>
+                <motion.div key="etapa6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <CabecalhoEtapa etapa={ETAPAS[5]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <CadastroBarbeirosOnboarding tenantId={tenant.id} limiteBarbeiros={tenant.limite_barbeiros || 2} onTotalChange={setTotalBarbeiros} />
                 </motion.div>
               )}

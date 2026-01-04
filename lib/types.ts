@@ -9,6 +9,8 @@ export interface Tenant {
   slug: string
   nome: string
   logo_url: string | null
+  icone_pwa_192: string | null
+  icone_pwa_512: string | null
   cor_primaria: string
   cor_secundaria: string
   cor_destaque: string
