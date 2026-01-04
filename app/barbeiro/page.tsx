@@ -7,16 +7,12 @@ import { motion } from 'framer-motion'
 import { 
   Scissors, 
   Calendar, 
-  DollarSign, 
   LogOut, 
   Menu, 
   X, 
   TrendingUp,
-  Clock,
-  List,
-  Plus,
   Settings,
-  User
+  Star
 } from 'lucide-react'
 import { Tabs } from '@radix-ui/themes'
 import { useBarbeiroAuth } from '@/contexts/BarbeiroAuthContext'
@@ -24,14 +20,13 @@ import { AlternadorTema } from '@/components/AlternadorTema'
 
 // Componentes do dashboard do barbeiro
 import { VisaoGeralBarbeiro } from '@/components/barbeiro/VisaoGeralBarbeiro'
-import { CalendarioBarbeiro } from '@/components/barbeiro/CalendarioBarbeiro'
-import { ListaAgendamentosBarbeiro } from '@/components/barbeiro/ListaAgendamentosBarbeiro'
-import { NovoAgendamentoBarbeiro } from '@/components/barbeiro/NovoAgendamentoBarbeiro'
+import { GestaoAgendamentosBarbeiro } from '@/components/barbeiro/GestaoAgendamentosBarbeiro'
+import { GestaoServicosBarbeiro } from '@/components/barbeiro/GestaoServicosBarbeiro'
 import { ConfiguracoesBarbeiro } from '@/components/barbeiro/ConfiguracoesBarbeiro'
 
 /**
  * Dashboard principal do barbeiro
- * Interface simplificada focada nas necessidades do profissional
+ * Interface completa com calendário, agendamentos, serviços e configurações
  */
 export default function DashboardBarbeiro() {
   const router = useRouter()
@@ -64,12 +59,11 @@ export default function DashboardBarbeiro() {
     )
   }
 
-  // Itens do menu
+  // Itens do menu - reorganizado
   const itensMenu = [
     { value: 'visao-geral', icon: TrendingUp, label: 'Visão Geral' },
-    { value: 'calendario', icon: Calendar, label: 'Calendário' },
-    { value: 'agendamentos', icon: List, label: 'Agendamentos' },
-    { value: 'novo', icon: Plus, label: 'Novo Agendamento' },
+    { value: 'agendamentos', icon: Calendar, label: 'Agendamentos' },
+    { value: 'servicos', icon: Star, label: 'Serviços' },
     { value: 'configuracoes', icon: Settings, label: 'Configurações' },
   ]
 
@@ -196,16 +190,12 @@ export default function DashboardBarbeiro() {
             <VisaoGeralBarbeiro />
           </Tabs.Content>
 
-          <Tabs.Content value="calendario">
-            <CalendarioBarbeiro />
-          </Tabs.Content>
-
           <Tabs.Content value="agendamentos">
-            <ListaAgendamentosBarbeiro />
+            <GestaoAgendamentosBarbeiro />
           </Tabs.Content>
 
-          <Tabs.Content value="novo">
-            <NovoAgendamentoBarbeiro onSucesso={() => setAbaAtiva('agendamentos')} />
+          <Tabs.Content value="servicos">
+            <GestaoServicosBarbeiro />
           </Tabs.Content>
 
           <Tabs.Content value="configuracoes">

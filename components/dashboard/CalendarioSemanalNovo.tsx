@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
-  Plus, ChevronLeft, ChevronRight, Calendar, User, Scissors,
+  Plus, ChevronLeft, ChevronRight, Calendar, Scissors,
   CheckCircle, XCircle, Trash2, X, Clock, Phone, RefreshCw,
   ZoomIn, ZoomOut, CalendarDays, Columns, LayoutGrid
 } from "lucide-react";
@@ -11,8 +11,9 @@ import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { PortalModal } from "@/components/ui/PortalModal";
 import { ModalRemarcacao } from "./ModalRemarcacao";
 import { ModalNovoAgendamento } from "@/components/agendamento";
+import { ModalConfirmacaoExclusao } from "@/components/calendario";
 import {
-  format, addDays, startOfWeek, isSameDay, parseISO, subDays,
+  format, addDays, startOfWeek, parseISO, subDays,
   isToday, addWeeks, subWeeks
 } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
@@ -61,6 +62,8 @@ export function CalendarioSemanalNovo() {
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
   const [modalRemarcacaoAberto, setModalRemarcacaoAberto] = useState(false);
+  const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
+  const [processandoExclusao, setProcessandoExclusao] = useState(false);
   
   // Configurações de visualização
   const [visualizacao, setVisualizacao] = useState<TipoVisualizacao>('semana');
@@ -319,16 +322,32 @@ export function CalendarioSemanalNovo() {
     }
   };
 
-  const deletarAgendamento = async (id: string) => {
-    if (!confirm('Excluir este agendamento permanentemente?')) return;
+  const abrirModalExcluir = () => {
+    setModalDetalhesAberto(false);
+    setTimeout(() => setModalExcluirAberto(true), 150);
+  };
+
+  const deletarAgendamento = async () => {
+    if (!agendamentoSelecionado) return;
+    
+    setProcessandoExclusao(true);
     try {
-      await supabase.from('historico_agendamentos').delete().eq('agendamento_id', id);
-      await supabase.from('notificacoes_enviadas').delete().eq('agendamento_id', id);
-      await supabase.from('agendamentos').delete().eq('id', id);
-      setModalDetalhesAberto(false);
+      // Deletar registros relacionados
+      await supabase.from('historico_agendamentos').delete().eq('agendamento_id', agendamentoSelecionado.id);
+      await supabase.from('notificacoes_enviadas').delete().eq('agendamento_id', agendamentoSelecionado.id);
+      await supabase.from('comissoes').update({ agendamento_id: null }).eq('agendamento_id', agendamentoSelecionado.id);
+      await supabase.from('transacoes').update({ agendamento_id: null }).eq('agendamento_id', agendamentoSelecionado.id);
+      
+      const { error } = await supabase.from('agendamentos').delete().eq('id', agendamentoSelecionado.id);
+      if (error) throw error;
+      
+      setModalExcluirAberto(false);
+      setAgendamentoSelecionado(null);
       buscarAgendamentos();
     } catch (error) {
       console.error('Erro ao deletar:', error);
+    } finally {
+      setProcessandoExclusao(false);
     }
   };
 
@@ -680,7 +699,7 @@ export function CalendarioSemanalNovo() {
                   </button>
                 )}
                 <button
-                  onClick={() => deletarAgendamento(agendamentoSelecionado.id)}
+                  onClick={abrirModalExcluir}
                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-rose-600 border border-rose-200 dark:border-rose-800 rounded-xl text-sm font-medium hover:bg-rose-50 dark:hover:bg-rose-950/20"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -719,6 +738,18 @@ export function CalendarioSemanalNovo() {
           dataPadrao={format(dataBase, 'yyyy-MM-dd')}
         />
       )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      <ModalConfirmacaoExclusao
+        aberto={modalExcluirAberto}
+        nomeCliente={agendamentoSelecionado?.clientes?.nome || ''}
+        processando={processandoExclusao}
+        onConfirmar={deletarAgendamento}
+        onCancelar={() => {
+          setModalExcluirAberto(false);
+          setAgendamentoSelecionado(null);
+        }}
+      />
     </div>
   );
 }
