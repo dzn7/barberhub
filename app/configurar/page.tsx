@@ -32,7 +32,7 @@ import {
   ExternalLink,
   PartyPopper,
   Rocket,
-  X
+  Eye
 } from 'lucide-react'
 
 const PALETAS_SOFISTICADAS = [
@@ -65,6 +65,7 @@ export default function ConfigurarPage() {
   const [concluido, setConcluido] = useState(false)
   const [totalServicos, setTotalServicos] = useState(0)
   const [totalBarbeiros, setTotalBarbeiros] = useState(0)
+  const [mostrarPreviewMobile, setMostrarPreviewMobile] = useState(false)
   
   const [dados, setDados] = useState({
     nome: '',
@@ -224,6 +225,14 @@ export default function ConfigurarPage() {
           <Link href="/"><LogoMarca className="h-10" /></Link>
           <div className="flex items-center gap-4">
             <span className="text-xs text-zinc-600 hidden sm:block">Etapa {etapaAtual} de {TOTAL_ETAPAS}</span>
+            <button 
+              onClick={() => setMostrarPreviewMobile(true)} 
+              className="lg:hidden flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+              aria-label="Ver preview do site"
+            >
+              <Eye className="w-4 h-4" />
+              <span className="hidden sm:inline">Preview</span>
+            </button>
             <button onClick={() => router.push('/admin')} className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">Pular</button>
           </div>
         </div>
@@ -339,40 +348,32 @@ export default function ConfigurarPage() {
           </div>
         </div>
 
-        {/* Preview Mobile - Botão flutuante */}
-        <div className="lg:hidden fixed bottom-20 right-4 z-50">
-          <button
-            onClick={() => {
-              const modal = document.getElementById('preview-modal')
-              if (modal) modal.classList.toggle('hidden')
-            }}
-            className="flex items-center gap-2 px-4 py-3 bg-white text-black rounded-full shadow-lg hover:bg-zinc-200 transition-colors"
-          >
-            <Phone className="w-4 h-4" />
-            <span className="text-sm font-medium">Ver Preview</span>
-          </button>
-        </div>
-
         {/* Modal de Preview Mobile */}
-        <div id="preview-modal" className="hidden lg:hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm">
-          <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <span className="text-white font-medium">Preview do Site</span>
-              <button
-                onClick={() => {
-                  const modal = document.getElementById('preview-modal')
-                  if (modal) modal.classList.add('hidden')
-                }}
-                className="p-2 text-zinc-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              <PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} />
-            </div>
-          </div>
-        </div>
+        <AnimatePresence>
+          {mostrarPreviewMobile && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="lg:hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-sm"
+            >
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between p-4 border-b border-zinc-800">
+                  <span className="text-white font-medium">Preview do Site</span>
+                  <button
+                    onClick={() => setMostrarPreviewMobile(false)}
+                    className="px-3 py-1.5 text-sm bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white rounded-lg transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
+                <div className="flex-1 overflow-auto p-4">
+                  <PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

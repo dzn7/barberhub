@@ -358,7 +358,7 @@ export function GestaoUsuarios() {
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-zinc-600 dark:text-zinc-400">Com Agendamentos</span>
-            <Calendar className="w-5 h-5 text-orange-600" />
+            <Calendar className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
           </div>
           <p className="text-2xl font-bold text-zinc-900 dark:text-white">
             {usuarios.filter((u) => u.total_agendamentos > 0).length}

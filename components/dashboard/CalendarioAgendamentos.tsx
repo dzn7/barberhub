@@ -817,8 +817,8 @@ export function CalendarioAgendamentos() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300">
                     ⚠️ Esta ação irá marcar todos os agendamentos <strong>confirmados e pendentes</strong> deste dia como <strong>concluídos</strong>.
                   </p>
                 </div>

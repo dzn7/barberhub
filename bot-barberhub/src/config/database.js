@@ -16,14 +16,19 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
+console.log('🔗 Conectando ao Supabase:', supabaseUrl);
+
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
   },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
+  db: {
+    schema: 'public'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'bot-barberhub'
     }
   }
 });

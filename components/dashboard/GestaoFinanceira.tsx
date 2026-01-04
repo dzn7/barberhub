@@ -608,7 +608,7 @@ export function GestaoFinanceira() {
               ? 'bg-green-50 dark:bg-green-900/10' 
               : modalFeedback.tipo === 'erro'
               ? 'bg-red-50 dark:bg-red-900/10'
-              : 'bg-orange-50 dark:bg-orange-900/10'
+              : 'bg-zinc-50 dark:bg-zinc-900/10'
           }`}>
             <div className="flex items-start gap-4">
               <div className={`p-2 rounded-full ${
@@ -616,7 +616,7 @@ export function GestaoFinanceira() {
                   ? 'bg-green-100 dark:bg-green-900/30' 
                   : modalFeedback.tipo === 'erro'
                   ? 'bg-red-100 dark:bg-red-900/30'
-                  : 'bg-orange-100 dark:bg-orange-900/30'
+                  : 'bg-zinc-100 dark:bg-zinc-800'
               }`}>
                 {modalFeedback.tipo === 'sucesso' && (
                   <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -625,7 +625,7 @@ export function GestaoFinanceira() {
                   <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                 )}
                 {modalFeedback.tipo === 'confirmacao' && (
-                  <AlertCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                  <AlertCircle className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
                 )}
               </div>
               
@@ -635,7 +635,7 @@ export function GestaoFinanceira() {
                     ? 'text-green-900 dark:text-green-100' 
                     : modalFeedback.tipo === 'erro'
                     ? 'text-red-900 dark:text-red-100'
-                    : 'text-orange-900 dark:text-orange-100'
+                    : 'text-zinc-900 dark:text-zinc-100'
                 }`}>
                   {modalFeedback.titulo}
                 </h3>
@@ -644,7 +644,7 @@ export function GestaoFinanceira() {
                     ? 'text-green-700 dark:text-green-300' 
                     : modalFeedback.tipo === 'erro'
                     ? 'text-red-700 dark:text-red-300'
-                    : 'text-orange-700 dark:text-orange-300'
+                    : 'text-zinc-700 dark:text-zinc-300'
                 }`}>
                   {modalFeedback.mensagem}
                 </p>

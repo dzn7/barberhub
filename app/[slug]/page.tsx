@@ -562,7 +562,7 @@ export default function PaginaBarbearia() {
           {new Date().getFullYear()} {tenant.nome}. Todos os direitos reservados.
         </p>
         <p className="text-xs mt-2" style={{ color: cores.destaque + '80' }}>
-          Powered by{' '}
+          Criado por{' '}
           <a href="/" className="hover:underline" style={{ color: cores.secundaria }}>
             BarberHub
           </a>

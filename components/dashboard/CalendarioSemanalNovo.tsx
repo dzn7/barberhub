@@ -41,11 +41,11 @@ const ALTURA_HORA = 64;
 
 const STATUS_CONFIG = {
   pendente: { 
-    bg: 'bg-amber-500/90',
-    border: 'border-l-amber-400',
-    text: 'text-amber-50',
-    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
-    dot: 'bg-amber-400'
+    bg: 'bg-zinc-500/90',
+    border: 'border-l-zinc-400',
+    text: 'text-zinc-50',
+    badge: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+    dot: 'bg-zinc-400'
   },
   confirmado: { 
     bg: 'bg-sky-500/90',
@@ -465,7 +465,7 @@ export function CalendarioSemanalNovo() {
             {/* Stats rápidos */}
             <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
               <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-amber-500" />
+                <div className="w-2 h-2 rounded-full bg-zinc-500" />
                 <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{estatisticasHoje.pendentes}</span>
               </div>
               <div className="flex items-center gap-1.5">

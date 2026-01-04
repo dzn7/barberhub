@@ -7,3 +7,4 @@ auth_info/
 .DS_Store
 .gitignore
 nodemon.json
+bot/

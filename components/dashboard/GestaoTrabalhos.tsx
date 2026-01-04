@@ -569,7 +569,7 @@ export function GestaoTrabalhos() {
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-zinc-600 dark:text-zinc-400">Ocultos</span>
-            <EyeOff className="w-5 h-5 text-orange-600" />
+            <EyeOff className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
           </div>
           <p className="text-2xl font-bold text-zinc-900 dark:text-white">
             {trabalhos.filter((t) => !t.ativo).length}
@@ -617,7 +617,7 @@ export function GestaoTrabalhos() {
               className={`group relative bg-white dark:bg-zinc-900 rounded-xl border overflow-hidden ${
                 trabalho.ativo
                   ? "border-zinc-200 dark:border-zinc-800"
-                  : "border-orange-300 dark:border-orange-800 opacity-60"
+                  : "border-zinc-300 dark:border-zinc-700 opacity-60"
               }`}
             >
               {/* Imagem */}
@@ -642,7 +642,7 @@ export function GestaoTrabalhos() {
                   <Button
                     size="1"
                     variant="soft"
-                    color={trabalho.ativo ? "orange" : "green"}
+                    color={trabalho.ativo ? "gray" : "green"}
                     onClick={() => toggleAtivo(trabalho)}
                     className="cursor-pointer"
                   >
@@ -666,7 +666,7 @@ export function GestaoTrabalhos() {
                 {/* Badge de status */}
                 {!trabalho.ativo && (
                   <div className="absolute top-2 right-2">
-                    <Badge color="orange" size="1">Oculto</Badge>
+                    <Badge color="gray" size="1">Oculto</Badge>
                   </div>
                 )}
               </div>

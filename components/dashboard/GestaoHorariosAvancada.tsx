@@ -524,16 +524,16 @@ export function GestaoHorariosAvancada() {
         </div>
 
         {/* Intervalo de Almoço */}
-        <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 rounded-xl p-6 border-2 border-orange-200 dark:border-orange-800">
-          <h4 className="text-lg font-semibold text-orange-900 dark:text-orange-100 mb-2 flex items-center gap-2">
+        <div className="bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900/50 dark:to-zinc-800/50 rounded-xl p-6 border-2 border-zinc-200 dark:border-zinc-700">
+          <h4 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2 flex items-center gap-2">
             <span className="text-2xl">🍽️</span>
             Intervalo de Almoço (Opcional)
           </h4>
-          <p className="text-sm text-orange-700 dark:text-orange-300 mb-4">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
             Defina o horário em que não haverá atendimentos para o almoço
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
               <label className="block text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3">
                 ⏰ Início do Almoço
               </label>
@@ -549,7 +549,7 @@ export function GestaoHorariosAvancada() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
               <label className="block text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3">
                 ⏰ Fim do Almoço
               </label>
@@ -897,7 +897,7 @@ export function GestaoHorariosAvancada() {
                     <span className="font-medium text-zinc-900 dark:text-zinc-100">
                       {format(parseISO(`${bloqueio.data}T00:00:00`), "dd/MM/yyyy", { locale: ptBR })}
                     </span>
-                    <Badge color={bloqueio.tipo === 'feriado' ? 'red' : 'orange'}>
+                    <Badge color={bloqueio.tipo === 'feriado' ? 'red' : 'gray'}>
                       {bloqueio.tipo === 'feriado' ? 'Feriado' : bloqueio.tipo === 'folga' ? 'Folga' : 'Bloqueio'}
                     </Badge>
                   </div>
@@ -928,7 +928,7 @@ export function GestaoHorariosAvancada() {
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-xl shadow-2xl border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Lock className="w-6 h-6 text-orange-600" />
+              <Lock className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
               <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Novo Bloqueio de Horário</h2>
             </div>
             <button onClick={() => setModalBloqueio(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
@@ -975,8 +975,8 @@ export function GestaoHorariosAvancada() {
                     valor: "bloqueio_manual", 
                     label: "Manual", 
                     icone: Lock, 
-                    corSelecionado: "border-orange-500 bg-orange-50 dark:bg-orange-900/20",
-                    corIconeSelecionado: "text-orange-600"
+                    corSelecionado: "border-zinc-500 bg-zinc-50 dark:bg-zinc-800",
+                    corIconeSelecionado: "text-zinc-600"
                   },
                   { 
                     valor: "folga", 
@@ -1095,7 +1095,7 @@ export function GestaoHorariosAvancada() {
             <button
               onClick={criarBloqueio}
               disabled={salvando}
-              className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 px-4 py-3 bg-white hover:bg-zinc-100 text-black rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {salvando ? (
                 <>

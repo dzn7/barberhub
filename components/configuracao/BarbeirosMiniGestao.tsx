@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
+import { RecorteImagem } from '@/components/ui/recorte-imagem'
 import {
   User,
   Plus,
@@ -72,6 +73,10 @@ export function BarbeirosMiniGestao({
     especialidades: [] as string[],
     comissao_percentual: 50
   })
+  
+  // Estados para recorte de imagem
+  const [imagemParaRecortar, setImagemParaRecortar] = useState<string | null>(null)
+  const [arquivoOriginal, setArquivoOriginal] = useState<File | null>(null)
 
   useEffect(() => {
     buscarBarbeiros()
@@ -105,7 +110,10 @@ export function BarbeirosMiniGestao({
     return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`
   }
 
-  const handleUploadFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Abre o seletor de arquivo e prepara a imagem para recorte
+   */
+  const handleSelecionarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const arquivo = e.target.files?.[0]
     if (!arquivo) return
 
@@ -114,15 +122,39 @@ export function BarbeirosMiniGestao({
       return
     }
 
-    if (arquivo.size > 5 * 1024 * 1024) {
-      toast({ tipo: 'erro', mensagem: 'A imagem deve ter no máximo 5MB' })
+    if (arquivo.size > 10 * 1024 * 1024) {
+      toast({ tipo: 'erro', mensagem: 'A imagem deve ter no máximo 10MB' })
       return
     }
 
+    // Criar URL temporária para preview e recorte
+    const urlTemporaria = URL.createObjectURL(arquivo)
+    setImagemParaRecortar(urlTemporaria)
+    setArquivoOriginal(arquivo)
+    
+    // Limpar input para permitir selecionar o mesmo arquivo novamente
+    if (inputFotoRef.current) {
+      inputFotoRef.current.value = ''
+    }
+  }
+
+  /**
+   * Processa a imagem recortada e faz upload
+   */
+  const handleRecorteConcluido = async (imagemRecortada: Blob) => {
     setUploadandoFoto(true)
+    setImagemParaRecortar(null)
+    
     try {
+      // Criar arquivo a partir do blob recortado
+      const arquivoRecortado = new File(
+        [imagemRecortada], 
+        arquivoOriginal?.name || 'foto-barbeiro.jpg',
+        { type: 'image/jpeg' }
+      )
+
       const formData = new FormData()
-      formData.append('file', arquivo)
+      formData.append('file', arquivoRecortado)
       formData.append('tenant_id', tenantId)
       formData.append('tipo', 'barbeiro')
 
@@ -135,14 +167,24 @@ export function BarbeirosMiniGestao({
       if (dados.error) throw new Error(dados.error)
 
       setFormulario({ ...formulario, foto_url: dados.url })
+      toast({ tipo: 'sucesso', mensagem: 'Foto atualizada com sucesso' })
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao enviar foto' })
     } finally {
       setUploadandoFoto(false)
-      if (inputFotoRef.current) {
-        inputFotoRef.current.value = ''
-      }
+      setArquivoOriginal(null)
     }
+  }
+
+  /**
+   * Cancela o recorte e limpa os estados
+   */
+  const handleCancelarRecorte = () => {
+    if (imagemParaRecortar) {
+      URL.revokeObjectURL(imagemParaRecortar)
+    }
+    setImagemParaRecortar(null)
+    setArquivoOriginal(null)
   }
 
   const toggleEspecialidade = (especialidade: string) => {
@@ -357,7 +399,7 @@ export function BarbeirosMiniGestao({
                     ref={inputFotoRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={handleUploadFoto}
+                    onChange={handleSelecionarFoto}
                     className="hidden"
                   />
                 </div>
@@ -555,6 +597,17 @@ export function BarbeirosMiniGestao({
         <p className="text-xs text-zinc-600 text-center">
           Limite de {limiteBarbeiros} profissionais do seu plano atingido
         </p>
+      )}
+
+      {/* Modal de Recorte de Imagem */}
+      {imagemParaRecortar && (
+        <RecorteImagem
+          imagemOriginal={imagemParaRecortar}
+          onRecorteConcluido={handleRecorteConcluido}
+          onCancelar={handleCancelarRecorte}
+          aspectoRecorte={1}
+          formatoCircular={true}
+        />
       )}
     </div>
   )

@@ -5,6 +5,11 @@
 
 /**
  * Formata número de telefone para JID do WhatsApp
+ * Remove o 9 extra dos celulares brasileiros para formato correto do WhatsApp
+ * 
+ * O WhatsApp Brasil usa formato: 55 + DDD (2) + número (8) = 12 dígitos
+ * Celulares brasileiros têm 9 na frente, mas o WhatsApp não usa esse 9.
+ * 
  * @param {string} telefone - Número de telefone
  * @returns {string} JID formatado (numero@s.whatsapp.net)
  */
@@ -19,17 +24,10 @@ export function formatarParaJid(telefone) {
     numeroLimpo = '55' + numeroLimpo;
   }
   
-  // Remove o 9 extra se tiver 13 dígitos (formato antigo)
-  // Formato correto: 55 + DDD (2) + Número (8 ou 9 dígitos)
-  // WhatsApp usa formato sem o 9 extra para alguns números
-  if (numeroLimpo.length === 13 && numeroLimpo.charAt(4) === '9') {
-    // Verifica se é um número móvel (DDD + 9 + 8 dígitos)
-    const ddd = parseInt(numeroLimpo.substring(2, 4));
-    // DDDs que usam 9 dígitos: maioria do Brasil
-    if (ddd >= 11 && ddd <= 99) {
-      // Mantém o 9 para números móveis brasileiros
-      // O WhatsApp aceita ambos os formatos
-    }
+  // Se tem 13 dígitos (55 + DDD + 9 + 8 dígitos), remover o 9 extra
+  // Formato: 5563981053014 -> 556381053014
+  if (numeroLimpo.length === 13 && numeroLimpo[4] === '9') {
+    numeroLimpo = numeroLimpo.slice(0, 4) + numeroLimpo.slice(5);
   }
   
   return `${numeroLimpo}@s.whatsapp.net`;

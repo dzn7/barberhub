@@ -30,7 +30,7 @@ Sua barbearia *${nomeBarbearia}* foi cadastrada com sucesso! 🎊
 📱 *Seu site está pronto:*
 🌐 barberhub.com.br/${slug}
 
-✨ *O que você pode fazer agora:*
+*O que você pode fazer agora:*
 • Cadastrar seus serviços
 • Adicionar barbeiros
 • Configurar horários

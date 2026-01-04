@@ -359,7 +359,7 @@ export default function DashboardCompleto() {
           <div className="space-y-2">
             <button
               onClick={() => window.location.reload()}
-              className="w-full px-4 py-2 bg-amber-500 text-black font-semibold rounded-lg hover:bg-amber-400 transition-colors"
+              className="w-full px-4 py-2 bg-white text-black font-semibold rounded-lg hover:bg-zinc-200 transition-colors"
             >
               Tentar novamente
             </button>
@@ -917,7 +917,7 @@ function GraficoBarbeiros({
     );
   }
 
-  const cores = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500'];
+  const cores = ['bg-zinc-600', 'bg-zinc-500', 'bg-zinc-400', 'bg-zinc-700'];
 
   return (
     <div className="h-64 space-y-4">

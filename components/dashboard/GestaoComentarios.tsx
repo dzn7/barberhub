@@ -155,7 +155,7 @@ export function GestaoComentarios() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-amber-500 mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 animate-spin text-zinc-500 mx-auto mb-4" />
           <p className="text-zinc-600 dark:text-zinc-400">Carregando comentários...</p>
         </div>
       </div>
@@ -208,12 +208,12 @@ export function GestaoComentarios() {
 
         <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+              <Clock className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
             </div>
             <div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Pendentes</p>
-              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              <p className="text-2xl font-bold text-zinc-600 dark:text-zinc-400">
                 {comentariosPendentes}
               </p>
             </div>
@@ -231,7 +231,7 @@ export function GestaoComentarios() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por nome, comentário ou trabalho..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-amber-500 dark:focus:border-amber-500 outline-none transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-zinc-500 dark:focus:border-zinc-500 outline-none transition-colors"
           />
         </div>
 
@@ -243,7 +243,7 @@ export function GestaoComentarios() {
               onClick={() => setFiltroStatus(status)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filtroStatus === status
-                  ? "bg-amber-500 text-white"
+                  ? "bg-white text-black dark:bg-zinc-100"
                   : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
               }`}
             >
@@ -296,7 +296,7 @@ export function GestaoComentarios() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-800 flex items-center justify-center">
                             <span className="text-white text-xs font-bold">
                               {comentario.nome.charAt(0).toUpperCase()}
                             </span>
@@ -308,7 +308,7 @@ export function GestaoComentarios() {
                             className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                               comentario.aprovado
                                 ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                                : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                             }`}
                           >
                             {comentario.aprovado ? "Aprovado" : "Pendente"}
