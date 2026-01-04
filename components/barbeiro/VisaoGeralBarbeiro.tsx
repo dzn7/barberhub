@@ -55,20 +55,20 @@ export function VisaoGeralBarbeiro() {
       // Buscar comissões do mês
       const { data: comissoesMes } = await supabase
         .from('comissoes')
-        .select('valor')
+        .select('valor_comissao')
         .eq('tenant_id', tenant.id)
         .eq('barbeiro_id', barbeiro.id)
-        .gte('data', inicioMes.toISOString())
-        .lte('data', fimMes.toISOString())
+        .gte('criado_em', inicioMes.toISOString())
+        .lte('criado_em', fimMes.toISOString())
 
       // Buscar comissões da semana
       const { data: comissoesSemana } = await supabase
         .from('comissoes')
-        .select('valor')
+        .select('valor_comissao')
         .eq('tenant_id', tenant.id)
         .eq('barbeiro_id', barbeiro.id)
-        .gte('data', inicioSemana.toISOString())
-        .lte('data', fimSemana.toISOString())
+        .gte('criado_em', inicioSemana.toISOString())
+        .lte('criado_em', fimSemana.toISOString())
 
       // Buscar agendamentos de hoje
       const inicioHoje = new Date(hoje.setHours(0, 0, 0, 0))
@@ -94,8 +94,8 @@ export function VisaoGeralBarbeiro() {
         .neq('status', 'cancelado')
 
       // Calcular métricas
-      const totalComissaoMes = (comissoesMes || []).reduce((acc, c) => acc + Number(c.valor || 0), 0)
-      const totalComissaoSemana = (comissoesSemana || []).reduce((acc, c) => acc + Number(c.valor || 0), 0)
+      const totalComissaoMes = (comissoesMes || []).reduce((acc, c) => acc + Number(c.valor_comissao || 0), 0)
+      const totalComissaoSemana = (comissoesSemana || []).reduce((acc, c) => acc + Number(c.valor_comissao || 0), 0)
       const totalAgendamentosHoje = (agendamentosHoje || []).length
       const totalAgendamentosSemana = (agendamentosSemana || []).length
       const concluidos = (agendamentosSemana || []).filter(a => a.status === 'concluido').length

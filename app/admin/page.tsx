@@ -200,14 +200,28 @@ export default function DashboardCompleto() {
         throw erroAtendimentos;
       }
 
+      // Buscar transações de receita do período
+      const { data: receitas, error: erroReceitas } = await supabase
+        .from('transacoes')
+        .select('valor')
+        .eq('tenant_id', tenant?.id)
+        .eq('tipo', 'receita')
+        .gte('data', inicioMes.split('T')[0])
+        .lte('data', fimMes.split('T')[0]);
+
+      console.log('[Métricas] Receitas (transações):', { 
+        total: receitas?.length,
+        erro: erroReceitas 
+      });
+
       // Buscar despesas do mês
       const { data: despesas, error: erroDespesas } = await supabase
         .from('transacoes')
         .select('valor')
         .eq('tenant_id', tenant?.id)
         .eq('tipo', 'despesa')
-        .gte('data', inicioMes)
-        .lte('data', fimMes);
+        .gte('data', inicioMes.split('T')[0])
+        .lte('data', fimMes.split('T')[0]);
 
       console.log('[Métricas] Despesas:', { 
         total: despesas?.length,
@@ -220,15 +234,19 @@ export default function DashboardCompleto() {
       }
 
       // Calcular métricas
+      // Priorizar receitas da tabela transações se disponíveis
+      const receitaTransacoes = (receitas as any[])?.reduce((sum, r) => sum + Number(r.valor || 0), 0) || 0;
       const receitaAgendamentos = (agendamentos as any[])?.reduce((sum, a) => sum + (a.servicos?.preco || 0), 0) || 0;
-      const receitaAtendimentos = (atendimentos as any[])?.reduce((sum, a) => sum + a.valor, 0) || 0;
-      const receitaTotal = receitaAgendamentos + receitaAtendimentos;
-      const totalDespesas = (despesas as any[])?.reduce((sum, d) => sum + d.valor, 0) || 0;
+      const receitaAtendimentos = (atendimentos as any[])?.reduce((sum, a) => sum + Number(a.valor || 0), 0) || 0;
+      // Usar receita de transações como principal, ou soma de agendamentos + atendimentos presenciais
+      const receitaTotal = receitaTransacoes > 0 ? receitaTransacoes : (receitaAgendamentos + receitaAtendimentos);
+      const totalDespesas = (despesas as any[])?.reduce((sum, d) => sum + Number(d.valor || 0), 0) || 0;
       const lucroLiquidoReal = receitaTotal - totalDespesas;
       const totalAtendimentos = (agendamentos?.length || 0) + (atendimentos?.length || 0);
       const ticketMedio = totalAtendimentos > 0 ? receitaTotal / totalAtendimentos : 0;
 
       console.log('[Métricas] Cálculos intermediários:', {
+        receitaTransacoes,
         receitaAgendamentos,
         receitaAtendimentos,
         receitaTotal,

@@ -551,11 +551,21 @@ export function CalendarioSemanalNovo() {
                   )}
 
                   {/* Agendamentos */}
-                  <div className="absolute inset-0 p-px sm:p-0.5">
-                    {agDia.map(ag => {
+                  <div className="absolute inset-0 p-px">
+                    {agDia.map((ag, index) => {
                       const { top, height } = calcularPosicao(ag.data_hora, ag.servicos?.duracao || 30);
                       const status = STATUS_CORES[ag.status as keyof typeof STATUS_CORES] || STATUS_CORES.pendente;
                       const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
+                      
+                      // Calcular sobreposições para posicionar cards lado a lado
+                      const agendamentosMesmoHorario = agDia.filter(a => {
+                        const posA = calcularPosicao(a.data_hora, a.servicos?.duracao || 30);
+                        return (posA.top < top + height && posA.top + posA.height > top);
+                      });
+                      const indexNoGrupo = agendamentosMesmoHorario.findIndex(a => a.id === ag.id);
+                      const totalNoGrupo = agendamentosMesmoHorario.length;
+                      const largura = totalNoGrupo > 1 ? `${100 / totalNoGrupo}%` : '100%';
+                      const left = totalNoGrupo > 1 ? `${(indexNoGrupo / totalNoGrupo) * 100}%` : '0';
 
                       return (
                         <motion.div
@@ -566,18 +576,25 @@ export function CalendarioSemanalNovo() {
                             setAgendamentoSelecionado(ag);
                             setModalDetalhesAberto(true);
                           }}
-                          className={`absolute left-0.5 right-0.5 sm:left-1 sm:right-1 ${status.bg} rounded cursor-pointer overflow-hidden shadow-sm hover:shadow-md hover:brightness-110 transition-all`}
-                          style={{ top: `${top}px`, height: `${height}px`, minHeight: '36px' }}
+                          className={`absolute ${status.bg} rounded-md cursor-pointer overflow-hidden shadow-sm hover:shadow-lg hover:brightness-110 hover:z-30 transition-all border-l-2 ${status.border}`}
+                          style={{ 
+                            top: `${top}px`, 
+                            height: `${Math.max(height, 44)}px`,
+                            left: left,
+                            width: `calc(${largura} - 4px)`,
+                            marginLeft: '2px',
+                            zIndex: 10 + index
+                          }}
                         >
-                          <div className="p-1 sm:p-1.5 h-full flex flex-col text-white">
-                            <div className="text-[10px] sm:text-xs font-semibold opacity-90">
-                              {format(dataBrasilia, 'HH:mm')}
+                          <div className="p-1.5 h-full flex flex-col text-white overflow-hidden">
+                            <div className="flex items-center gap-1 text-[10px] font-bold opacity-95">
+                              <span>{format(dataBrasilia, 'HH:mm')}</span>
                             </div>
-                            <div className="text-[10px] sm:text-xs font-medium truncate">
-                              {ag.clientes?.nome}
+                            <div className="text-[11px] font-semibold truncate leading-tight mt-0.5">
+                              {ag.clientes?.nome?.split(' ')[0] || 'Cliente'}
                             </div>
-                            {height > 50 && (
-                              <div className="text-[9px] sm:text-[10px] opacity-75 truncate">
+                            {height > 55 && (
+                              <div className="text-[10px] opacity-80 truncate mt-auto">
                                 {ag.servicos?.nome}
                               </div>
                             )}
