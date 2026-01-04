@@ -22,6 +22,7 @@ import { GestaoHorarios } from "@/components/dashboard/GestaoHorarios";
 import { GestaoHorariosAvancada } from "@/components/dashboard/GestaoHorariosAvancada";
 import { Relatorios } from "@/components/dashboard/Relatorios";
 import { ConfiguracaoBarbearia } from "@/components/dashboard/ConfiguracaoBarbearia";
+import { TelaTesteExpirado } from "@/components/dashboard/TelaTesteExpirado";
 import { AlternadorTema } from "@/components/AlternadorTema";
 // PWA removido temporariamente
 // import { NotificationPermission } from "@/components/NotificationPermission";
@@ -80,6 +81,22 @@ export default function DashboardCompleto() {
       router.push("/entrar");
     }
   }, [carregandoAuth, user, router]);
+
+  // Verificar se o trial expirou
+  const verificarTrialExpirado = (): boolean => {
+    if (!tenant) return false;
+    
+    // Se não está no plano trial, não expirou
+    if (tenant.plano !== 'trial') return false;
+    
+    // Verificar se a data de fim do trial já passou
+    const dataFimTrial = new Date(tenant.trial_fim);
+    const agora = new Date();
+    
+    return agora > dataFimTrial;
+  };
+
+  const trialExpirado = verificarTrialExpirado();
 
   useEffect(() => {
     if (user && tenant) {
@@ -376,6 +393,16 @@ export default function DashboardCompleto() {
     );
   }
 
+  // Se o trial expirou, mostrar tela de expiração
+  if (trialExpirado && tenant) {
+    return (
+      <TelaTesteExpirado
+        nomeBarbearia={tenant.nome}
+        dataExpiracao={tenant.trial_fim}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black overflow-x-hidden">
       {/* Componente de Notificações Push - PWA removido temporariamente */}
@@ -516,7 +543,8 @@ export default function DashboardCompleto() {
                   { value: "comissoes", icon: Percent, label: "Comissões" },
                   { value: "usuarios", icon: Users, label: "Usuários" },
                   { value: "servicos", icon: Edit3, label: "Serviços" },
-                                    { value: "remarcacao", icon: Clock, label: "Remarcação" },
+                  { value: "barbeiros", icon: Scissors, label: "Barbeiros" },
+                  { value: "remarcacao", icon: Clock, label: "Remarcação" },
                   { value: "horarios", icon: Clock, label: "Horários" },
                   { value: "relatorios", icon: BarChart3, label: "Relatórios" },
                   { value: "configuracoes", icon: Settings, label: "Configurações" },
@@ -743,7 +771,11 @@ export default function DashboardCompleto() {
             <GestaoServicos />
           </Tabs.Content>
 
-          
+          {/* Barbeiros */}
+          <Tabs.Content value="barbeiros">
+            <GestaoBarbeiros />
+          </Tabs.Content>
+
           {/* Remarcação */}
           <Tabs.Content value="remarcacao">
             <RemarcacaoAgendamento />
