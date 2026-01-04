@@ -513,7 +513,7 @@ export default function RegistrarPage() {
                   Endereço da sua página <span className="text-red-400">*</span>
                 </label>
                 <div className={`flex items-center bg-zinc-900 border rounded-lg overflow-hidden transition-colors ${classesBordaValidacao(validacaoSlug)}`}>
-                  <span className="px-3 text-zinc-500 text-sm select-none" aria-hidden="true">barberhub.online/</span>
+                  <span className="px-2 sm:px-3 text-zinc-500 text-xs sm:text-sm select-none whitespace-nowrap flex-shrink-0" aria-hidden="true">barberhub.online/</span>
                   <input
                     id="slug"
                     type="text"
@@ -528,13 +528,13 @@ export default function RegistrarPage() {
                     aria-required="true"
                     aria-describedby="slug_ajuda slug_status"
                     aria-invalid={validacaoSlug.estado === 'invalido'}
-                    className="flex-1 bg-transparent px-2 py-3 text-white placeholder:text-zinc-500 focus:outline-none"
+                    className="flex-1 min-w-0 bg-transparent px-2 py-3 text-white placeholder:text-zinc-500 focus:outline-none"
                   />
-                  <div className="pr-3" aria-hidden="true">
+                  <div className="pr-2 sm:pr-3 flex-shrink-0" aria-hidden="true">
                     {renderizarIndicadorValidacao(validacaoSlug)}
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-1">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-1">
                   <p id="slug_ajuda" className="text-xs text-zinc-500">
                     Este será o link da sua página de agendamentos
                   </p>

@@ -69,21 +69,35 @@ export function GestaoBarbeiros() {
   const carregarBarbeiros = async () => {
     if (!tenant) return;
 
-    setCarregando(true);
-    const { data } = await supabase
-      .from("barbeiros")
-      .select("*")
-      .eq("tenant_id", tenant.id)
-      .eq("ativo", true)
-      .order("nome");
+    try {
+      setCarregando(true);
+      const { data, error } = await supabase
+        .from("barbeiros")
+        .select("*")
+        .eq("tenant_id", tenant.id)
+        .eq("ativo", true)
+        .order("nome");
 
-    setBarbeiros(data || []);
-    setCarregando(false);
+      if (error) {
+        console.error("Erro ao carregar barbeiros:", error);
+        toast({ tipo: "erro", mensagem: "Erro ao carregar barbeiros" });
+        return;
+      }
+
+      setBarbeiros(data || []);
+    } catch (erro) {
+      console.error("Erro ao carregar barbeiros:", erro);
+      toast({ tipo: "erro", mensagem: "Erro ao carregar barbeiros" });
+    } finally {
+      setCarregando(false);
+    }
   };
 
   useEffect(() => {
-    carregarBarbeiros();
-  }, [tenant]);
+    if (tenant?.id) {
+      carregarBarbeiros();
+    }
+  }, [tenant?.id]);
 
   const formatarTelefone = (valor: string) => {
     const numeros = valor.replace(/\D/g, "");
