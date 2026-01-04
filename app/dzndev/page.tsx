@@ -78,6 +78,48 @@ interface StatusBot {
   erro: string | null
 }
 
+interface MetricasSupabase {
+  database: {
+    usado_mb: number
+    limite_mb: number
+    percentual: number
+  }
+  auth: {
+    usuarios: number
+    limite: number
+    percentual: number
+  }
+  tabelas: {
+    tenants: number
+    agendamentos: number
+    clientes: number
+    barbeiros: number
+    servicos: number
+    trabalhos: number
+    transacoes: number
+    comentarios: number
+    total_registros: number
+  }
+}
+
+interface MetricasR2 {
+  total_objetos: number
+  tamanho_total_bytes: number
+  tamanho_total_mb: number
+  limite_gb: number
+  percentual: number
+}
+
+interface MetricasFly {
+  online: boolean
+  app_name: string
+  region: string
+  vm_size: string
+  memory_mb: number
+  status: string
+  erro: string | null
+}
+
 /**
  * Painel Administrativo do SaaS BarberHub
  * Acesso exclusivo para o dono do sistema
@@ -108,6 +150,12 @@ export default function PainelAdminSaaS() {
   // Status do bot
   const [statusBot, setStatusBot] = useState<StatusBot>({ online: false, ultimaVerificacao: null, erro: null })
   const [verificandoBot, setVerificandoBot] = useState(false)
+  
+  // Métricas de infraestrutura
+  const [metricasSupabase, setMetricasSupabase] = useState<MetricasSupabase | null>(null)
+  const [metricasR2, setMetricasR2] = useState<MetricasR2 | null>(null)
+  const [metricasFly, setMetricasFly] = useState<MetricasFly | null>(null)
+  const [carregandoMetricas, setCarregandoMetricas] = useState(false)
 
   // Verificar se já está autenticado (sessão local)
   useEffect(() => {
@@ -122,6 +170,7 @@ export default function PainelAdminSaaS() {
     if (autenticado) {
       carregarDados()
       verificarStatusBot()
+      buscarMetricasSupabase()
     }
   }, [autenticado])
 
@@ -210,6 +259,31 @@ export default function PainelAdminSaaS() {
       console.error('Erro ao carregar dados:', erro)
     } finally {
       setCarregando(false)
+    }
+  }
+
+  /**
+   * Busca métricas reais do Supabase via API
+   */
+  const buscarMetricasSupabase = async () => {
+    setCarregandoMetricas(true)
+    try {
+      const resposta = await fetch('/api/admin/metricas', {
+        headers: {
+          'x-admin-auth': 'dzndev-1503'
+        }
+      })
+      
+      if (resposta.ok) {
+        const dados = await resposta.json()
+        setMetricasSupabase(dados.supabase)
+        setMetricasR2(dados.cloudflare_r2)
+        setMetricasFly(dados.fly_io)
+      }
+    } catch (erro) {
+      console.error('Erro ao buscar métricas:', erro)
+    } finally {
+      setCarregandoMetricas(false)
     }
   }
 
@@ -439,12 +513,16 @@ export default function PainelAdminSaaS() {
 
             <div className="flex items-center gap-3">
               <button
-                onClick={carregarDados}
-                disabled={carregando}
+                onClick={() => {
+                  carregarDados()
+                  buscarMetricasSupabase()
+                  verificarStatusBot()
+                }}
+                disabled={carregando || carregandoMetricas}
                 className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                 title="Atualizar dados"
               >
-                <RefreshCw className={`w-5 h-5 ${carregando ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 ${carregando || carregandoMetricas ? 'animate-spin' : ''}`} />
               </button>
               <button
                 onClick={fazerLogout}
@@ -744,34 +822,64 @@ export default function PainelAdminSaaS() {
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-zinc-600 dark:text-zinc-400">Database</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">500 MB (Free)</span>
+                          <span className="text-zinc-900 dark:text-white font-medium">
+                            {metricasSupabase ? `${metricasSupabase.database.usado_mb.toFixed(2)} MB` : '...'} / 500 MB
+                          </span>
                         </div>
                         <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: '15%' }} />
+                          <div 
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                            style={{ width: `${metricasSupabase?.database.percentual || 0}%` }} 
+                          />
                         </div>
-                        <p className="text-xs text-zinc-500 mt-1">~75 MB usado (estimativa)</p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          {metricasSupabase ? `${metricasSupabase.database.percentual.toFixed(2)}% usado` : 'Carregando...'}
+                        </p>
                       </div>
 
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-zinc-600 dark:text-zinc-400">Auth Users</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">50.000 (Free)</span>
+                          <span className="text-zinc-900 dark:text-white font-medium">
+                            {metricasSupabase?.auth.usuarios || 0} / 50.000
+                          </span>
                         </div>
                         <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: '1%' }} />
+                          <div 
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                            style={{ width: `${Math.max(metricasSupabase?.auth.percentual || 0, 0.5)}%` }} 
+                          />
                         </div>
-                        <p className="text-xs text-zinc-500 mt-1">{estatisticas?.totalTenants || 0} usuários</p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          {metricasSupabase ? `${metricasSupabase.auth.percentual.toFixed(3)}% usado` : 'Carregando...'}
+                        </p>
                       </div>
 
                       <div>
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-zinc-600 dark:text-zinc-400">API Requests</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">500K/mês</span>
+                          <span className="text-zinc-600 dark:text-zinc-400">Total Registros</span>
+                          <span className="text-zinc-900 dark:text-white font-medium">
+                            {metricasSupabase?.tabelas.total_registros.toLocaleString('pt-BR') || '...'}
+                          </span>
                         </div>
-                        <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full" style={{ width: '5%' }} />
+                        <div className="text-xs text-zinc-500 space-y-0.5 mt-2">
+                          <div className="flex justify-between">
+                            <span>Tenants:</span>
+                            <span>{metricasSupabase?.tabelas.tenants || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Agendamentos:</span>
+                            <span>{metricasSupabase?.tabelas.agendamentos || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Clientes:</span>
+                            <span>{metricasSupabase?.tabelas.clientes || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Barbeiros:</span>
+                            <span>{metricasSupabase?.tabelas.barbeiros || 0}</span>
+                          </div>
                         </div>
-                        <p className="text-xs text-zinc-500 mt-1">Uso baixo</p>
                       </div>
                     </div>
 
@@ -802,34 +910,38 @@ export default function PainelAdminSaaS() {
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-zinc-600 dark:text-zinc-400">Storage</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">10 GB (Free)</span>
+                          <span className="text-zinc-900 dark:text-white font-medium">
+                            {metricasR2 ? `${metricasR2.tamanho_total_mb.toFixed(2)} MB` : '...'} / 10 GB
+                          </span>
                         </div>
                         <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full" style={{ width: '5%' }} />
+                          <div 
+                            className="h-full bg-orange-500 rounded-full transition-all duration-500" 
+                            style={{ width: `${Math.max(metricasR2?.percentual || 0, 0.5)}%` }} 
+                          />
                         </div>
-                        <p className="text-xs text-zinc-500 mt-1">~500 MB usado (estimativa)</p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          {metricasR2 ? `${metricasR2.percentual.toFixed(2)}% usado` : 'Carregando...'}
+                        </p>
                       </div>
 
                       <div>
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-zinc-600 dark:text-zinc-400">Class A Ops</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">1M/mês</span>
+                          <span className="text-zinc-600 dark:text-zinc-400">Total de Arquivos</span>
+                          <span className="text-zinc-900 dark:text-white font-medium">
+                            {metricasR2?.total_objetos.toLocaleString('pt-BR') || '...'}
+                          </span>
                         </div>
-                        <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full" style={{ width: '2%' }} />
-                        </div>
-                        <p className="text-xs text-zinc-500 mt-1">Uploads/Deletes</p>
+                        <p className="text-xs text-zinc-500">Imagens armazenadas no bucket</p>
                       </div>
 
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-zinc-600 dark:text-zinc-400">Class B Ops</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">10M/mês</span>
-                        </div>
-                        <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-orange-500 rounded-full" style={{ width: '1%' }} />
-                        </div>
-                        <p className="text-xs text-zinc-500 mt-1">Downloads/Reads</p>
+                      <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                        <p className="text-xs text-zinc-500">Limites Free Tier:</p>
+                        <ul className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 space-y-0.5">
+                          <li>• 10 GB de storage</li>
+                          <li>• 1M Class A ops/mês</li>
+                          <li>• 10M Class B ops/mês</li>
+                        </ul>
                       </div>
                     </div>
 
@@ -847,15 +959,15 @@ export default function PainelAdminSaaS() {
                   {/* Bot Fly.io */}
                   <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 ${statusBot.online ? 'bg-purple-500' : 'bg-zinc-500'} rounded-lg flex items-center justify-center`}>
+                      <div className={`w-10 h-10 ${metricasFly?.online || statusBot.online ? 'bg-purple-500' : 'bg-zinc-500'} rounded-lg flex items-center justify-center`}>
                         <Bot className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-zinc-900 dark:text-white">Bot WhatsApp</h3>
-                        <p className="text-xs text-zinc-500">Fly.io - bot-barberhub</p>
+                        <p className="text-xs text-zinc-500">Fly.io - {metricasFly?.app_name || 'bot-barberhub'}</p>
                       </div>
                       <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
-                        statusBot.online 
+                        metricasFly?.online || statusBot.online 
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-600' 
                           : 'bg-red-100 dark:bg-red-900/30 text-red-600'
                       }`}>
@@ -868,28 +980,37 @@ export default function PainelAdminSaaS() {
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-zinc-600 dark:text-zinc-400">VM</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">shared-cpu-1x</span>
+                          <span className="text-zinc-900 dark:text-white font-medium">
+                            {metricasFly?.vm_size || 'shared-cpu-1x'}
+                          </span>
                         </div>
-                        <p className="text-xs text-zinc-500">256 MB RAM • Região: GRU (São Paulo)</p>
+                        <p className="text-xs text-zinc-500">
+                          {metricasFly?.memory_mb || 256} MB RAM • Região: {metricasFly?.region?.toUpperCase() || 'GRU'} (São Paulo)
+                        </p>
                       </div>
 
                       <div>
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-zinc-600 dark:text-zinc-400">Volume</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">1 GB</span>
+                          <span className="text-zinc-600 dark:text-zinc-400">Status</span>
+                          <span className={`font-medium ${
+                            metricasFly?.status === 'started' 
+                              ? 'text-green-600' 
+                              : 'text-zinc-500'
+                          }`}>
+                            {metricasFly?.status || 'Desconhecido'}
+                          </span>
                         </div>
-                        <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-purple-500 rounded-full" style={{ width: '10%' }} />
-                        </div>
-                        <p className="text-xs text-zinc-500 mt-1">Credenciais WhatsApp</p>
+                        <p className="text-xs text-zinc-500">Estado atual da máquina</p>
                       </div>
 
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-zinc-600 dark:text-zinc-400">Free Tier</span>
-                          <span className="text-zinc-900 dark:text-white font-medium">$5/mês</span>
-                        </div>
-                        <p className="text-xs text-zinc-500">3 VMs grátis • 3GB storage</p>
+                      <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                        <p className="text-xs text-zinc-500">Limites Free Tier:</p>
+                        <ul className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 space-y-0.5">
+                          <li>• 3 VMs shared-cpu-1x</li>
+                          <li>• 256 MB RAM cada</li>
+                          <li>• 3 GB volume total</li>
+                          <li>• $5 crédito mensal</li>
+                        </ul>
                       </div>
 
                       {statusBot.ultimaVerificacao && (

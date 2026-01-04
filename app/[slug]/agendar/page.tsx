@@ -567,81 +567,155 @@ export default function PaginaAgendar() {
   }
 
   if (agendamentoConcluido) {
-    const barbeiroNome = barbeiros.find(b => b.id === barbeiroSelecionado)?.nome || ''
-    const servicoNome = servicos.find(s => s.id === servicoSelecionado)?.nome || ''
-    const servicoPreco = servicos.find(s => s.id === servicoSelecionado)?.preco || 0
+    const barbeiroInfo = barbeiros.find(b => b.id === barbeiroSelecionado)
+    const servicoInfo = servicos.find(s => s.id === servicoSelecionado)
 
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: cores.primaria }}>
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center space-y-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="max-w-md w-full"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="w-20 h-20 mx-auto rounded-full flex items-center justify-center"
-            style={{ backgroundColor: cores.secundaria }}
-          >
-            <Check className="w-10 h-10" style={{ color: cores.primaria }} />
-          </motion.div>
-          
-          <h2 className="text-3xl font-bold" style={{ color: cores.secundaria }}>
-            Agendamento Confirmado!
-          </h2>
-          
-          <p className="text-lg" style={{ color: cores.destaque }}>
-            Seu horário foi agendado com sucesso.
-          </p>
-
+          {/* Card Principal */}
           <div 
-            className="p-6 rounded-xl border space-y-3 text-left"
+            className="rounded-2xl overflow-hidden border"
             style={{ 
-              backgroundColor: cores.destaque + '10',
-              borderColor: cores.destaque + '20'
+              backgroundColor: cores.destaque + '08',
+              borderColor: cores.destaque + '15'
             }}
           >
-            <div className="flex justify-between">
-              <span style={{ color: cores.destaque }}>Barbeiro:</span>
-              <span className="font-semibold" style={{ color: cores.secundaria }}>{barbeiroNome}</span>
-            </div>
-            <div className="flex justify-between">
-              <span style={{ color: cores.destaque }}>Serviço:</span>
-              <span className="font-semibold" style={{ color: cores.secundaria }}>{servicoNome}</span>
-            </div>
-            <div className="flex justify-between">
-              <span style={{ color: cores.destaque }}>Data:</span>
-              <span className="font-semibold" style={{ color: cores.secundaria }}>
-                {dataSelecionada && format(parse(dataSelecionada, 'yyyy-MM-dd', new Date()), "dd 'de' MMMM", { locale: ptBR })}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span style={{ color: cores.destaque }}>Horário:</span>
-              <span className="font-semibold" style={{ color: cores.secundaria }}>{horarioSelecionado}</span>
-            </div>
+            {/* Header com ícone de sucesso */}
             <div 
-              className="flex justify-between pt-3 mt-3 border-t"
-              style={{ borderColor: cores.destaque + '20' }}
+              className="px-6 py-8 text-center"
+              style={{ backgroundColor: cores.secundaria + '08' }}
             >
-              <span style={{ color: cores.destaque }}>Valor:</span>
-              <span className="font-bold text-lg" style={{ color: cores.secundaria }}>
-                R$ {servicoPreco.toFixed(2)}
-              </span>
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 15 }}
+                className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4"
+                style={{ backgroundColor: cores.secundaria }}
+              >
+                <Check className="w-8 h-8" style={{ color: cores.primaria }} />
+              </motion.div>
+              
+              <motion.h2 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-2xl font-bold mb-2" 
+                style={{ color: cores.secundaria }}
+              >
+                Agendamento Confirmado
+              </motion.h2>
+              
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-sm" 
+                style={{ color: cores.destaque }}
+              >
+                Você receberá uma confirmação por WhatsApp
+              </motion.p>
+            </div>
+
+            {/* Detalhes do Agendamento */}
+            <div className="px-6 py-6 space-y-4">
+              {/* Serviço e Profissional */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="flex items-center gap-4"
+              >
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: cores.destaque + '15' }}
+                >
+                  <Scissors className="w-5 h-5" style={{ color: cores.secundaria }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate" style={{ color: cores.secundaria }}>
+                    {servicoInfo?.nome}
+                  </p>
+                  <p className="text-sm" style={{ color: cores.destaque }}>
+                    com {barbeiroInfo?.nome} • {servicoInfo?.duracao} min
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Data e Horário */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="flex items-center gap-4"
+              >
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: cores.destaque + '15' }}
+                >
+                  <Calendar className="w-5 h-5" style={{ color: cores.secundaria }} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold" style={{ color: cores.secundaria }}>
+                    {dataSelecionada && format(parse(dataSelecionada, 'yyyy-MM-dd', new Date()), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                  </p>
+                  <p className="text-sm" style={{ color: cores.destaque }}>
+                    às {horarioSelecionado}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Valor */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+                className="pt-4 mt-4 border-t flex items-center justify-between"
+                style={{ borderColor: cores.destaque + '15' }}
+              >
+                <span className="text-sm" style={{ color: cores.destaque }}>Valor do serviço</span>
+                <span className="text-xl font-bold" style={{ color: cores.secundaria }}>
+                  R$ {servicoInfo?.preco.toFixed(2)}
+                </span>
+              </motion.div>
+            </div>
+
+            {/* Footer com botão */}
+            <div className="px-6 pb-6">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Link
+                  href={`/${slug}`}
+                  className="block w-full py-3.5 font-semibold rounded-xl text-center transition-all hover:opacity-90 active:scale-[0.98]"
+                  style={{ 
+                    backgroundColor: cores.secundaria,
+                    color: cores.primaria
+                  }}
+                >
+                  Voltar ao Início
+                </Link>
+              </motion.div>
             </div>
           </div>
 
-          <Link
-            href={`/${slug}`}
-            className="block w-full py-3 font-semibold rounded-xl transition-all hover:scale-[1.02]"
-            style={{ 
-              backgroundColor: cores.secundaria,
-              color: cores.primaria
-            }}
+          {/* Texto de rodapé */}
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-center text-xs mt-4" 
+            style={{ color: cores.destaque + '80' }}
           >
-            Voltar ao Início
-          </Link>
+            Dúvidas? Entre em contato com {tenant.nome}
+          </motion.p>
         </motion.div>
       </div>
     )
@@ -722,14 +796,15 @@ export default function PaginaAgendar() {
 
       {/* Content */}
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {/* Etapa 1: Serviço e Barbeiro */}
           {etapa === 1 && (
             <motion.div
               key="etapa1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
               className="space-y-8"
             >
               {/* Serviços */}
@@ -834,9 +909,10 @@ export default function PaginaAgendar() {
           {etapa === 2 && (
             <motion.div
               key="etapa2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
               className="space-y-8"
             >
               {/* Datas */}
@@ -932,9 +1008,10 @@ export default function PaginaAgendar() {
           {etapa === 3 && (
             <motion.div
               key="etapa3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
               className="space-y-6"
             >
               <h2 
@@ -1022,9 +1099,10 @@ export default function PaginaAgendar() {
           {etapa === 4 && (
             <motion.div
               key="etapa4"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
               className="space-y-6"
             >
               <h2 

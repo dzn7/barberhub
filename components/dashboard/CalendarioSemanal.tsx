@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ChevronLeft, ChevronRight, Calendar, User, Scissors, CheckCircle, XCircle, MessageCircle, Trash2, X, Clock } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Calendar, User, Scissors, CheckCircle, XCircle, Trash2, X, Clock } from "lucide-react";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { format, addDays, startOfWeek, isSameDay, parseISO, subDays } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
@@ -955,7 +956,7 @@ export function CalendarioSemanal() {
                   onClick={enviarWhatsApp}
                   className="flex items-center justify-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium"
                 >
-                  <MessageCircle className="w-5 h-5" />
+                  <WhatsAppIcon className="w-5 h-5" />
                   WhatsApp
                 </button>
               </div>

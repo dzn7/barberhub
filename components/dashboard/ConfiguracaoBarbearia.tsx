@@ -17,12 +17,25 @@ interface ConfiguracaoBarbeariaProps {
 
 // Paletas sofisticadas e elegantes - design monocromático profissional
 const CORES_PREDEFINIDAS = [
+  // Tons escuros clássicos
   { nome: "Obsidian", descricao: "Elegância clássica", primaria: "#09090b", secundaria: "#fafafa", destaque: "#fafafa" },
   { nome: "Grafite", descricao: "Minimalismo moderno", primaria: "#18181b", secundaria: "#f4f4f5", destaque: "#a1a1aa" },
   { nome: "Midnight", descricao: "Sofisticação noturna", primaria: "#0c0a09", secundaria: "#fafaf9", destaque: "#a8a29e" },
   { nome: "Slate", descricao: "Profissional discreto", primaria: "#0f172a", secundaria: "#f8fafc", destaque: "#94a3b8" },
   { nome: "Charcoal", descricao: "Neutro atemporal", primaria: "#171717", secundaria: "#fafafa", destaque: "#d4d4d4" },
   { nome: "Onyx", descricao: "Contraste marcante", primaria: "#0a0a0a", secundaria: "#ffffff", destaque: "#737373" },
+  // Tons com cor
+  { nome: "Navy", descricao: "Azul profundo", primaria: "#0c1929", secundaria: "#f0f9ff", destaque: "#38bdf8" },
+  { nome: "Forest", descricao: "Verde floresta", primaria: "#052e16", secundaria: "#f0fdf4", destaque: "#4ade80" },
+  { nome: "Wine", descricao: "Vinho elegante", primaria: "#1c0a0a", secundaria: "#fef2f2", destaque: "#f87171" },
+  { nome: "Royal", descricao: "Roxo real", primaria: "#1e1033", secundaria: "#faf5ff", destaque: "#a78bfa" },
+  { nome: "Copper", descricao: "Cobre vintage", primaria: "#1c1210", secundaria: "#fffbeb", destaque: "#f59e0b" },
+  { nome: "Ocean", descricao: "Oceano profundo", primaria: "#0c1a1f", secundaria: "#ecfeff", destaque: "#22d3d8" },
+  // Tons claros
+  { nome: "Snow", descricao: "Branco neve", primaria: "#ffffff", secundaria: "#18181b", destaque: "#71717a" },
+  { nome: "Pearl", descricao: "Pérola suave", primaria: "#fafafa", secundaria: "#27272a", destaque: "#a1a1aa" },
+  { nome: "Cream", descricao: "Creme clássico", primaria: "#fffbeb", secundaria: "#292524", destaque: "#a8a29e" },
+  { nome: "Mint", descricao: "Menta fresca", primaria: "#f0fdf4", secundaria: "#14532d", destaque: "#22c55e" },
 ];
 
 export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) {

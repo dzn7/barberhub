@@ -16,10 +16,10 @@ import {
   Scissors,
   Users,
   ChevronRight,
-  MessageCircle,
   Loader2,
   ArrowRight
 } from 'lucide-react'
+import { WhatsAppIcon } from '@/components/WhatsAppIcon'
 
 interface Tenant {
   id: string
@@ -251,7 +251,7 @@ export default function PaginaBarbearia() {
                   backgroundColor: cores.destaque + '10'
                 }}
               >
-                <MessageCircle className="w-5 h-5" />
+                <WhatsAppIcon className="w-5 h-5" />
                 WhatsApp
               </a>
             )}
@@ -519,7 +519,20 @@ export default function PaginaBarbearia() {
       >
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-wrap justify-center gap-6">
-            {tenant.telefone && (
+            {tenant.whatsapp && (
+              <a 
+                href={`https://wa.me/${tenant.whatsapp.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 transition-opacity hover:opacity-80"
+                style={{ color: cores.destaque }}
+              >
+                <WhatsAppIcon className="w-4 h-4" />
+                {tenant.whatsapp}
+              </a>
+            )}
+
+            {tenant.telefone && !tenant.whatsapp && (
               <a 
                 href={`tel:${tenant.telefone}`}
                 className="flex items-center gap-2 transition-opacity hover:opacity-80"
