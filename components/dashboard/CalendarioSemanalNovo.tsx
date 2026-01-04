@@ -190,18 +190,115 @@ export function CalendarioSemanalNovo() {
 
   // Ações
   const atualizarStatus = async (id: string, novoStatus: string) => {
+    if (!tenant) return;
+    
     try {
+      const agendamento = agendamentos.find(a => a.id === id);
+      if (!agendamento) return;
+
       const updateData: any = { status: novoStatus };
-      if (novoStatus === 'concluido') updateData.concluido_em = new Date().toISOString();
-      await supabase.from('agendamentos').update(updateData).eq('id', id);
-      if (novoStatus === 'cancelado') {
-        const ag = agendamentos.find(a => a.id === id);
-        if (ag) await notificarCancelamento(ag);
+      if (novoStatus === 'concluido') {
+        updateData.concluido_em = new Date().toISOString();
       }
+      
+      const { error: erroUpdate } = await supabase
+        .from('agendamentos')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (erroUpdate) throw erroUpdate;
+
+      // Se concluído, criar transação e comissão
+      if (novoStatus === 'concluido' && agendamento) {
+        await criarTransacaoEComissao(agendamento);
+      }
+
+      // Se cancelado, notificar cliente
+      if (novoStatus === 'cancelado' && agendamento) {
+        await notificarCancelamento(agendamento);
+      }
+
       setModalDetalhesAberto(false);
       buscarAgendamentos();
     } catch (error) {
       console.error('Erro ao atualizar:', error);
+    }
+  };
+
+  // Criar transação de receita e comissão do barbeiro
+  const criarTransacaoEComissao = async (agendamento: Agendamento) => {
+    if (!tenant) return;
+
+    try {
+      const valorServico = agendamento.servicos?.preco || 0;
+      const barbeiroId = agendamento.barbeiros?.id || agendamento.barbeiro_id;
+      const dataBrasilia = toZonedTime(parseISO(agendamento.data_hora), TIMEZONE_BRASILIA);
+      const dataFormatada = format(dataBrasilia, 'yyyy-MM-dd');
+      const mes = dataBrasilia.getMonth() + 1;
+      const ano = dataBrasilia.getFullYear();
+
+      // Buscar percentual de comissão do barbeiro
+      const { data: barbeiro } = await supabase
+        .from('barbeiros')
+        .select('comissao_percentual')
+        .eq('id', barbeiroId)
+        .single();
+
+      const percentualComissao = barbeiro?.comissao_percentual || 40;
+      const valorComissao = (valorServico * percentualComissao) / 100;
+
+      // Criar transação de receita
+      const { error: erroTransacao } = await supabase
+        .from('transacoes')
+        .insert({
+          tenant_id: tenant.id,
+          tipo: 'receita',
+          categoria: 'servico',
+          descricao: `${agendamento.servicos?.nome} - ${agendamento.clientes?.nome}`,
+          valor: valorServico,
+          data: dataFormatada,
+          forma_pagamento: 'dinheiro',
+          agendamento_id: agendamento.id,
+          barbeiro_id: barbeiroId
+        });
+
+      if (erroTransacao) {
+        console.error('Erro ao criar transação:', erroTransacao);
+      }
+
+      // Criar registro de comissão
+      const { error: erroComissao } = await supabase
+        .from('comissoes')
+        .insert({
+          tenant_id: tenant.id,
+          barbeiro_id: barbeiroId,
+          agendamento_id: agendamento.id,
+          valor_servico: valorServico,
+          percentual_comissao: percentualComissao,
+          valor_comissao: valorComissao,
+          mes,
+          ano,
+          pago: false
+        });
+
+      if (erroComissao) {
+        console.error('Erro ao criar comissão:', erroComissao);
+      }
+
+      // Incrementar total de atendimentos do barbeiro
+      const { data: barbeiroAtual } = await supabase
+        .from('barbeiros')
+        .select('total_atendimentos')
+        .eq('id', barbeiroId)
+        .single();
+      
+      await supabase
+        .from('barbeiros')
+        .update({ total_atendimentos: (barbeiroAtual?.total_atendimentos || 0) + 1 })
+        .eq('id', barbeiroId);
+
+    } catch (error) {
+      console.error('Erro ao criar transação/comissão:', error);
     }
   };
 

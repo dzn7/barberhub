@@ -21,14 +21,17 @@ import {
   X
 } from "lucide-react";
 import { format, addDays, isSameDay, parseISO, startOfDay, isToday, isPast } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { schemaNovoAgendamento, validarFormulario } from "@/lib/validacoes";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { Badge, Button, TextField, Select } from "@radix-ui/themes";
 import { PortalModal } from "@/components/ui/PortalModal";
 import { ModalRemarcacao } from "./ModalRemarcacao";
+import { ModalNovoAgendamento } from "@/components/agendamento";
+
+const TIMEZONE_BRASILIA = "America/Sao_Paulo";
 
 const BOT_URL = 'https://bot-barberhub.fly.dev';
 
@@ -94,23 +97,8 @@ export function CalendarioAgendamentos() {
   const [diaSelecionadoConcluir, setDiaSelecionadoConcluir] = useState<Date | null>(null);
   const [modalRemarcacaoAberto, setModalRemarcacaoAberto] = useState(false);
   
-  // Estados para novo agendamento
+  // Estado para novo agendamento
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
-  const [modalDataAberto, setModalDataAberto] = useState(false);
-  const [modalHoraAberto, setModalHoraAberto] = useState(false);
-  const [mensagemSucesso, setMensagemSucesso] = useState("");
-  const [mensagemErro, setMensagemErro] = useState("");
-  const [novoAgendamento, setNovoAgendamento] = useState({
-    clienteNome: "",
-    clienteTelefone: "",
-    data: format(new Date(), "yyyy-MM-dd"),
-    hora: "09:00",
-    barbeiroId: "",
-    servicoId: "",
-  });
-  const [barbeiros, setBarbeiros] = useState<any[]>([]);
-  const [servicos, setServicos] = useState<any[]>([]);
-  const [clientes, setClientes] = useState<any[]>([]);
 
   // Calcular próximos 7 dias
   const diasExibicao = useMemo(() => {
@@ -123,59 +111,6 @@ export function CalendarioAgendamentos() {
       buscarAgendamentos();
     }
   }, [dataInicio, tenant]);
-
-  // Bloquear scroll quando modal está aberto
-  useEffect(() => {
-    if (modalNovoAberto || modalDataAberto || modalHoraAberto) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-    } else {
-      document.body.style.overflow = 'unset';
-      document.body.style.position = 'unset';
-      document.body.style.width = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-      document.body.style.position = 'unset';
-      document.body.style.width = 'unset';
-    };
-  }, [modalNovoAberto, modalDataAberto, modalHoraAberto]);
-
-  // Carregar barbeiros, serviços e clientes
-  useEffect(() => {
-    if (tenant) {
-      carregarDadosFormulario();
-    }
-  }, [tenant]);
-
-  const carregarDadosFormulario = async () => {
-    if (!tenant) return;
-    
-    try {
-      const [barbeirosRes, servicosRes, clientesRes] = await Promise.all([
-        supabase.from('barbeiros').select('id, nome').eq('tenant_id', tenant.id).eq('ativo', true),
-        supabase.from('servicos').select('id, nome, preco').eq('tenant_id', tenant.id).eq('ativo', true),
-        supabase.from('clientes').select('id, nome').eq('tenant_id', tenant.id).order('nome')
-      ]);
-
-      if (barbeirosRes.data) {
-        setBarbeiros(barbeirosRes.data);
-        if (barbeirosRes.data.length > 0 && !novoAgendamento.barbeiroId) {
-          setNovoAgendamento(prev => ({ ...prev, barbeiroId: barbeirosRes.data[0].id }));
-        }
-      }
-      if (servicosRes.data) {
-        setServicos(servicosRes.data);
-        if (servicosRes.data.length > 0 && !novoAgendamento.servicoId) {
-          setNovoAgendamento(prev => ({ ...prev, servicoId: servicosRes.data[0].id }));
-        }
-      }
-      if (clientesRes.data) setClientes(clientesRes.data);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    }
-  };
 
   const buscarAgendamentos = async () => {
     if (!tenant) return;
@@ -253,26 +188,101 @@ export function CalendarioAgendamentos() {
 
   // Atualizar status
   const atualizarStatus = async (id: string, novoStatus: string) => {
+    if (!tenant) return;
+    
     try {
-      // Buscar dados do agendamento antes de atualizar (para notificação)
-      const agendamentoParaNotificar = agendamentos.find(ag => ag.id === id);
+      const agendamento = agendamentos.find(ag => ag.id === id);
+      if (!agendamento) return;
+      
+      const updateData: any = { status: novoStatus };
+      if (novoStatus === 'concluido') {
+        updateData.concluido_em = new Date().toISOString();
+      }
       
       const { error } = await supabase
         .from('agendamentos')
-        .update({ status: novoStatus })
+        .update(updateData)
         .eq('id', id);
 
       if (error) throw error;
       
+      // Se concluído, criar transação e comissão
+      if (novoStatus === 'concluido') {
+        await criarTransacaoEComissao(agendamento);
+      }
+      
       // Se cancelou, notificar cliente via bot
-      if (novoStatus === 'cancelado' && agendamentoParaNotificar) {
-        await notificarCancelamento(agendamentoParaNotificar);
+      if (novoStatus === 'cancelado') {
+        await notificarCancelamento(agendamento);
       }
       
       buscarAgendamentos();
       setAgendamentoSelecionado(null);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
+    }
+  };
+
+  // Criar transação de receita e comissão do barbeiro
+  const criarTransacaoEComissao = async (agendamento: Agendamento) => {
+    if (!tenant) return;
+
+    try {
+      const valorServico = agendamento.servicos?.preco || 0;
+      const barbeiroId = agendamento.barbeiros?.id || agendamento.barbeiro_id;
+      const dataBrasilia = toZonedTime(parseISO(agendamento.data_hora), TIMEZONE_BRASILIA);
+      const dataFormatada = format(dataBrasilia, 'yyyy-MM-dd');
+      const mes = dataBrasilia.getMonth() + 1;
+      const ano = dataBrasilia.getFullYear();
+
+      // Buscar percentual de comissão do barbeiro
+      const { data: barbeiro } = await supabase
+        .from('barbeiros')
+        .select('comissao_percentual, total_atendimentos')
+        .eq('id', barbeiroId)
+        .single();
+
+      const percentualComissao = barbeiro?.comissao_percentual || 40;
+      const valorComissao = (valorServico * percentualComissao) / 100;
+
+      // Criar transação de receita
+      await supabase
+        .from('transacoes')
+        .insert({
+          tenant_id: tenant.id,
+          tipo: 'receita',
+          categoria: 'servico',
+          descricao: `${agendamento.servicos?.nome} - ${agendamento.clientes?.nome}`,
+          valor: valorServico,
+          data: dataFormatada,
+          forma_pagamento: 'dinheiro',
+          agendamento_id: agendamento.id,
+          barbeiro_id: barbeiroId
+        });
+
+      // Criar registro de comissão
+      await supabase
+        .from('comissoes')
+        .insert({
+          tenant_id: tenant.id,
+          barbeiro_id: barbeiroId,
+          agendamento_id: agendamento.id,
+          valor_servico: valorServico,
+          percentual_comissao: percentualComissao,
+          valor_comissao: valorComissao,
+          mes,
+          ano,
+          pago: false
+        });
+
+      // Incrementar total de atendimentos do barbeiro
+      await supabase
+        .from('barbeiros')
+        .update({ total_atendimentos: (barbeiro?.total_atendimentos || 0) + 1 })
+        .eq('id', barbeiroId);
+
+    } catch (error) {
+      console.error('Erro ao criar transação/comissão:', error);
     }
   };
 
@@ -302,93 +312,6 @@ export function CalendarioAgendamentos() {
       }
     } catch (error) {
       console.error('[Cancelamento] Erro ao notificar:', error);
-    }
-  };
-
-  // Salvar novo agendamento
-  const salvarNovoAgendamento = async () => {
-    // Validações com Zod
-    setMensagemErro("");
-    
-    if (!tenant) {
-      setMensagemErro("Erro: Barbearia não identificada. Recarregue a página.");
-      return;
-    }
-    
-    const validacao = validarFormulario(schemaNovoAgendamento, novoAgendamento);
-    if (!validacao.sucesso) {
-      const primeiroErro = Object.values(validacao.erros)[0];
-      setMensagemErro(primeiroErro || "Preencha todos os campos obrigatórios");
-      return;
-    }
-
-    setProcessando(true);
-    try {
-      // Criar ou buscar cliente
-      let clienteId: string;
-      const clienteExistente = clientes.find(c => c.nome.toLowerCase() === novoAgendamento.clienteNome.toLowerCase());
-      
-      if (clienteExistente) {
-        clienteId = clienteExistente.id;
-      } else {
-        // Criar novo cliente
-        const { data: novoCliente, error: erroCliente } = await supabase
-          .from('clientes')
-          .insert([{ 
-            tenant_id: tenant.id,
-            nome: novoAgendamento.clienteNome, 
-            telefone: novoAgendamento.clienteTelefone, 
-            ativo: true 
-          }])
-          .select()
-          .single();
-        
-        if (erroCliente) throw erroCliente;
-        clienteId = novoCliente.id;
-      }
-
-      // Combinar data e hora
-      const dataHora = new Date(`${novoAgendamento.data}T${novoAgendamento.hora}:00`).toISOString();
-
-      // Buscar dados do barbeiro e serviço
-      const barbeiro = barbeiros.find(b => b.id === novoAgendamento.barbeiroId);
-      const servico = servicos.find(s => s.id === novoAgendamento.servicoId);
-
-      // Criar agendamento
-      const { error: erroAgendamento } = await supabase
-        .from('agendamentos')
-        .insert([{
-          tenant_id: tenant.id,
-          cliente_id: clienteId,
-          barbeiro_id: novoAgendamento.barbeiroId,
-          servico_id: novoAgendamento.servicoId,
-          data_hora: dataHora,
-          status: 'pendente'
-        }]);
-
-      if (erroAgendamento) throw erroAgendamento;
-
-      // Notificação será enviada automaticamente pelo bot via Supabase Realtime
-
-      // Fechar modal e recarregar
-      setModalNovoAberto(false);
-      setMensagemSucesso("Agendamento criado com sucesso!");
-      setTimeout(() => setMensagemSucesso(""), 3000);
-      
-      setNovoAgendamento({
-        clienteNome: "",
-        clienteTelefone: "",
-        data: format(new Date(), "yyyy-MM-dd"),
-        hora: "09:00",
-        barbeiroId: barbeiros.length > 0 ? barbeiros[0].id : "",
-        servicoId: servicos.length > 0 ? servicos[0].id : "",
-      });
-      buscarAgendamentos();
-    } catch (error: any) {
-      console.error('Erro ao salvar agendamento:', error);
-      setMensagemErro(`Erro ao criar agendamento: ${error.message}`);
-    } finally {
-      setProcessando(false);
     }
   };
 
@@ -464,7 +387,7 @@ export function CalendarioAgendamentos() {
   };
 
   const confirmarConcluirTodos = async () => {
-    if (!diaSelecionadoConcluir) return;
+    if (!diaSelecionadoConcluir || !tenant) return;
 
     setProcessando(true);
     try {
@@ -486,6 +409,11 @@ export function CalendarioAgendamentos() {
         .in('id', idsParaConcluir);
 
       if (error) throw error;
+
+      // Criar transações e comissões para cada agendamento
+      for (const agendamento of agendamentosParaConcluir) {
+        await criarTransacaoEComissao(agendamento);
+      }
 
       setModalConcluirTodos(false);
       setDiaSelecionadoConcluir(null);
@@ -1118,333 +1046,21 @@ export function CalendarioAgendamentos() {
       </AnimatePresence>
 
       {/* Modal de Novo Agendamento */}
-      <AnimatePresence>
-        {modalNovoAberto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center z-[9999] p-4 overflow-hidden"
-            style={{ top: 0, left: 0, right: 0, bottom: 0, position: 'fixed' }}
-            onClick={() => !processando && setModalNovoAberto(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-white dark:bg-zinc-900 rounded-2xl p-6 sm:p-8 w-full max-w-md border border-zinc-200 dark:border-zinc-800 shadow-2xl max-h-[95vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-6">
-                <div className="pb-4 border-b border-zinc-200 dark:border-zinc-800">
-                  <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white">
-                    Novo Agendamento
-                  </h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
-                    Crie um novo agendamento para um cliente
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Mensagem de Erro */}
-                  {mensagemErro && (
-                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                      <p className="text-sm text-red-700 dark:text-red-400">{mensagemErro}</p>
-                    </div>
-                  )}
-
-                  {/* Nome do Cliente */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Nome do Cliente
-                    </label>
-                    <TextField.Root
-                      placeholder="Digite o nome do cliente"
-                      value={novoAgendamento.clienteNome}
-                      onChange={(e) => setNovoAgendamento({ ...novoAgendamento, clienteNome: e.target.value })}
-                      size="3"
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* Telefone */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Telefone (WhatsApp)
-                    </label>
-                    <TextField.Root
-                      placeholder="(86) 98905-3279"
-                      value={novoAgendamento.clienteTelefone}
-                      onChange={(e) => setNovoAgendamento({ ...novoAgendamento, clienteTelefone: e.target.value })}
-                      size="3"
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* Data com Modal */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Data
-                    </label>
-                    <Button
-                      onClick={() => setModalDataAberto(true)}
-                      variant="soft"
-                      className="w-full text-left justify-between"
-                      size="3"
-                    >
-                      <span>{format(parseISO(`${novoAgendamento.data}T00:00:00`), "dd/MM/yyyy", { locale: ptBR })}</span>
-                      <Calendar className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Hora com Modal */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Hora
-                    </label>
-                    <Button
-                      onClick={() => setModalHoraAberto(true)}
-                      variant="soft"
-                      className="w-full text-left justify-between"
-                      size="3"
-                    >
-                      <span>{novoAgendamento.hora}</span>
-                      <Clock className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Barbeiro */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Barbeiro
-                    </label>
-                    <Select.Root value={novoAgendamento.barbeiroId} onValueChange={(value) => setNovoAgendamento({ ...novoAgendamento, barbeiroId: value })}>
-                      <Select.Trigger placeholder="Selecione um barbeiro" className="w-full" />
-                      <Select.Content>
-                        {barbeiros.map((barbeiro) => (
-                          <Select.Item key={barbeiro.id} value={barbeiro.id}>
-                            {barbeiro.nome}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Root>
-                  </div>
-
-                  {/* Serviço */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Serviço
-                    </label>
-                    <Select.Root value={novoAgendamento.servicoId} onValueChange={(value) => setNovoAgendamento({ ...novoAgendamento, servicoId: value })}>
-                      <Select.Trigger placeholder="Selecione um serviço" className="w-full" />
-                      <Select.Content>
-                        {servicos.map((servico) => (
-                          <Select.Item key={servico.id} value={servico.id}>
-                            {servico.nome} - R$ {servico.preco.toFixed(2)}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Root>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                  <Button
-                    onClick={() => setModalNovoAberto(false)}
-                    variant="soft"
-                    className="flex-1"
-                    size="3"
-                    disabled={processando}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={salvarNovoAgendamento}
-                    className="flex-1 bg-zinc-900 dark:bg-white text-white dark:text-black cursor-pointer"
-                    size="3"
-                    disabled={processando}
-                  >
-                    {processando ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white dark:border-black mr-2"></div>
-                        Salvando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Criar
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal de Seleção de Data */}
-      <AnimatePresence>
-        {modalDataAberto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
-            style={{ top: 0, left: 0, right: 0, bottom: 0, position: 'fixed' }}
-            onClick={() => setModalDataAberto(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-lg max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
-                  Selecione a Data
-                </h3>
-                
-                <input
-                  type="date"
-                  value={novoAgendamento.data}
-                  onChange={(e) => {
-                    setNovoAgendamento({ ...novoAgendamento, data: e.target.value });
-                    setModalDataAberto(false);
-                  }}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:border-zinc-500"
-                />
-
-                <div className="grid grid-cols-7 gap-1">
-                  {Array.from({ length: 14 }, (_, i) => addDays(parseISO(`${novoAgendamento.data}T00:00:00`), i - 7)).map((dia) => (
-                    <button
-                      key={format(dia, 'yyyy-MM-dd')}
-                      onClick={() => {
-                        setNovoAgendamento({ ...novoAgendamento, data: format(dia, 'yyyy-MM-dd') });
-                        setModalDataAberto(false);
-                      }}
-                      className={`p-2 rounded text-sm font-medium transition-all ${
-                        format(dia, 'yyyy-MM-dd') === novoAgendamento.data
-                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                      }`}
-                    >
-                      {format(dia, 'd')}
-                    </button>
-                  ))}
-                </div>
-
-                <Button
-                  onClick={() => setModalDataAberto(false)}
-                  variant="soft"
-                  className="w-full"
-                  size="2"
-                >
-                  Fechar
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal de Seleção de Hora */}
-      <AnimatePresence>
-        {modalHoraAberto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
-            style={{ top: 0, left: 0, right: 0, bottom: 0, position: 'fixed' }}
-            onClick={() => setModalHoraAberto(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-white dark:bg-zinc-900 rounded-xl p-6 w-full max-w-sm border border-zinc-200 dark:border-zinc-800 shadow-lg max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
-                  Selecione a Hora
-                </h3>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {Array.from({ length: 33 }, (_, i) => {
-                    const horas = 8 + Math.floor((i * 20) / 60);
-                    const minutos = (i * 20) % 60;
-                    const hora = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
-                    
-                    // Verificar se horário está ocupado
-                    const dataHora = `${novoAgendamento.data}T${hora}:00`;
-                    const horaOcupada = agendamentos.some(ag => {
-                      const agDataHora = format(parseISO(ag.data_hora), 'yyyy-MM-dd HH:mm');
-                      return agDataHora.startsWith(`${novoAgendamento.data} ${hora}`);
-                    });
-
-                    return (
-                      <button
-                        key={hora}
-                        onClick={() => {
-                          if (!horaOcupada) {
-                            setNovoAgendamento({ ...novoAgendamento, hora });
-                            setModalHoraAberto(false);
-                          }
-                        }}
-                        disabled={horaOcupada}
-                        className={`p-2 rounded text-sm font-medium transition-all ${
-                          novoAgendamento.hora === hora
-                            ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                            : horaOcupada
-                            ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400 dark:text-zinc-500 cursor-not-allowed'
-                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                        }`}
-                      >
-                        {hora}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  onClick={() => setModalHoraAberto(false)}
-                  variant="soft"
-                  className="w-full"
-                  size="2"
-                >
-                  Fechar
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {tenant && (
+        <ModalNovoAgendamento
+          tenantId={tenant.id}
+          aberto={modalNovoAberto}
+          onFechar={() => setModalNovoAberto(false)}
+          onSucesso={buscarAgendamentos}
+          dataPadrao={format(dataInicio, 'yyyy-MM-dd')}
+        />
+      )}
 
       {carregando && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-900 dark:border-white"></div>
         </div>
       )}
-
-      {/* Mensagem de Sucesso */}
-      <AnimatePresence>
-        {mensagemSucesso && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-4 right-4 z-50 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 max-w-sm"
-          >
-            <p className="text-sm text-green-700 dark:text-green-400">{mensagemSucesso}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
