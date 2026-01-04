@@ -259,7 +259,7 @@ export function GuiaAcessoBarbeiros() {
                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center overflow-hidden">
+                          <div className="relative w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                             {barbeiro.foto_url ? (
                               <Image
                                 src={barbeiro.foto_url}

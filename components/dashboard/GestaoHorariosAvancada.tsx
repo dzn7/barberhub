@@ -597,22 +597,22 @@ export function GestaoHorariosAvancada() {
               onValueChange={(value: string) => setConfig({ ...config, intervalo_horarios: Number(value) })}
               size="3"
             >
-              <Select.Trigger className="w-full" />
-              <Select.Content>
+              <Select.Trigger className="w-full max-w-full" />
+              <Select.Content position="popper" sideOffset={5}>
                 <Select.Item value="15">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <span className="font-semibold">15 minutos</span>
                     <span className="text-xs text-zinc-500">(Ex: 08:00, 08:15, 08:30...)</span>
                   </div>
                 </Select.Item>
                 <Select.Item value="20">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <span className="font-semibold">20 minutos</span>
                     <span className="text-xs text-zinc-500">(Ex: 08:00, 08:20, 08:40...)</span>
                   </div>
                 </Select.Item>
                 <Select.Item value="30">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <span className="font-semibold">30 minutos</span>
                     <span className="text-xs text-zinc-500">(Ex: 08:00, 08:30, 09:00...)</span>
                   </div>
