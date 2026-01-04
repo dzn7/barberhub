@@ -664,23 +664,25 @@ export function GestaoBarbeiros() {
                   <div className="relative">
                     <Percent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                     <input
-                      type="number"
-                      value={form.comissao_percentual || ""}
+                      type="text"
+                      inputMode="numeric"
+                      value={form.comissao_percentual === 0 ? "" : form.comissao_percentual}
                       onChange={(e) => {
-                        const valor = e.target.value;
-                        setForm({
-                          ...form,
-                          comissao_percentual: valor === "" ? 0 : parseFloat(valor),
-                        });
+                        const valor = e.target.value.replace(/[^0-9]/g, "");
+                        const numero = valor === "" ? 0 : Math.min(100, parseInt(valor, 10));
+                        setForm({ ...form, comissao_percentual: numero });
                       }}
-                      min={0}
-                      max={100}
+                      onBlur={(e) => {
+                        if (e.target.value === "") {
+                          setForm({ ...form, comissao_percentual: 40 });
+                        }
+                      }}
                       placeholder="40"
                       className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-12 pr-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                     />
                   </div>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Percentual de comissão por atendimento
+                    Percentual de comissão por atendimento (padrão: 40%)
                   </p>
                 </div>
 

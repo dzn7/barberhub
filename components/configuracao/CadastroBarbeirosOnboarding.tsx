@@ -253,6 +253,22 @@ export function CadastroBarbeirosOnboarding({
 
       if (error) throw error
 
+      // Enviar mensagem de boas-vindas via WhatsApp (bot)
+      const telefoneNumeros = formulario.telefone.replace(/\D/g, '')
+      if (data && telefoneNumeros) {
+        try {
+          const BOT_URL = process.env.NEXT_PUBLIC_BOT_URL || 'https://bot-barberhub.fly.dev'
+          await fetch(`${BOT_URL}/api/mensagens/boas-vindas-barbeiro`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ barbeiro_id: data.id }),
+          })
+          console.log('[CadastroBarbeiros] Mensagem de boas-vindas enviada ao barbeiro')
+        } catch (erroBot) {
+          console.warn('[CadastroBarbeiros] Não foi possível enviar WhatsApp (bot offline?):', erroBot)
+        }
+      }
+
       setBarbeiros([...barbeiros, data])
       setBarbeiroAtual(data)
       setTokenGerado(novoToken)

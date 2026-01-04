@@ -35,8 +35,11 @@ import {
   Calendar,
   Settings,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  Sun,
+  Moon
 } from 'lucide-react'
+import { useTheme } from 'next-themes'
 
 const PALETAS_SOFISTICADAS = [
   // Tons escuros clássicos
@@ -357,6 +360,12 @@ export default function ConfigurarPage() {
   const router = useRouter()
   const { user, tenant, carregando: carregandoAuth, atualizarTenant } = useAuth()
   const { toast } = useToast()
+  const { theme, setTheme } = useTheme()
+  const [montado, setMontado] = useState(false)
+  
+  useEffect(() => {
+    setMontado(true)
+  }, [])
   
   const [etapaAtual, setEtapaAtual] = useState(1)
   const [salvando, setSalvando] = useState(false)
@@ -478,9 +487,13 @@ export default function ConfigurarPage() {
     return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7, 11)}`
   }
 
+  const alternarTema = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
+
   if (carregandoAuth || !tenant) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
       </div>
     )
@@ -498,29 +511,43 @@ export default function ConfigurarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <header className="border-b border-zinc-800">
+    <div className="min-h-screen bg-zinc-50 dark:bg-black transition-colors">
+      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/"><LogoMarca className="h-10" /></Link>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-zinc-600 hidden sm:block">Etapa {etapaAtual} de {TOTAL_ETAPAS}</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-600 hidden sm:block">Etapa {etapaAtual} de {TOTAL_ETAPAS}</span>
             <button 
               onClick={() => setMostrarPreviewMobile(true)} 
-              className="lg:hidden flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+              className="lg:hidden flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
               aria-label="Ver preview do site"
             >
               <Eye className="w-4 h-4" />
               <span className="hidden sm:inline">Preview</span>
             </button>
-            <button onClick={() => router.push('/admin')} className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">Pular</button>
+            {/* Theme Toggle */}
+            {montado && (
+              <button
+                onClick={alternarTema}
+                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                aria-label="Alternar tema"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                )}
+              </button>
+            )}
+            <button onClick={() => router.push('/admin')} className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">Pular</button>
           </div>
         </div>
       </header>
 
-      <div className="border-b border-zinc-800">
+      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="h-1 bg-zinc-900 rounded-full overflow-hidden">
-            <motion.div className="h-full bg-white" initial={{ width: 0 }} animate={{ width: `${(etapaAtual / TOTAL_ETAPAS) * 100}%` }} transition={{ duration: 0.3 }} />
+          <div className="h-1 bg-zinc-200 dark:bg-zinc-900 rounded-full overflow-hidden">
+            <motion.div className="h-full bg-zinc-900 dark:bg-white" initial={{ width: 0 }} animate={{ width: `${(etapaAtual / TOTAL_ETAPAS) * 100}%` }} transition={{ duration: 0.3 }} />
           </div>
           <div className="hidden lg:flex items-center justify-between py-4">
             {ETAPAS.map((etapa) => {
@@ -528,11 +555,11 @@ export default function ConfigurarPage() {
               const ativa = etapaAtual === etapa.id
               const completa = etapaAtual > etapa.id
               return (
-                <button key={etapa.id} onClick={() => etapa.id < etapaAtual && setEtapaAtual(etapa.id)} disabled={etapa.id > etapaAtual} className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${ativa ? 'bg-white/10' : completa ? 'hover:bg-zinc-800 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${ativa ? 'bg-white text-black' : completa ? 'bg-zinc-700 text-white' : 'bg-zinc-900 text-zinc-600'}`}>
+                <button key={etapa.id} onClick={() => etapa.id < etapaAtual && setEtapaAtual(etapa.id)} disabled={etapa.id > etapaAtual} className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${ativa ? 'bg-zinc-900/10 dark:bg-white/10' : completa ? 'hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${ativa ? 'bg-zinc-900 dark:bg-white text-white dark:text-black' : completa ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-700 dark:text-white' : 'bg-zinc-200 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-600'}`}>
                     {completa ? <Check className="w-4 h-4" /> : <Icone className="w-4 h-4" />}
                   </div>
-                  <div className="text-left"><p className={`text-sm font-medium ${ativa ? 'text-white' : 'text-zinc-500'}`}>{etapa.titulo}</p></div>
+                  <div className="text-left"><p className={`text-sm font-medium ${ativa ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}`}>{etapa.titulo}</p></div>
                 </button>
               )
             })}
@@ -546,49 +573,49 @@ export default function ConfigurarPage() {
             <AnimatePresence mode="wait">
               {etapaAtual === 1 && (
                 <motion.div key="etapa1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-white mb-2">Identidade da sua barbearia</h2><p className="text-zinc-400">Como seus clientes vão conhecer você</p></div>
+                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Identidade da sua barbearia</h2><p className="text-zinc-500 dark:text-zinc-400">Como seus clientes vão conhecer você</p></div>
                   <div className="space-y-6">
-                    <div><label className="block text-sm font-medium text-zinc-300 mb-2">Nome da Barbearia *</label><input type="text" value={dados.nome} onChange={e => setDados({ ...dados, nome: e.target.value })} placeholder="Ex: Barbearia Premium" className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-all" /></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Nome da Barbearia *</label><input type="text" value={dados.nome} onChange={e => setDados({ ...dados, nome: e.target.value })} placeholder="Ex: Barbearia Premium" className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div>
                     <EditorLogo logoUrl={dados.logo_url} tenantId={tenant.id} onLogoChange={(url) => setDados({ ...dados, logo_url: url })} corPrimaria={dados.cor_primaria} corSecundaria={dados.cor_secundaria} />
                   </div>
                 </motion.div>
               )}
               {etapaAtual === 2 && (
                 <motion.div key="etapa2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-white mb-2">Informações de contato</h2><p className="text-zinc-400">Como seus clientes podem falar com você</p></div>
+                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Informações de contato</h2><p className="text-zinc-500 dark:text-zinc-400">Como seus clientes podem falar com você</p></div>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div><label className="block text-sm font-medium text-zinc-300 mb-2">Telefone</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" /><input type="tel" value={dados.telefone} onChange={e => setDados({ ...dados, telefone: formatarTelefone(e.target.value) })} placeholder="(00) 0000-0000" className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-all" /></div></div>
-                      <div><label className="block text-sm font-medium text-zinc-300 mb-2">WhatsApp *</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" /><input type="tel" value={dados.whatsapp} onChange={e => setDados({ ...dados, whatsapp: formatarTelefone(e.target.value) })} placeholder="(00) 00000-0000" className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-all" /></div><p className="text-xs text-zinc-600 mt-1">Usado para agendamentos</p></div>
+                      <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Telefone</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.telefone} onChange={e => setDados({ ...dados, telefone: formatarTelefone(e.target.value) })} placeholder="(00) 0000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
+                      <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">WhatsApp *</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.whatsapp} onChange={e => setDados({ ...dados, whatsapp: formatarTelefone(e.target.value) })} placeholder="(00) 00000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div><p className="text-xs text-zinc-500 dark:text-zinc-600 mt-1">Usado para agendamentos</p></div>
                     </div>
-                    <div><label className="block text-sm font-medium text-zinc-300 mb-2">E-mail</label><div className="relative"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" /><input type="email" value={dados.email} onChange={e => setDados({ ...dados, email: e.target.value })} placeholder="contato@barbearia.com" className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-all" /></div></div>
-                    <div><label className="block text-sm font-medium text-zinc-300 mb-2">Instagram</label><div className="relative"><Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" /><input type="text" value={dados.instagram} onChange={e => setDados({ ...dados, instagram: e.target.value })} placeholder="@suabarbearia" className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-all" /></div></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">E-mail</label><div className="relative"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="email" value={dados.email} onChange={e => setDados({ ...dados, email: e.target.value })} placeholder="contato@barbearia.com" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Instagram</label><div className="relative"><Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.instagram} onChange={e => setDados({ ...dados, instagram: e.target.value })} placeholder="@suabarbearia" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
                   </div>
                 </motion.div>
               )}
               {etapaAtual === 3 && (
                 <motion.div key="etapa3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-white mb-2">Onde fica sua barbearia</h2><p className="text-zinc-400">Ajude seus clientes a te encontrar</p></div>
+                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Onde fica sua barbearia</h2><p className="text-zinc-500 dark:text-zinc-400">Ajude seus clientes a te encontrar</p></div>
                   <div className="space-y-4">
-                    <div><label className="block text-sm font-medium text-zinc-300 mb-2">Endereço completo</label><div className="relative"><MapPin className="absolute left-4 top-3.5 w-4 h-4 text-zinc-500" /><input type="text" value={dados.endereco} onChange={e => setDados({ ...dados, endereco: e.target.value })} placeholder="Rua, número, bairro" className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-all" /></div></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Endereço completo</label><div className="relative"><MapPin className="absolute left-4 top-3.5 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.endereco} onChange={e => setDados({ ...dados, endereco: e.target.value })} placeholder="Rua, número, bairro" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="block text-sm font-medium text-zinc-300 mb-2">Cidade</label><input type="text" value={dados.cidade} onChange={e => setDados({ ...dados, cidade: e.target.value })} placeholder="São Paulo" className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-all" /></div>
-                      <div><label className="block text-sm font-medium text-zinc-300 mb-2">Estado</label><input type="text" value={dados.estado} onChange={e => setDados({ ...dados, estado: e.target.value.toUpperCase() })} placeholder="SP" maxLength={2} className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-all uppercase" /></div>
+                      <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Cidade</label><input type="text" value={dados.cidade} onChange={e => setDados({ ...dados, cidade: e.target.value })} placeholder="São Paulo" className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div>
+                      <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Estado</label><input type="text" value={dados.estado} onChange={e => setDados({ ...dados, estado: e.target.value.toUpperCase() })} placeholder="SP" maxLength={2} className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all uppercase" /></div>
                     </div>
                   </div>
                 </motion.div>
               )}
               {etapaAtual === 4 && (
                 <motion.div key="etapa4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-white mb-2">Aparência do seu site</h2><p className="text-zinc-400">Escolha as cores que representam sua marca</p></div>
+                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Aparência do seu site</h2><p className="text-zinc-500 dark:text-zinc-400">Escolha as cores que representam sua marca</p></div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {PALETAS_SOFISTICADAS.map((paleta) => {
                       const selecionada = dados.cor_primaria === paleta.primaria
                       return (
-                        <button key={paleta.nome} onClick={() => aplicarPaleta(paleta)} className={`relative p-4 rounded-xl border-2 transition-all ${selecionada ? 'border-white bg-zinc-800' : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'}`}>
-                          {selecionada && <div className="absolute top-2 right-2"><Check className="w-4 h-4 text-white" /></div>}
-                          <div className="flex gap-2 mb-3"><div className="w-8 h-8 rounded-lg border border-zinc-700" style={{ backgroundColor: paleta.primaria }} /><div className="w-8 h-8 rounded-lg border border-zinc-700" style={{ backgroundColor: paleta.secundaria }} /></div>
-                          <p className="text-sm font-medium text-white text-left">{paleta.nome}</p><p className="text-xs text-zinc-500 text-left">{paleta.descricao}</p>
+                        <button key={paleta.nome} onClick={() => aplicarPaleta(paleta)} className={`relative p-4 rounded-xl border-2 transition-all ${selecionada ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'}`}>
+                          {selecionada && <div className="absolute top-2 right-2"><Check className="w-4 h-4 text-zinc-900 dark:text-white" /></div>}
+                          <div className="flex gap-2 mb-3"><div className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-700" style={{ backgroundColor: paleta.primaria }} /><div className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-700" style={{ backgroundColor: paleta.secundaria }} /></div>
+                          <p className="text-sm font-medium text-zinc-900 dark:text-white text-left">{paleta.nome}</p><p className="text-xs text-zinc-500 text-left">{paleta.descricao}</p>
                         </button>
                       )
                     })}
@@ -597,26 +624,26 @@ export default function ConfigurarPage() {
               )}
               {etapaAtual === 5 && (
                 <motion.div key="etapa5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-white mb-2">Cadastre seus serviços</h2><p className="text-zinc-400">O que sua barbearia oferece aos clientes</p></div>
+                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Cadastre seus serviços</h2><p className="text-zinc-500 dark:text-zinc-400">O que sua barbearia oferece aos clientes</p></div>
                   <ServicosMiniGestao tenantId={tenant.id} limiteServicos={tenant.limite_servicos || 10} onTotalChange={setTotalServicos} />
                 </motion.div>
               )}
               {etapaAtual === 6 && (
                 <motion.div key="etapa6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-white mb-2">Sua equipe de profissionais</h2><p className="text-zinc-400">Cadastre os barbeiros que trabalham com você e gere os códigos de acesso</p></div>
+                  <div><h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Sua equipe de profissionais</h2><p className="text-zinc-500 dark:text-zinc-400">Cadastre os barbeiros que trabalham com você e gere os códigos de acesso</p></div>
                   <CadastroBarbeirosOnboarding tenantId={tenant.id} limiteBarbeiros={tenant.limite_barbeiros || 2} onTotalChange={setTotalBarbeiros} />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="flex justify-between mt-12 pt-6 border-t border-zinc-800">
+            <div className="flex justify-between mt-12 pt-6 border-t border-zinc-200 dark:border-zinc-800">
               {etapaAtual > 1 ? (
-                <Botao type="button" variante="fantasma" onClick={voltar} className="text-zinc-400 hover:text-white"><ArrowLeft className="w-4 h-4 mr-2" />Voltar</Botao>
+                <Botao type="button" variante="fantasma" onClick={voltar} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><ArrowLeft className="w-4 h-4 mr-2" />Voltar</Botao>
               ) : <div />}
               {etapaAtual < TOTAL_ETAPAS ? (
-                <Botao type="button" onClick={avancar} className="bg-white text-black hover:bg-zinc-200">Continuar<ArrowRight className="w-4 h-4 ml-2" /></Botao>
+                <Botao type="button" onClick={avancar} className="bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">Continuar<ArrowRight className="w-4 h-4 ml-2" /></Botao>
               ) : (
-                <Botao type="button" onClick={finalizar} disabled={salvando} className="bg-white text-black hover:bg-zinc-200">
+                <Botao type="button" onClick={finalizar} disabled={salvando} className="bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">
                   {salvando ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Finalizando...</>) : (<><Check className="w-4 h-4 mr-2" />Finalizar</>)}
                 </Botao>
               )}
