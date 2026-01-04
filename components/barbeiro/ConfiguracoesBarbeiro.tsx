@@ -621,7 +621,7 @@ export function ConfiguracoesBarbeiro() {
       {/* Info */}
       <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
         <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center">
-          💡 Clique em "Editar" para atualizar seus dados pessoais. A comissão só pode ser alterada pelo administrador.
+          💡 Clique em &quot;Editar&quot; para atualizar seus dados pessoais. A comissão só pode ser alterada pelo administrador.
         </p>
       </div>
 
