@@ -309,6 +309,11 @@ export function CalendarioAgendamentos() {
     // Validações
     setMensagemErro("");
     
+    if (!tenant) {
+      setMensagemErro("Erro: Barbearia não identificada. Recarregue a página.");
+      return;
+    }
+    
     if (!novoAgendamento.clienteNome.trim()) {
       setMensagemErro("Por favor, digite o nome do cliente");
       return;
@@ -338,7 +343,12 @@ export function CalendarioAgendamentos() {
         // Criar novo cliente
         const { data: novoCliente, error: erroCliente } = await supabase
           .from('clientes')
-          .insert([{ nome: novoAgendamento.clienteNome, telefone: novoAgendamento.clienteTelefone, ativo: true }])
+          .insert([{ 
+            tenant_id: tenant.id,
+            nome: novoAgendamento.clienteNome, 
+            telefone: novoAgendamento.clienteTelefone, 
+            ativo: true 
+          }])
           .select()
           .single();
         
@@ -357,6 +367,7 @@ export function CalendarioAgendamentos() {
       const { error: erroAgendamento } = await supabase
         .from('agendamentos')
         .insert([{
+          tenant_id: tenant.id,
           cliente_id: clienteId,
           barbeiro_id: novoAgendamento.barbeiroId,
           servico_id: novoAgendamento.servicoId,
