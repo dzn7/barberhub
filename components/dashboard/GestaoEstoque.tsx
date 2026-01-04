@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Trash2, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { Button, TextField, TextArea, Dialog } from "@radix-ui/themes";
+import { Package, Plus, AlertTriangle, TrendingDown, TrendingUp, Trash2, CheckCircle, XCircle, AlertCircle, X } from "lucide-react";
+import { Button, TextField, TextArea } from "@radix-ui/themes";
 import { supabase } from "@/lib/supabase";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import type { Produto } from "@/types";
 
 interface NovoProdutoForm {
@@ -229,12 +230,17 @@ export function GestaoEstoque() {
       </div>
 
       {/* Modal de Novo Produto */}
-      <Dialog.Root open={modalAberto} onOpenChange={setModalAberto}>
-        <Dialog.Content style={{ maxWidth: 600 }}>
-          <Dialog.Title>Cadastrar Novo Produto</Dialog.Title>
-          <Dialog.Description size="2" mb="4">
+      <ModalPortal aberto={modalAberto} onFechar={() => setModalAberto(false)}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-xl shadow-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">Cadastrar Novo Produto</h2>
+            <button onClick={() => setModalAberto(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-zinc-500" />
+            </button>
+          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
             Preencha as informações do produto para estoque
-          </Dialog.Description>
+          </p>
 
           <div className="space-y-4">
             {/* Nome e Categoria */}
@@ -381,21 +387,19 @@ export function GestaoEstoque() {
           </div>
 
           <div className="flex gap-3 mt-6 justify-end">
-            <Dialog.Close>
-              <Button variant="soft" className="cursor-pointer">
-                Cancelar
-              </Button>
-            </Dialog.Close>
-            <Button
+            <button onClick={() => setModalAberto(false)} className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+              Cancelar
+            </button>
+            <button
               onClick={criarProduto}
               disabled={salvando}
-              className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer"
+              className="px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {salvando ? "Cadastrando..." : "Cadastrar Produto"}
-            </Button>
+            </button>
           </div>
-        </Dialog.Content>
-      </Dialog.Root>
+        </div>
+      </ModalPortal>
 
       {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -639,8 +643,8 @@ export function GestaoEstoque() {
       )}
 
       {/* Modal de Feedback */}
-      <Dialog.Root open={modalFeedback.aberto} onOpenChange={(aberto) => setModalFeedback({ ...modalFeedback, aberto })}>
-        <Dialog.Content style={{ maxWidth: 450 }} className="p-0 overflow-hidden">
+      <ModalPortal aberto={modalFeedback.aberto} onFechar={() => setModalFeedback({ ...modalFeedback, aberto: false })}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800">
           <div className={`p-6 ${
             modalFeedback.tipo === 'sucesso' 
               ? 'bg-green-50 dark:bg-green-900/10' 
@@ -668,7 +672,7 @@ export function GestaoEstoque() {
               </div>
               
               <div className="flex-1">
-                <Dialog.Title className={`text-lg font-semibold mb-2 ${
+                <h3 className={`text-lg font-semibold mb-2 ${
                   modalFeedback.tipo === 'sucesso' 
                     ? 'text-green-900 dark:text-green-100' 
                     : modalFeedback.tipo === 'erro'
@@ -676,8 +680,8 @@ export function GestaoEstoque() {
                     : 'text-orange-900 dark:text-orange-100'
                 }`}>
                   {modalFeedback.titulo}
-                </Dialog.Title>
-                <Dialog.Description className={`${
+                </h3>
+                <p className={`${
                   modalFeedback.tipo === 'sucesso' 
                     ? 'text-green-700 dark:text-green-300' 
                     : modalFeedback.tipo === 'erro'
@@ -685,7 +689,7 @@ export function GestaoEstoque() {
                     : 'text-orange-700 dark:text-orange-300'
                 }`}>
                   {modalFeedback.mensagem}
-                </Dialog.Description>
+                </p>
               </div>
             </div>
           </div>
@@ -693,37 +697,35 @@ export function GestaoEstoque() {
           <div className="p-4 bg-white dark:bg-zinc-900 flex gap-3 justify-end">
             {modalFeedback.tipo === 'confirmacao' ? (
               <>
-                <Dialog.Close>
-                  <Button variant="soft" className="cursor-pointer">
-                    Cancelar
-                  </Button>
-                </Dialog.Close>
-                <Button
-                  onClick={() => {
-                    modalFeedback.onConfirmar?.();
-                  }}
+                <button
+                  onClick={() => setModalFeedback({ ...modalFeedback, aberto: false })}
+                  className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => modalFeedback.onConfirmar?.()}
                   disabled={salvando}
-                  className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
                   {salvando ? 'Excluindo...' : 'Confirmar Exclusão'}
-                </Button>
+                </button>
               </>
             ) : (
-              <Dialog.Close>
-                <Button 
-                  className={`cursor-pointer ${
-                    modalFeedback.tipo === 'sucesso'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-red-600 text-white hover:bg-red-700'
-                  }`}
-                >
-                  Entendi
-                </Button>
-              </Dialog.Close>
+              <button
+                onClick={() => setModalFeedback({ ...modalFeedback, aberto: false })}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  modalFeedback.tipo === 'sucesso'
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                Entendi
+              </button>
             )}
           </div>
-        </Dialog.Content>
-      </Dialog.Root>
+        </div>
+      </ModalPortal>
     </div>
   );
 }

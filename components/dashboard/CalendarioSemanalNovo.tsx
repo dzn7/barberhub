@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
+const BOT_URL = 'https://bot-barberhub.fly.dev';
 
 interface Agendamento {
   id: string;
@@ -254,6 +255,9 @@ export function CalendarioSemanalNovo() {
   // Ações
   const atualizarStatus = async (id: string, novoStatus: string) => {
     try {
+      // Buscar dados do agendamento para notificação
+      const agendamentoParaNotificar = agendamentos.find(ag => ag.id === id);
+      
       const updateData: any = { status: novoStatus };
       if (novoStatus === 'concluido') {
         updateData.concluido_em = new Date().toISOString();
@@ -266,10 +270,46 @@ export function CalendarioSemanalNovo() {
 
       if (error) throw error;
       
+      // Se cancelou, notificar cliente via bot
+      if (novoStatus === 'cancelado' && agendamentoParaNotificar) {
+        await notificarCancelamento(agendamentoParaNotificar);
+      }
+      
       setModalDetalhesAberto(false);
       buscarAgendamentosSemana();
     } catch (error) {
       console.error('Erro ao atualizar:', error);
+    }
+  };
+
+  // Notificar cancelamento via bot WhatsApp
+  const notificarCancelamento = async (agendamento: Agendamento) => {
+    try {
+      const dataUTC = parseISO(agendamento.data_hora);
+      const dataBrasilia = toZonedTime(dataUTC, TIMEZONE_BRASILIA);
+      const dataFormatada = format(dataBrasilia, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      
+      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes?.nome}!\n\nSeu agendamento foi cancelado:\n\n📅 *Data:* ${dataFormatada}\n✂️ *Serviço:* ${agendamento.servicos?.nome}\n👤 *Barbeiro:* ${agendamento.barbeiros?.nome}\n\nSe desejar reagendar, entre em contato ou acesse nosso site.\n\n_BarberHub_`;
+
+      let telefone = agendamento.clientes?.telefone?.replace(/\D/g, '') || '';
+      if (!telefone.startsWith('55')) {
+        telefone = '55' + telefone;
+      }
+
+      const response = await fetch(`${BOT_URL}/api/mensagens/enviar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numero: telefone, mensagem }),
+      });
+
+      const resultado = await response.json();
+      if (resultado.sucesso) {
+        console.log('[Cancelamento] ✅ Notificação enviada');
+      } else {
+        console.error('[Cancelamento] Falha:', resultado.erro);
+      }
+    } catch (error) {
+      console.error('[Cancelamento] Erro ao notificar:', error);
     }
   };
 

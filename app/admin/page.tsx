@@ -20,8 +20,6 @@ import { RemarcacaoAgendamento } from "@/components/dashboard/RemarcacaoAgendame
 import { GestaoHorarios } from "@/components/dashboard/GestaoHorarios";
 import { GestaoHorariosAvancada } from "@/components/dashboard/GestaoHorariosAvancada";
 import { Relatorios } from "@/components/dashboard/Relatorios";
-import { GestaoTrabalhos } from "@/components/dashboard/GestaoTrabalhos";
-import { GestaoComentarios } from "@/components/dashboard/GestaoComentarios";
 import { ConfiguracaoBarbearia } from "@/components/dashboard/ConfiguracaoBarbearia";
 import { AlternadorTema } from "@/components/AlternadorTema";
 // PWA removido temporariamente
@@ -477,15 +475,7 @@ export default function DashboardCompleto() {
               <Edit3 className="w-4 h-4 mr-2" />
               Serviços
             </Tabs.Trigger>
-            <Tabs.Trigger value="portfolio">
-              <ImageIcon className="w-4 h-4 mr-2" />
-              Portfólio
-            </Tabs.Trigger>
-            <Tabs.Trigger value="comentarios">
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Comentários
-            </Tabs.Trigger>
-            <Tabs.Trigger value="remarcacao">
+                        <Tabs.Trigger value="remarcacao">
               <Clock className="w-4 h-4 mr-2" />
               Remarcação
             </Tabs.Trigger>
@@ -521,9 +511,7 @@ export default function DashboardCompleto() {
                   { value: "comissoes", icon: Percent, label: "Comissões" },
                   { value: "usuarios", icon: Users, label: "Usuários" },
                   { value: "servicos", icon: Edit3, label: "Serviços" },
-                  { value: "portfolio", icon: ImageIcon, label: "Portfólio" },
-                  { value: "comentarios", icon: MessageCircle, label: "Comentários" },
-                  { value: "remarcacao", icon: Clock, label: "Remarcação" },
+                                    { value: "remarcacao", icon: Clock, label: "Remarcação" },
                   { value: "horarios", icon: Clock, label: "Horários" },
                   { value: "relatorios", icon: BarChart3, label: "Relatórios" },
                   { value: "configuracoes", icon: Settings, label: "Configurações" },
@@ -750,16 +738,7 @@ export default function DashboardCompleto() {
             <GestaoServicos />
           </Tabs.Content>
 
-          {/* Portfólio */}
-          <Tabs.Content value="portfolio">
-            <GestaoTrabalhos />
-          </Tabs.Content>
-
-          {/* Comentários */}
-          <Tabs.Content value="comentarios">
-            <GestaoComentarios />
-          </Tabs.Content>
-
+          
           {/* Remarcação */}
           <Tabs.Content value="remarcacao">
             <RemarcacaoAgendamento />

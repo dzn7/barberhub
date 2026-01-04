@@ -9,7 +9,7 @@ import { format, addDays, setHours, setMinutes, parseISO, isSameDay, parse } fro
 import { ptBR } from "date-fns/locale";
 import { gerarTodosHorarios } from "@/lib/horarios";
 
-const BOT_URL = 'https://barbearia-br99-bot.fly.dev';
+const BOT_URL = 'https://bot-barberhub.fly.dev';
 
 interface Agendamento {
   id: string;

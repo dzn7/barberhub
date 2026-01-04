@@ -43,3 +43,10 @@ next-env.d.ts
 # Logs
 logs
 *.log
+
+bot-barberhub
+bot-barberhub/auth_info
+bot-barberhub/auth_info/*
+bot-dowhatsapp
+bot-dowhatsapp/auth_info
+bot-dowhatsapp/auth_info/*

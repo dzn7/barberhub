@@ -26,19 +26,6 @@ export function SecaoHero() {
 
       <div className="relative z-10 mx-auto max-w-6xl flex flex-col items-center justify-center w-full px-4 py-10 md:py-20">
         
-        {/* Badge superior */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
-        >
-          <span className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full text-sm text-zinc-400">
-            <span className="w-2 h-2 bg-green-500 rounded-full" />
-            Mais de 500 barbearias confiam no BarberHub
-          </span>
-        </motion.div>
-
         {/* Título principal */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}

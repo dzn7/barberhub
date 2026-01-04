@@ -25,6 +25,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { Badge, Button, TextField, Select } from "@radix-ui/themes";
 
+const BOT_URL = 'https://bot-barberhub.fly.dev';
+
 interface Agendamento {
   id: string;
   data_hora: string;
@@ -244,12 +246,21 @@ export function CalendarioAgendamentos() {
   // Atualizar status
   const atualizarStatus = async (id: string, novoStatus: string) => {
     try {
+      // Buscar dados do agendamento antes de atualizar (para notificação)
+      const agendamentoParaNotificar = agendamentos.find(ag => ag.id === id);
+      
       const { error } = await supabase
         .from('agendamentos')
         .update({ status: novoStatus })
         .eq('id', id);
 
       if (error) throw error;
+      
+      // Se cancelou, notificar cliente via bot
+      if (novoStatus === 'cancelado' && agendamentoParaNotificar) {
+        await notificarCancelamento(agendamentoParaNotificar);
+      }
+      
       buscarAgendamentos();
       setAgendamentoSelecionado(null);
     } catch (error) {
@@ -257,16 +268,32 @@ export function CalendarioAgendamentos() {
     }
   };
 
-  // Enviar mensagem WhatsApp
-  const enviarMensagemWhatsApp = async (telefone: string, mensagem: string) => {
+  // Notificar cancelamento via bot WhatsApp
+  const notificarCancelamento = async (agendamento: Agendamento) => {
     try {
-      await fetch('/api/whatsapp/enviar', {
+      const dataFormatada = format(parseISO(agendamento.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      
+      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes?.nome}!\n\nSeu agendamento foi cancelado:\n\n📅 *Data:* ${dataFormatada}\n✂️ *Serviço:* ${agendamento.servicos?.nome}\n👤 *Barbeiro:* ${agendamento.barbeiros?.nome}\n\nSe desejar reagendar, entre em contato ou acesse nosso site.\n\n_BarberHub_`;
+
+      let telefone = agendamento.clientes?.telefone?.replace(/\D/g, '') || '';
+      if (!telefone.startsWith('55')) {
+        telefone = '55' + telefone;
+      }
+
+      const response = await fetch(`${BOT_URL}/api/mensagens/enviar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefone, mensagem })
+        body: JSON.stringify({ numero: telefone, mensagem }),
       });
+
+      const resultado = await response.json();
+      if (resultado.sucesso) {
+        console.log('[Cancelamento] ✅ Notificação enviada');
+      } else {
+        console.error('[Cancelamento] Falha:', resultado.erro);
+      }
     } catch (error) {
-      console.error('Erro ao enviar WhatsApp:', error);
+      console.error('[Cancelamento] Erro ao notificar:', error);
     }
   };
 
@@ -332,11 +359,7 @@ export function CalendarioAgendamentos() {
 
       if (erroAgendamento) throw erroAgendamento;
 
-      // Enviar mensagem de confirmação via WhatsApp
-      const dataFormatada = format(parseISO(dataHora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-      const mensagemConfirmacao = `Olá ${novoAgendamento.clienteNome}! 👋\n\nSeu agendamento foi confirmado:\n📅 ${dataFormatada}\n✂️ ${servico?.nome}\n💈 Barbeiro: ${barbeiro?.nome}\n\nAguardamos você!`;
-      
-      await enviarMensagemWhatsApp(novoAgendamento.clienteTelefone, mensagemConfirmacao);
+      // Notificação será enviada automaticamente pelo bot via Supabase Realtime
 
       // Fechar modal e recarregar
       setModalNovoAberto(false);

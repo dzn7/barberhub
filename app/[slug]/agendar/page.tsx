@@ -1036,69 +1036,69 @@ export default function PaginaAgendar() {
               </h2>
 
               <div 
-                className="rounded-xl border p-6 space-y-4"
+                className="rounded-xl border p-4 sm:p-6 space-y-3 sm:space-y-4"
                 style={{ 
                   backgroundColor: cores.destaque + '08',
                   borderColor: cores.destaque + '20'
                 }}
               >
                 <div 
-                  className="flex justify-between items-center pb-4 border-b"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pb-3 sm:pb-4 border-b"
                   style={{ borderColor: cores.destaque + '20' }}
                 >
-                  <span style={{ color: cores.destaque }}>Serviço</span>
-                  <span className="font-semibold" style={{ color: cores.secundaria }}>
+                  <span className="text-sm" style={{ color: cores.destaque }}>Serviço</span>
+                  <span className="font-semibold text-right" style={{ color: cores.secundaria }}>
                     {servicos.find(s => s.id === servicoSelecionado)?.nome}
                   </span>
                 </div>
                 
                 <div 
-                  className="flex justify-between items-center pb-4 border-b"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pb-3 sm:pb-4 border-b"
                   style={{ borderColor: cores.destaque + '20' }}
                 >
-                  <span style={{ color: cores.destaque }}>Profissional</span>
-                  <span className="font-semibold" style={{ color: cores.secundaria }}>
+                  <span className="text-sm" style={{ color: cores.destaque }}>Profissional</span>
+                  <span className="font-semibold text-right" style={{ color: cores.secundaria }}>
                     {barbeiros.find(b => b.id === barbeiroSelecionado)?.nome}
                   </span>
                 </div>
                 
                 <div 
-                  className="flex justify-between items-center pb-4 border-b"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pb-3 sm:pb-4 border-b"
                   style={{ borderColor: cores.destaque + '20' }}
                 >
-                  <span style={{ color: cores.destaque }}>Data</span>
-                  <span className="font-semibold" style={{ color: cores.secundaria }}>
+                  <span className="text-sm" style={{ color: cores.destaque }}>Data</span>
+                  <span className="font-semibold text-right" style={{ color: cores.secundaria }}>
                     {dataSelecionada && format(parse(dataSelecionada, 'yyyy-MM-dd', new Date()), "dd 'de' MMMM", { locale: ptBR })}
                   </span>
                 </div>
                 
                 <div 
-                  className="flex justify-between items-center pb-4 border-b"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pb-3 sm:pb-4 border-b"
                   style={{ borderColor: cores.destaque + '20' }}
                 >
-                  <span style={{ color: cores.destaque }}>Horário</span>
-                  <span className="font-semibold" style={{ color: cores.secundaria }}>{horarioSelecionado}</span>
+                  <span className="text-sm" style={{ color: cores.destaque }}>Horário</span>
+                  <span className="font-semibold text-right" style={{ color: cores.secundaria }}>{horarioSelecionado}</span>
                 </div>
                 
                 <div 
-                  className="flex justify-between items-center pb-4 border-b"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pb-3 sm:pb-4 border-b"
                   style={{ borderColor: cores.destaque + '20' }}
                 >
-                  <span style={{ color: cores.destaque }}>Cliente</span>
-                  <span className="font-semibold" style={{ color: cores.secundaria }}>{nomeCliente}</span>
+                  <span className="text-sm" style={{ color: cores.destaque }}>Cliente</span>
+                  <span className="font-semibold text-right truncate max-w-[200px] sm:max-w-none" style={{ color: cores.secundaria }}>{nomeCliente}</span>
                 </div>
                 
                 <div 
-                  className="flex justify-between items-center pb-4 border-b"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pb-3 sm:pb-4 border-b"
                   style={{ borderColor: cores.destaque + '20' }}
                 >
-                  <span style={{ color: cores.destaque }}>WhatsApp</span>
-                  <span className="font-semibold" style={{ color: cores.secundaria }}>{telefoneCliente}</span>
+                  <span className="text-sm" style={{ color: cores.destaque }}>WhatsApp</span>
+                  <span className="font-semibold text-right" style={{ color: cores.secundaria }}>{telefoneCliente}</span>
                 </div>
                 
                 <div className="flex justify-between items-center pt-2">
-                  <span className="text-lg" style={{ color: cores.destaque }}>Total</span>
-                  <span className="font-bold text-2xl" style={{ color: cores.secundaria }}>
+                  <span className="text-base sm:text-lg" style={{ color: cores.destaque }}>Total</span>
+                  <span className="font-bold text-xl sm:text-2xl" style={{ color: cores.secundaria }}>
                     R$ {servicos.find(s => s.id === servicoSelecionado)?.preco.toFixed(2)}
                   </span>
                 </div>
@@ -1108,11 +1108,11 @@ export default function PaginaAgendar() {
         </AnimatePresence>
 
         {/* Navegação */}
-        <div className="flex gap-3 mt-8">
+        <div className="flex flex-col sm:flex-row gap-3 mt-8">
           {etapa > 1 && (
             <button
               onClick={voltarEtapa}
-              className="flex-1 py-3 font-semibold rounded-xl transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
+              className="w-full sm:w-auto sm:flex-1 py-4 px-6 font-semibold rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
               style={{ 
                 backgroundColor: cores.destaque + '20',
                 color: cores.secundaria
@@ -1127,12 +1127,11 @@ export default function PaginaAgendar() {
             <button
               onClick={avancarEtapa}
               disabled={!etapaCompleta()}
-              className="flex-1 py-3 font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto sm:flex-1 py-4 px-6 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
               style={{ 
                 backgroundColor: etapaCompleta() ? cores.secundaria : cores.destaque + '20',
                 color: etapaCompleta() ? cores.primaria : cores.destaque,
-                cursor: etapaCompleta() ? 'pointer' : 'not-allowed',
-                transform: etapaCompleta() ? undefined : 'none'
+                cursor: etapaCompleta() ? 'pointer' : 'not-allowed'
               }}
             >
               Continuar
@@ -1142,7 +1141,7 @@ export default function PaginaAgendar() {
             <button
               onClick={finalizarAgendamento}
               disabled={enviando}
-              className="flex-1 py-3 font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto sm:flex-1 py-4 px-6 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
               style={{ 
                 backgroundColor: cores.secundaria,
                 color: cores.primaria,
@@ -1157,7 +1156,7 @@ export default function PaginaAgendar() {
               ) : (
                 <>
                   <Check className="w-5 h-5" />
-                  Confirmar Agendamento
+                  Confirmar
                 </>
               )}
             </button>

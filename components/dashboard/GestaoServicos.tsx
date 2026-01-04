@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Scissors, Edit2, Save, X, DollarSign, Clock, TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button, TextField, TextArea, Dialog } from "@radix-ui/themes";
+import { Button, TextField, TextArea } from "@radix-ui/themes";
 import { useToast } from "@/hooks/useToast";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 interface Servico {
   id: string;
@@ -246,12 +247,20 @@ export function GestaoServicos() {
       </div>
 
       {/* Modal de Novo Serviço */}
-      <Dialog.Root open={modalNovoAberto} onOpenChange={setModalNovoAberto}>
-        <Dialog.Content style={{ maxWidth: 500 }}>
-          <Dialog.Title>Criar Novo Serviço</Dialog.Title>
-          <Dialog.Description size="2" mb="4">
+      <ModalPortal aberto={modalNovoAberto} onFechar={() => setModalNovoAberto(false)}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">Criar Novo Serviço</h2>
+            <button
+              onClick={() => setModalNovoAberto(false)}
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-zinc-500" />
+            </button>
+          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
             Preencha as informações do novo serviço
-          </Dialog.Description>
+          </p>
 
           <div className="space-y-4">
             {/* Nome */}
@@ -334,21 +343,22 @@ export function GestaoServicos() {
           </div>
 
           <div className="flex gap-3 mt-6 justify-end">
-            <Dialog.Close>
-              <Button variant="soft" className="cursor-pointer">
-                Cancelar
-              </Button>
-            </Dialog.Close>
-            <Button
+            <button
+              onClick={() => setModalNovoAberto(false)}
+              className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
               onClick={criarNovoServico}
               disabled={salvando}
-              className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer"
+              className="px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {salvando ? "Criando..." : "Criar Serviço"}
-            </Button>
+            </button>
           </div>
-        </Dialog.Content>
-      </Dialog.Root>
+        </div>
+      </ModalPortal>
 
       {/* Lista de Serviços */}
       <div className="grid gap-4">

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Clock, Save, CheckCircle, XCircle, AlertCircle, Ban, Calendar as CalendarIcon } from "lucide-react";
-import { Button, Switch, Dialog, Select, TextField, TextArea } from "@radix-ui/themes";
+import { Clock, Save, CheckCircle, XCircle, AlertCircle, Ban, Calendar as CalendarIcon, X } from "lucide-react";
+import { Button, Switch, Select, TextField, TextArea } from "@radix-ui/themes";
 import { supabase } from "@/lib/supabase";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -356,18 +357,21 @@ export function GestaoHorarios() {
       </div>
 
       {/* Modal de Bloqueio de Horário */}
-      <Dialog.Root open={modalBloqueioAberto} onOpenChange={setModalBloqueioAberto}>
-        <Dialog.Content style={{ maxWidth: 500 }}>
-          <Dialog.Title className="text-xl font-bold mb-4">
+      <ModalPortal aberto={modalBloqueioAberto} onFechar={() => setModalBloqueioAberto(false)}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Ban className="w-6 h-6" />
-              Bloquear Horário
+              <Ban className="w-6 h-6 text-red-500" />
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Bloquear Horário</h2>
             </div>
-          </Dialog.Title>
+            <button onClick={() => setModalBloqueioAberto(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-zinc-500" />
+            </button>
+          </div>
           
-          <Dialog.Description className="text-zinc-600 dark:text-zinc-400 mb-6">
+          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
             Bloqueie um horário específico para impedir novos agendamentos
-          </Dialog.Description>
+          </p>
 
           <div className="space-y-4">
             {/* Data */}
@@ -430,22 +434,26 @@ export function GestaoHorarios() {
           </div>
 
           <div className="flex gap-3 justify-end mt-6">
-            <Dialog.Close>
-              <Button variant="soft" color="gray" className="cursor-pointer">
-                Cancelar
-              </Button>
-            </Dialog.Close>
-            <Button onClick={criarBloqueio} className="cursor-pointer bg-red-600 text-white hover:bg-red-700">
-              <Ban className="w-4 h-4 mr-2" />
+            <button
+              onClick={() => setModalBloqueioAberto(false)}
+              className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={criarBloqueio}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
+            >
+              <Ban className="w-4 h-4" />
               Bloquear
-            </Button>
+            </button>
           </div>
-        </Dialog.Content>
-      </Dialog.Root>
+        </div>
+      </ModalPortal>
 
       {/* Modal de Feedback */}
-      <Dialog.Root open={modalFeedback.aberto} onOpenChange={(aberto) => setModalFeedback({ ...modalFeedback, aberto })}>
-        <Dialog.Content style={{ maxWidth: 450 }} className="p-0 overflow-hidden">
+      <ModalPortal aberto={modalFeedback.aberto} onFechar={() => setModalFeedback({ ...modalFeedback, aberto: false })}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800">
           <div className={`p-6 ${
             modalFeedback.tipo === 'sucesso' 
               ? 'bg-green-50 dark:bg-green-900/10' 
@@ -465,39 +473,38 @@ export function GestaoHorarios() {
               </div>
               
               <div className="flex-1">
-                <Dialog.Title className={`text-lg font-semibold mb-2 ${
+                <h3 className={`text-lg font-semibold mb-2 ${
                   modalFeedback.tipo === 'sucesso' 
                     ? 'text-green-900 dark:text-green-100' 
                     : 'text-red-900 dark:text-red-100'
                 }`}>
                   {modalFeedback.titulo}
-                </Dialog.Title>
-                <Dialog.Description className={`${
+                </h3>
+                <p className={`${
                   modalFeedback.tipo === 'sucesso' 
                     ? 'text-green-700 dark:text-green-300' 
                     : 'text-red-700 dark:text-red-300'
                 }`}>
                   {modalFeedback.mensagem}
-                </Dialog.Description>
+                </p>
               </div>
             </div>
           </div>
 
           <div className="p-4 bg-white dark:bg-zinc-900 flex gap-3 justify-end">
-            <Dialog.Close>
-              <Button 
-                className={`cursor-pointer ${
-                  modalFeedback.tipo === 'sucesso'
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-red-600 text-white hover:bg-red-700'
-                }`}
-              >
-                Entendi
-              </Button>
-            </Dialog.Close>
+            <button
+              onClick={() => setModalFeedback({ ...modalFeedback, aberto: false })}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                modalFeedback.tipo === 'sucesso'
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+            >
+              Entendi
+            </button>
           </div>
-        </Dialog.Content>
-      </Dialog.Root>
+        </div>
+      </ModalPortal>
     </div>
   );
 }

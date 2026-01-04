@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
-  DollarSign, TrendingUp, TrendingDown, Calendar, Plus, Filter, Trash2, Download, CheckCircle, XCircle, AlertCircle 
+  DollarSign, TrendingUp, TrendingDown, Calendar, Plus, Filter, Trash2, Download, CheckCircle, XCircle, AlertCircle, X 
 } from "lucide-react";
-import { Button, Select, TextField, TextArea, Dialog } from "@radix-ui/themes";
+import { Button, Select, TextField, TextArea } from "@radix-ui/themes";
 import { supabase } from "@/lib/supabase";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Transacao, CategoriaDespesa, FormaPagamento } from "@/types";
@@ -600,8 +601,8 @@ export function GestaoFinanceira() {
       )}
 
       {/* Modal de Feedback */}
-      <Dialog.Root open={modalFeedback.aberto} onOpenChange={(aberto) => setModalFeedback({ ...modalFeedback, aberto })}>
-        <Dialog.Content style={{ maxWidth: 450 }} className="p-0 overflow-hidden">
+      <ModalPortal aberto={modalFeedback.aberto} onFechar={() => setModalFeedback({ ...modalFeedback, aberto: false })}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800">
           <div className={`p-6 ${
             modalFeedback.tipo === 'sucesso' 
               ? 'bg-green-50 dark:bg-green-900/10' 
@@ -629,7 +630,7 @@ export function GestaoFinanceira() {
               </div>
               
               <div className="flex-1">
-                <Dialog.Title className={`text-lg font-semibold mb-2 ${
+                <h3 className={`text-lg font-semibold mb-2 ${
                   modalFeedback.tipo === 'sucesso' 
                     ? 'text-green-900 dark:text-green-100' 
                     : modalFeedback.tipo === 'erro'
@@ -637,8 +638,8 @@ export function GestaoFinanceira() {
                     : 'text-orange-900 dark:text-orange-100'
                 }`}>
                   {modalFeedback.titulo}
-                </Dialog.Title>
-                <Dialog.Description className={`${
+                </h3>
+                <p className={`${
                   modalFeedback.tipo === 'sucesso' 
                     ? 'text-green-700 dark:text-green-300' 
                     : modalFeedback.tipo === 'erro'
@@ -646,7 +647,7 @@ export function GestaoFinanceira() {
                     : 'text-orange-700 dark:text-orange-300'
                 }`}>
                   {modalFeedback.mensagem}
-                </Dialog.Description>
+                </p>
               </div>
             </div>
           </div>
@@ -654,37 +655,35 @@ export function GestaoFinanceira() {
           <div className="p-4 bg-white dark:bg-zinc-900 flex gap-3 justify-end">
             {modalFeedback.tipo === 'confirmacao' ? (
               <>
-                <Dialog.Close>
-                  <Button variant="soft" className="cursor-pointer">
-                    Cancelar
-                  </Button>
-                </Dialog.Close>
-                <Button
-                  onClick={() => {
-                    modalFeedback.onConfirmar?.();
-                  }}
+                <button
+                  onClick={() => setModalFeedback({ ...modalFeedback, aberto: false })}
+                  className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => modalFeedback.onConfirmar?.()}
                   disabled={salvando}
-                  className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
                   {salvando ? 'Excluindo...' : 'Confirmar Exclusão'}
-                </Button>
+                </button>
               </>
             ) : (
-              <Dialog.Close>
-                <Button 
-                  className={`cursor-pointer ${
-                    modalFeedback.tipo === 'sucesso'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-red-600 text-white hover:bg-red-700'
-                  }`}
-                >
-                  Entendi
-                </Button>
-              </Dialog.Close>
+              <button
+                onClick={() => setModalFeedback({ ...modalFeedback, aberto: false })}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  modalFeedback.tipo === 'sucesso'
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                Entendi
+              </button>
             )}
           </div>
-        </Dialog.Content>
-      </Dialog.Root>
+        </div>
+      </ModalPortal>
     </div>
   );
 }

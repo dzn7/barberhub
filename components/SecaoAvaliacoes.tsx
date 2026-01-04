@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ThumbsUp, Quote, ChevronLeft, ChevronRight, CheckCircle, XCircle } from "lucide-react";
-import { Button, TextField, Dialog } from "@radix-ui/themes";
+import { Button, TextField } from "@radix-ui/themes";
 import { supabase } from "@/lib/supabase";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -520,8 +521,8 @@ export function SecaoAvaliacoes() {
         )}
 
         {/* Modal de Feedback */}
-        <Dialog.Root open={modalFeedback.aberto} onOpenChange={(aberto) => setModalFeedback({ ...modalFeedback, aberto })}>
-          <Dialog.Content style={{ maxWidth: 450 }} className="p-0 overflow-hidden">
+        <ModalPortal aberto={modalFeedback.aberto} onFechar={() => setModalFeedback({ ...modalFeedback, aberto: false })}>
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800">
             <div className={`p-6 ${
               modalFeedback.tipo === 'sucesso' 
                 ? 'bg-green-50 dark:bg-green-900/10' 
@@ -541,39 +542,38 @@ export function SecaoAvaliacoes() {
                 </div>
                 
                 <div className="flex-1">
-                  <Dialog.Title className={`text-lg font-semibold mb-2 ${
+                  <h3 className={`text-lg font-semibold mb-2 ${
                     modalFeedback.tipo === 'sucesso' 
                       ? 'text-green-900 dark:text-green-100' 
                       : 'text-red-900 dark:text-red-100'
                   }`}>
                     {modalFeedback.titulo}
-                  </Dialog.Title>
-                  <Dialog.Description className={`${
+                  </h3>
+                  <p className={`${
                     modalFeedback.tipo === 'sucesso' 
                       ? 'text-green-700 dark:text-green-300' 
                       : 'text-red-700 dark:text-red-300'
                   }`}>
                     {modalFeedback.mensagem}
-                  </Dialog.Description>
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="p-4 bg-white dark:bg-zinc-900 flex gap-3 justify-end">
-              <Dialog.Close>
-                <Button 
-                  className={`cursor-pointer ${
-                    modalFeedback.tipo === 'sucesso'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : 'bg-red-600 text-white hover:bg-red-700'
-                  }`}
-                >
-                  Entendi
-                </Button>
-              </Dialog.Close>
+              <button
+                onClick={() => setModalFeedback({ ...modalFeedback, aberto: false })}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  modalFeedback.tipo === 'sucesso'
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                Entendi
+              </button>
             </div>
-          </Dialog.Content>
-        </Dialog.Root>
+          </div>
+        </ModalPortal>
       </div>
     </section>
   );

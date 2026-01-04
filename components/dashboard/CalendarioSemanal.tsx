@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TextField, Select, Button } from "@radix-ui/themes";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
+const BOT_URL = 'https://bot-barberhub.fly.dev';
 
 interface Agendamento {
   id: string;
@@ -399,10 +400,44 @@ export function CalendarioSemanal() {
 
       if (error) throw error;
       
+      // Notificar cliente via WhatsApp
+      await notificarCancelamento(agendamentoSelecionado);
+      
       setModalDetalhesAberto(false);
       buscarAgendamentos();
     } catch (error) {
       console.error('Erro ao cancelar:', error);
+    }
+  };
+
+  // Notificar cancelamento via bot
+  const notificarCancelamento = async (agendamento: Agendamento) => {
+    try {
+      const dataUTC = parseISO(agendamento.data_hora);
+      const dataBrasilia = toZonedTime(dataUTC, TIMEZONE_BRASILIA);
+      const dataFormatada = format(dataBrasilia, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      
+      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes.nome}!\n\nSeu agendamento foi cancelado:\n\n📅 *Data:* ${dataFormatada}\n✂️ *Serviço:* ${agendamento.servicos.nome}\n👤 *Barbeiro:* ${agendamento.barbeiros.nome}\n\nSe desejar reagendar, entre em contato ou acesse nosso site.\n\n_BarberHub_`;
+
+      let telefone = agendamento.clientes.telefone.replace(/\D/g, '');
+      if (!telefone.startsWith('55')) {
+        telefone = '55' + telefone;
+      }
+
+      const response = await fetch(`${BOT_URL}/api/mensagens/enviar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numero: telefone, mensagem }),
+      });
+
+      const resultado = await response.json();
+      if (resultado.sucesso) {
+        console.log('[Cancelamento] ✅ Notificação enviada');
+      } else {
+        console.error('[Cancelamento] Falha:', resultado.erro);
+      }
+    } catch (error) {
+      console.error('[Cancelamento] Erro ao notificar:', error);
     }
   };
 

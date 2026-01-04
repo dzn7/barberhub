@@ -6,12 +6,13 @@ import {
   Clock, Calendar, Lock, Unlock, AlertCircle, 
   Plus, Trash2, Save, X, History, Settings, User
 } from "lucide-react";
-import { Button, TextField, Select, Switch, Badge, Dialog, TextArea } from "@radix-ui/themes";
+import { Button, TextField, Select, Switch, Badge, TextArea } from "@radix-ui/themes";
 import { format, parse, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Modal } from "@/components/Modal";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { CalendarioInterativo } from "./CalendarioInterativo";
 import { SeletorHorarioInterativo } from "./SeletorHorarioInterativo";
 
@@ -923,17 +924,20 @@ export function GestaoHorariosAvancada() {
       </motion.div>
 
       {/* Modal de Novo Bloqueio */}
-      <Dialog.Root open={modalBloqueio} onOpenChange={setModalBloqueio}>
-        <Dialog.Content style={{ maxWidth: 600, maxHeight: '90vh', overflowY: 'auto' }}>
-          <div className="mb-6">
-            <Dialog.Title className="text-2xl font-bold text-zinc-900 dark:text-white mb-2 flex items-center gap-2">
+      <ModalPortal aberto={modalBloqueio} onFechar={() => setModalBloqueio(false)}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-xl shadow-2xl border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
               <Lock className="w-6 h-6 text-orange-600" />
-              Novo Bloqueio de Horário
-            </Dialog.Title>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Bloqueie um período específico para impedir novos agendamentos
-            </p>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Novo Bloqueio de Horário</h2>
+            </div>
+            <button onClick={() => setModalBloqueio(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-zinc-500" />
+            </button>
           </div>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+            Bloqueie um período específico para impedir novos agendamentos
+          </p>
           
           <div className="space-y-6">
             {/* Barbeiro */}
@@ -1081,71 +1085,60 @@ export function GestaoHorariosAvancada() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-            <Button
+            <button
               onClick={() => setModalBloqueio(false)}
-              variant="soft"
-              color="gray"
-              className="flex-1 cursor-pointer"
-              size="3"
+              className="flex-1 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
-              <X className="w-4 h-4 mr-2" />
+              <X className="w-4 h-4" />
               Cancelar
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={criarBloqueio}
               disabled={salvando}
-              className="flex-1 cursor-pointer bg-orange-600 hover:bg-orange-700 text-white"
-              size="3"
+              className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {salvando ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
                   Criando...
                 </>
               ) : (
                 <>
-                  <Lock className="w-4 h-4 mr-2" />
-              Criar Bloqueio
+                  <Lock className="w-4 h-4" />
+                  Criar Bloqueio
                 </>
               )}
-            </Button>
+            </button>
           </div>
-        </Dialog.Content>
-      </Dialog.Root>
+        </div>
+      </ModalPortal>
 
       {/* Modal de Confirmação de Remoção */}
-      <Dialog.Root open={confirmarRemocao.aberto} onOpenChange={(aberto) => {
-        if (!aberto) {
-          setConfirmarRemocao({ aberto: false, id: null });
-        }
-      }}>
-        <Dialog.Content style={{ maxWidth: 400 }}>
-          <Dialog.Title className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
+      <ModalPortal aberto={confirmarRemocao.aberto} onFechar={() => setConfirmarRemocao({ aberto: false, id: null })}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-zinc-200 dark:border-zinc-800">
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
             Confirmar Remoção
-          </Dialog.Title>
+          </h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
             Tem certeza que deseja remover este bloqueio? Esta ação não pode ser desfeita.
           </p>
           <div className="flex gap-3 justify-end">
-            <Button
+            <button
               onClick={() => setConfirmarRemocao({ aberto: false, id: null })}
-              variant="soft"
-              color="gray"
-              className="cursor-pointer"
+              className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
             >
               Cancelar
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={confirmarRemocaoBloqueio}
-              color="red"
-              className="cursor-pointer"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
+              <Trash2 className="w-4 h-4" />
               Remover
-            </Button>
+            </button>
           </div>
-        </Dialog.Content>
-      </Dialog.Root>
+        </div>
+      </ModalPortal>
 
       {/* Modal de Feedback */}
       {modalConfig && (
