@@ -24,6 +24,7 @@ import { format, addDays, isSameDay, parseISO, startOfDay, isToday, isPast } fro
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { schemaNovoAgendamento, validarFormulario } from "@/lib/validacoes";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { Badge, Button, TextField, Select } from "@radix-ui/themes";
 import { PortalModal } from "@/components/ui/PortalModal";
@@ -306,7 +307,7 @@ export function CalendarioAgendamentos() {
 
   // Salvar novo agendamento
   const salvarNovoAgendamento = async () => {
-    // Validações
+    // Validações com Zod
     setMensagemErro("");
     
     if (!tenant) {
@@ -314,20 +315,10 @@ export function CalendarioAgendamentos() {
       return;
     }
     
-    if (!novoAgendamento.clienteNome.trim()) {
-      setMensagemErro("Por favor, digite o nome do cliente");
-      return;
-    }
-    if (!novoAgendamento.clienteTelefone.trim()) {
-      setMensagemErro("Por favor, digite o número de telefone");
-      return;
-    }
-    if (!novoAgendamento.barbeiroId) {
-      setMensagemErro("Por favor, selecione um barbeiro");
-      return;
-    }
-    if (!novoAgendamento.servicoId) {
-      setMensagemErro("Por favor, selecione um serviço");
+    const validacao = validarFormulario(schemaNovoAgendamento, novoAgendamento);
+    if (!validacao.sucesso) {
+      const primeiroErro = Object.values(validacao.erros)[0];
+      setMensagemErro(primeiroErro || "Preencha todos os campos obrigatórios");
       return;
     }
 
@@ -407,18 +398,30 @@ export function CalendarioAgendamentos() {
     
     setProcessando(true);
     try {
-      // 1. Primeiro, deletar o histórico relacionado (se existir)
-      const { error: erroHistorico } = await supabase
+      // 1. Deletar notificações relacionadas (CASCADE deveria fazer, mas garantindo)
+      await supabase
+        .from('notificacoes_enviadas')
+        .delete()
+        .eq('agendamento_id', agendamentoSelecionado.id);
+
+      // 2. Deletar histórico relacionado (CASCADE deveria fazer, mas garantindo)
+      await supabase
         .from('historico_agendamentos')
         .delete()
         .eq('agendamento_id', agendamentoSelecionado.id);
 
-      if (erroHistorico) {
-        console.warn('Aviso ao deletar histórico:', erroHistorico);
-        // Não bloquear se não houver histórico
-      }
+      // 3. Setar NULL nas comissões e transações (já é SET NULL, mas garantindo)
+      await supabase
+        .from('comissoes')
+        .update({ agendamento_id: null })
+        .eq('agendamento_id', agendamentoSelecionado.id);
 
-      // 2. Depois, deletar o agendamento
+      await supabase
+        .from('transacoes')
+        .update({ agendamento_id: null })
+        .eq('agendamento_id', agendamentoSelecionado.id);
+
+      // 4. Deletar o agendamento
       const { error: erroAgendamento } = await supabase
         .from('agendamentos')
         .delete()
@@ -429,9 +432,9 @@ export function CalendarioAgendamentos() {
       setModalConfirmacao(false);
       setAgendamentoSelecionado(null);
       buscarAgendamentos();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao deletar agendamento:', error);
-      alert('Erro ao deletar agendamento. Tente novamente.');
+      alert(`Erro ao deletar agendamento: ${error.message || 'Tente novamente.'}`);
     } finally {
       setProcessando(false);
     }

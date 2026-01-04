@@ -60,6 +60,65 @@ interface DadosRelatorio {
   diasSemanaDistribuicao: { dia: string; quantidade: number }[];
 }
 
+// Interfaces para dados do banco
+interface AgendamentoRelatorio {
+  id: string;
+  data_hora: string;
+  status: string;
+  valor_pago?: number;
+  forma_pagamento?: string;
+  avaliacao?: number;
+  servicos?: Record<string, unknown>;
+  clientes?: Record<string, unknown>;
+}
+
+interface AtendimentoPresencialRelatorio {
+  id: string;
+  data: string;
+  valor?: number;
+  forma_pagamento?: string;
+  servicos?: Record<string, unknown>;
+}
+
+// Helpers para extrair dados de forma segura (Supabase pode retornar objeto ou array)
+const extrairServico = (servicos: unknown): { nome: string; preco: number } | null => {
+  if (!servicos) return null;
+  if (Array.isArray(servicos) && servicos.length > 0) {
+    return { nome: servicos[0]?.nome || '', preco: servicos[0]?.preco || 0 };
+  }
+  if (typeof servicos === 'object') {
+    const s = servicos as Record<string, unknown>;
+    return { nome: String(s.nome || ''), preco: Number(s.preco || 0) };
+  }
+  return null;
+};
+
+const extrairCliente = (clientes: unknown): { id: string } | null => {
+  if (!clientes) return null;
+  if (Array.isArray(clientes) && clientes.length > 0) {
+    return { id: clientes[0]?.id || '' };
+  }
+  if (typeof clientes === 'object') {
+    const c = clientes as Record<string, unknown>;
+    return { id: String(c.id || '') };
+  }
+  return null;
+};
+
+interface TooltipPayloadItem {
+  name: string;
+  value: number;
+  color: string;
+  dataKey: string;
+}
+
+interface CardMetricaProps {
+  titulo: string;
+  valor: string;
+  icone: React.ComponentType<{ className?: string }>;
+  cor: "blue" | "green" | "purple" | "zinc" | "red" | "yellow";
+}
+
 // Cores para os gráficos
 const CORES_GRAFICOS = [
   "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
@@ -164,17 +223,17 @@ export function Relatorios() {
         throw new Error("Erro ao buscar atendimentos: " + erroAtendimentos.message);
       }
 
-      // Processar dados
+      // Processar dados (cast necessário pois Supabase retorna tipos dinâmicos)
       const dadosProcessados = processarDadosRelatorio(
-        agendamentos || [],
-        atendimentosPresenciais || [],
+        (agendamentos || []) as unknown as AgendamentoRelatorio[],
+        (atendimentosPresenciais || []) as unknown as AtendimentoPresencialRelatorio[],
         filtro
       );
 
       setDados(dadosProcessados);
-    } catch (erro: any) {
+    } catch (erro) {
       console.error("[Relatórios] Erro:", erro);
-      setErroCarregamento(erro.message || "Erro ao carregar relatórios");
+      setErroCarregamento(erro instanceof Error ? erro.message : "Erro ao carregar relatórios");
     } finally {
       setCarregando(false);
     }
@@ -182,8 +241,8 @@ export function Relatorios() {
 
   // Processar dados para os relatórios
   const processarDadosRelatorio = (
-    agendamentos: any[],
-    atendimentosPresenciais: any[],
+    agendamentos: AgendamentoRelatorio[],
+    atendimentosPresenciais: AtendimentoPresencialRelatorio[],
     filtroAtual: FiltroRelatorio
   ): DadosRelatorio => {
     // Filtrar agendamentos confirmados e concluídos
@@ -196,24 +255,31 @@ export function Relatorios() {
 
     // Combinar todos os atendimentos
     const todosAtendimentos = [
-      ...agendamentosValidos.map((ag) => ({
-        data: parseISO(ag.data_hora),
-        hora: getHours(parseISO(ag.data_hora)),
-        valor: ag.servicos?.preco || ag.valor_pago || 0,
-        servico: ag.servicos?.nome || "Serviço não identificado",
-        formaPagamento: ag.forma_pagamento || "nao_informado",
-        avaliacao: ag.avaliacao,
-        clienteId: ag.clientes?.id
-      })),
-      ...atendimentosPresenciais.map((at) => ({
-        data: parseISO(at.data),
-        hora: getHours(parseISO(at.data)),
-        valor: at.valor || at.servicos?.preco || 0,
-        servico: at.servicos?.nome || "Serviço não identificado",
-        formaPagamento: at.forma_pagamento || "nao_informado",
-        avaliacao: null,
-        clienteId: null
-      }))
+      ...agendamentosValidos.map((ag) => {
+        const servico = extrairServico(ag.servicos);
+        const cliente = extrairCliente(ag.clientes);
+        return {
+          data: parseISO(ag.data_hora),
+          hora: getHours(parseISO(ag.data_hora)),
+          valor: servico?.preco || ag.valor_pago || 0,
+          servico: servico?.nome || "Serviço não identificado",
+          formaPagamento: ag.forma_pagamento || "nao_informado",
+          avaliacao: ag.avaliacao,
+          clienteId: cliente?.id || null
+        };
+      }),
+      ...atendimentosPresenciais.map((at) => {
+        const servico = extrairServico(at.servicos);
+        return {
+          data: parseISO(at.data),
+          hora: getHours(parseISO(at.data)),
+          valor: at.valor || servico?.preco || 0,
+          servico: servico?.nome || "Serviço não identificado",
+          formaPagamento: at.forma_pagamento || "nao_informado",
+          avaliacao: null,
+          clienteId: null
+        };
+      })
     ];
 
     // Calcular serviços mais pedidos

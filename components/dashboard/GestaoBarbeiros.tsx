@@ -23,7 +23,24 @@ import {
   Search,
   UserCheck,
   UserX,
+  Key,
+  Copy,
+  Check,
+  RefreshCw,
 } from "lucide-react";
+
+/**
+ * Gera um token de acesso único para o barbeiro
+ * Formato: 8 caracteres alfanuméricos maiúsculos
+ */
+const gerarTokenAcesso = (): string => {
+  const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Sem I, O, 1, 0 para evitar confusão
+  let token = '';
+  for (let i = 0; i < 8; i++) {
+    token += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+  }
+  return token;
+};
 
 const ESPECIALIDADES_SUGERIDAS = [
   "Corte Masculino",
@@ -51,6 +68,9 @@ export function GestaoBarbeiros() {
   const [salvando, setSalvando] = useState(false);
   const [uploadandoFoto, setUploadandoFoto] = useState(false);
   const [busca, setBusca] = useState("");
+  const [tokenGerado, setTokenGerado] = useState<string | null>(null);
+  const [modalTokenAberto, setModalTokenAberto] = useState(false);
+  const [tokenCopiado, setTokenCopiado] = useState(false);
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
   // Estados para recorte de imagem
@@ -249,6 +269,9 @@ export function GestaoBarbeiros() {
         if (error) throw error;
         toast({ tipo: "sucesso", mensagem: "Profissional atualizado com sucesso!" });
       } else {
+        // Gerar token de acesso para o novo barbeiro
+        const novoToken = gerarTokenAcesso();
+        
         const { error } = await supabase.from("barbeiros").insert({
           tenant_id: tenant.id,
           nome: form.nome.trim(),
@@ -257,9 +280,15 @@ export function GestaoBarbeiros() {
           especialidades: form.especialidades,
           comissao_percentual: form.comissao_percentual,
           foto_url: form.foto_url || null,
+          token_acesso: novoToken,
+          token_ativo: true,
         });
 
         if (error) throw error;
+        
+        // Exibir modal com o token gerado
+        setTokenGerado(novoToken);
+        setModalTokenAberto(true);
         toast({ tipo: "sucesso", mensagem: "Profissional adicionado com sucesso!" });
       }
 
@@ -703,6 +732,96 @@ export function GestaoBarbeiros() {
           formatoCircular={true}
         />
       )}
+
+      {/* Modal de Token de Acesso */}
+      <AnimatePresence>
+        {modalTokenAberto && tokenGerado && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-emerald-50 dark:bg-emerald-900/20">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl">
+                    <Key className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                      Token de Acesso Gerado!
+                    </h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                      Envie este código para o barbeiro
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Conteúdo */}
+              <div className="p-6 space-y-4">
+                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4">
+                  <p className="text-center text-3xl font-mono font-bold tracking-[0.3em] text-zinc-900 dark:text-white">
+                    {tokenGerado}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(tokenGerado);
+                    setTokenCopiado(true);
+                    setTimeout(() => setTokenCopiado(false), 2000);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-all"
+                >
+                  {tokenCopiado ? (
+                    <>
+                      <Check className="w-5 h-5 text-emerald-500" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-5 h-5" />
+                      Copiar Código
+                    </>
+                  )}
+                </button>
+
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    <strong>Importante:</strong> O barbeiro deve acessar{" "}
+                    <span className="font-mono bg-amber-100 dark:bg-amber-900/50 px-1 rounded">
+                      /barbeiro/entrar
+                    </span>{" "}
+                    e inserir este código para acessar o painel.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-zinc-200 dark:border-zinc-800">
+                <button
+                  onClick={() => {
+                    setModalTokenAberto(false);
+                    setTokenGerado(null);
+                    setTokenCopiado(false);
+                  }}
+                  className="w-full px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors font-medium"
+                >
+                  Fechar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

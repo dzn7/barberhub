@@ -12,7 +12,7 @@ import { Botao } from '@/components/ui/botao'
 import {
   EditorLogo,
   ServicosMiniGestao,
-  BarbeirosMiniGestao,
+  CadastroBarbeirosOnboarding,
   PreviewSite
 } from '@/components/configuracao'
 import {
@@ -152,7 +152,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
 
       <main className="max-w-3xl mx-auto px-4 py-12 md:py-20">
 
-        {/* Título principal */}
+        {/* ttulo principal */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,7 +168,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
           </p>
         </motion.div>
 
-        {/* Resumo da configuração */}
+        {/* resumo da configuraçao */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -603,8 +603,8 @@ export default function ConfigurarPage() {
               )}
               {etapaAtual === 6 && (
                 <motion.div key="etapa6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div><h2 className="text-2xl font-bold text-white mb-2">Cadastre sua equipe</h2><p className="text-zinc-400">Quem são os profissionais que trabalham com você</p></div>
-                  <BarbeirosMiniGestao tenantId={tenant.id} limiteBarbeiros={tenant.limite_barbeiros || 2} onTotalChange={setTotalBarbeiros} />
+                  <div><h2 className="text-2xl font-bold text-white mb-2">Sua equipe de profissionais</h2><p className="text-zinc-400">Cadastre os barbeiros que trabalham com você e gere os códigos de acesso</p></div>
+                  <CadastroBarbeirosOnboarding tenantId={tenant.id} limiteBarbeiros={tenant.limite_barbeiros || 2} onTotalChange={setTotalBarbeiros} />
                 </motion.div>
               )}
             </AnimatePresence>

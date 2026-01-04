@@ -10,6 +10,7 @@ import {
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { PortalModal } from "@/components/ui/PortalModal";
 import { ModalRemarcacao } from "./ModalRemarcacao";
+import { ModalNovoAgendamento } from "@/components/agendamento";
 import { format, addDays, startOfWeek, isSameDay, parseISO, subDays, isToday } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
@@ -84,20 +85,7 @@ export function CalendarioSemanalNovo() {
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
   const [processando, setProcessando] = useState(false);
-  const [mensagemErro, setMensagemErro] = useState("");
   const [modalRemarcacaoAberto, setModalRemarcacaoAberto] = useState(false);
-  
-  const [novoAgendamento, setNovoAgendamento] = useState({
-    clienteNome: "",
-    clienteTelefone: "",
-    data: format(new Date(), "yyyy-MM-dd"),
-    hora: "09:00",
-    barbeiroId: "",
-    servicoId: "",
-  });
-  
-  const [barbeiros, setBarbeiros] = useState<any[]>([]);
-  const [servicos, setServicos] = useState<any[]>([]);
   const subscriptionRef = useRef<any>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -123,13 +111,6 @@ export function CalendarioSemanalNovo() {
       buscarAgendamentosSemana();
     }
   }, [diaSelecionado, tenant]);
-
-  // Carregar dados do formulário
-  useEffect(() => {
-    if (tenant) {
-      carregarDadosFormulario();
-    }
-  }, [tenant]);
 
   // Realtime
   useEffect(() => {
@@ -164,32 +145,6 @@ export function CalendarioSemanalNovo() {
       scrollContainerRef.current.scrollTop = scrollPosition;
     }
   }, [carregando]);
-
-  const carregarDadosFormulario = async () => {
-    if (!tenant) return;
-    
-    try {
-      const [barbeirosRes, servicosRes] = await Promise.all([
-        supabase.from('barbeiros').select('id, nome').eq('tenant_id', tenant.id).eq('ativo', true),
-        supabase.from('servicos').select('id, nome, preco, duracao').eq('tenant_id', tenant.id).eq('ativo', true),
-      ]);
-
-      if (barbeirosRes.data) {
-        setBarbeiros(barbeirosRes.data);
-        if (barbeirosRes.data.length > 0) {
-          setNovoAgendamento(prev => ({ ...prev, barbeiroId: barbeirosRes.data[0].id }));
-        }
-      }
-      if (servicosRes.data) {
-        setServicos(servicosRes.data);
-        if (servicosRes.data.length > 0) {
-          setNovoAgendamento(prev => ({ ...prev, servicoId: servicosRes.data[0].id }));
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-    }
-  };
 
   const buscarAgendamentosSemana = async () => {
     if (!tenant) return;
@@ -340,84 +295,6 @@ export function CalendarioSemanalNovo() {
     } catch (error) {
       console.error('Erro ao deletar:', error);
       alert('Erro ao excluir agendamento');
-    }
-  };
-
-  const salvarNovoAgendamento = async () => {
-    if (!tenant) return;
-    
-    try {
-      setProcessando(true);
-      setMensagemErro("");
-
-      if (!novoAgendamento.clienteNome.trim()) {
-        setMensagemErro("Digite o nome do cliente");
-        return;
-      }
-      if (!novoAgendamento.clienteTelefone.trim()) {
-        setMensagemErro("Digite o telefone");
-        return;
-      }
-
-      const telefoneFormatado = novoAgendamento.clienteTelefone.replace(/\D/g, '');
-      let clienteId: string;
-
-      const { data: clienteExistente } = await supabase
-        .from('clientes')
-        .select('id')
-        .eq('tenant_id', tenant.id)
-        .eq('telefone', telefoneFormatado)
-        .maybeSingle();
-
-      if (clienteExistente) {
-        clienteId = clienteExistente.id;
-      } else {
-        const { data: novoCliente, error: erroCliente } = await supabase
-          .from('clientes')
-          .insert([{ 
-            tenant_id: tenant.id,
-            nome: novoAgendamento.clienteNome, 
-            telefone: telefoneFormatado, 
-            ativo: true 
-          }])
-          .select()
-          .single();
-
-        if (erroCliente) throw erroCliente;
-        clienteId = novoCliente.id;
-      }
-
-      const dataHoraLocal = `${novoAgendamento.data}T${novoAgendamento.hora}:00`;
-      const dataHoraUTC = fromZonedTime(dataHoraLocal, TIMEZONE_BRASILIA);
-
-      const { error: erroAgendamento } = await supabase
-        .from('agendamentos')
-        .insert([{
-          tenant_id: tenant.id,
-          cliente_id: clienteId,
-          barbeiro_id: novoAgendamento.barbeiroId,
-          servico_id: novoAgendamento.servicoId,
-          data_hora: dataHoraUTC.toISOString(),
-          status: 'pendente',
-        }]);
-
-      if (erroAgendamento) throw erroAgendamento;
-
-      setModalNovoAberto(false);
-      setNovoAgendamento({
-        clienteNome: "",
-        clienteTelefone: "",
-        data: format(new Date(), "yyyy-MM-dd"),
-        hora: "09:00",
-        barbeiroId: barbeiros[0]?.id || "",
-        servicoId: servicos[0]?.id || "",
-      });
-      buscarAgendamentosSemana();
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      setMensagemErro("Erro ao criar agendamento");
-    } finally {
-      setProcessando(false);
     }
   };
 
@@ -829,157 +706,17 @@ export function CalendarioSemanalNovo() {
       )}
 
       {/* Modal de Novo Agendamento */}
-      <AnimatePresence>
-        {modalNovoAberto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            onClick={() => !processando && setModalNovoAberto(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
-                    Novo Agendamento
-                  </h3>
-                  <button
-                    onClick={() => setModalNovoAberto(false)}
-                    className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                  >
-                    <X className="w-5 h-5 text-zinc-500" />
-                  </button>
-                </div>
-
-                {mensagemErro && (
-                  <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 rounded-xl">
-                    <p className="text-sm text-rose-700 dark:text-rose-400">{mensagemErro}</p>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Nome do Cliente
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Digite o nome"
-                      value={novoAgendamento.clienteNome}
-                      onChange={(e) => setNovoAgendamento({ ...novoAgendamento, clienteNome: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Telefone (WhatsApp)
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="(00) 00000-0000"
-                      value={novoAgendamento.clienteTelefone}
-                      onChange={(e) => setNovoAgendamento({ ...novoAgendamento, clienteTelefone: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                        Data
-                      </label>
-                      <input
-                        type="date"
-                        value={novoAgendamento.data}
-                        onChange={(e) => setNovoAgendamento({ ...novoAgendamento, data: e.target.value })}
-                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                        Horário
-                      </label>
-                      <input
-                        type="time"
-                        value={novoAgendamento.hora}
-                        onChange={(e) => setNovoAgendamento({ ...novoAgendamento, hora: e.target.value })}
-                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Barbeiro
-                    </label>
-                    <select
-                      value={novoAgendamento.barbeiroId}
-                      onChange={(e) => setNovoAgendamento({ ...novoAgendamento, barbeiroId: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
-                    >
-                      {barbeiros.map((b) => (
-                        <option key={b.id} value={b.id}>{b.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Serviço
-                    </label>
-                    <select
-                      value={novoAgendamento.servicoId}
-                      onChange={(e) => setNovoAgendamento({ ...novoAgendamento, servicoId: e.target.value })}
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
-                    >
-                      {servicos.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.nome} - R$ {s.preco.toFixed(2)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 mt-6">
-                  <button
-                    onClick={() => setModalNovoAberto(false)}
-                    disabled={processando}
-                    className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={salvarNovoAgendamento}
-                    disabled={processando}
-                    className="flex-1 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {processando ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Criando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        Criar
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {tenant && (
+        <ModalNovoAgendamento
+          tenantId={tenant.id}
+          aberto={modalNovoAberto}
+          onFechar={() => setModalNovoAberto(false)}
+          onSucesso={() => {
+            buscarAgendamentosSemana();
+          }}
+          dataPadrao={format(diaSelecionado, 'yyyy-MM-dd')}
+        />
+      )}
     </div>
   );
 }

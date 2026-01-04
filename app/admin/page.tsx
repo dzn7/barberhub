@@ -23,6 +23,7 @@ import { GestaoHorariosAvancada } from "@/components/dashboard/GestaoHorariosAva
 import { Relatorios } from "@/components/dashboard/Relatorios";
 import { ConfiguracaoBarbearia } from "@/components/dashboard/ConfiguracaoBarbearia";
 import { TelaTesteExpirado } from "@/components/dashboard/TelaTesteExpirado";
+import { GuiaAcessoBarbeiros } from "@/components/dashboard/GuiaAcessoBarbeiros";
 import { AlternadorTema } from "@/components/AlternadorTema";
 // PWA removido temporariamente
 // import { NotificationPermission } from "@/components/NotificationPermission";
@@ -806,6 +807,9 @@ export default function DashboardCompleto() {
                 </div>
               </div>
               
+              {/* Guia de Acesso dos Barbeiros */}
+              <GuiaAcessoBarbeiros />
+
               {/* Tabs internas para configurações */}
               <Tabs.Root defaultValue="personalizacao">
                 <Tabs.List className="mb-6">

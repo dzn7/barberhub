@@ -58,6 +58,17 @@ interface HorarioBloqueado {
   barbeiros?: { nome: string };
 }
 
+interface BarbeiroSimples {
+  id: string;
+  nome: string;
+}
+
+interface ModalConfigState {
+  title: string;
+  message: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+}
+
 export function GestaoHorariosAvancada() {
   const { tenant } = useAuth();
   const [config, setConfig] = useState<ConfiguracaoBarbearia | null>(null);
@@ -76,8 +87,8 @@ export function GestaoHorariosAvancada() {
     tipo: "bloqueio_manual"
   });
   
-  const [barbeiros, setBarbeiros] = useState<any[]>([]);
-  const [modalConfig, setModalConfig] = useState<any>(null);
+  const [barbeiros, setBarbeiros] = useState<BarbeiroSimples[]>([]);
+  const [modalConfig, setModalConfig] = useState<ModalConfigState | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [confirmarRemocao, setConfirmarRemocao] = useState<{aberto: boolean, id: string | null}>({
     aberto: false,
@@ -449,7 +460,7 @@ export function GestaoHorariosAvancada() {
             </label>
             <TextArea
               value={config.mensagem_fechamento || ""}
-              onChange={(e: any) => setConfig({ ...config, mensagem_fechamento: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setConfig({ ...config, mensagem_fechamento: e.target.value })}
               placeholder="Ex: Fechado para manutenção. Voltamos em breve!"
               rows={3}
             />
@@ -493,7 +504,7 @@ export function GestaoHorariosAvancada() {
               <TextField.Root
                 type="time"
                 value={config.horario_abertura}
-                onChange={(e: any) => setConfig({ ...config, horario_abertura: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfig({ ...config, horario_abertura: e.target.value })}
                 size="3"
                 className="text-lg font-semibold"
               />
@@ -512,7 +523,7 @@ export function GestaoHorariosAvancada() {
               <TextField.Root
                 type="time"
                 value={config.horario_fechamento}
-                onChange={(e: any) => setConfig({ ...config, horario_fechamento: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfig({ ...config, horario_fechamento: e.target.value })}
                 size="3"
                 className="text-lg font-semibold"
               />
@@ -540,7 +551,7 @@ export function GestaoHorariosAvancada() {
               <TextField.Root
                 type="time"
                 value={config.intervalo_almoco_inicio || ""}
-                onChange={(e: any) => setConfig({ ...config, intervalo_almoco_inicio: e.target.value || null })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfig({ ...config, intervalo_almoco_inicio: e.target.value || null })}
                 placeholder="Ex: 12:00"
                 size="3"
               />
@@ -556,7 +567,7 @@ export function GestaoHorariosAvancada() {
               <TextField.Root
                 type="time"
                 value={config.intervalo_almoco_fim || ""}
-                onChange={(e: any) => setConfig({ ...config, intervalo_almoco_fim: e.target.value || null })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfig({ ...config, intervalo_almoco_fim: e.target.value || null })}
                 placeholder="Ex: 14:00"
                 size="3"
               />
@@ -704,7 +715,7 @@ export function GestaoHorariosAvancada() {
                           <TextField.Root
                             type="time"
                             value={horarioDia.abertura}
-                            onChange={(e: any) => {
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                               const novosHorarios = {
                                 ...config.horarios_personalizados,
                                 [dia.valor]: {
@@ -724,7 +735,7 @@ export function GestaoHorariosAvancada() {
                           <TextField.Root
                             type="time"
                             value={horarioDia.fechamento}
-                            onChange={(e: any) => {
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                               const novosHorarios = {
                                 ...config.horarios_personalizados,
                                 [dia.valor]: {
@@ -748,7 +759,7 @@ export function GestaoHorariosAvancada() {
                           <TextField.Root
                             type="time"
                             value={horarioDia.almoco_inicio || ""}
-                            onChange={(e: any) => {
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                               const novosHorarios = {
                                 ...config.horarios_personalizados,
                                 [dia.valor]: {
@@ -769,7 +780,7 @@ export function GestaoHorariosAvancada() {
                           <TextField.Root
                             type="time"
                             value={horarioDia.almoco_fim || ""}
-                            onChange={(e: any) => {
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                               const novosHorarios = {
                                 ...config.horarios_personalizados,
                                 [dia.valor]: {
@@ -1053,7 +1064,7 @@ export function GestaoHorariosAvancada() {
               </label>
               <TextArea
                 value={novoBloqueio.motivo}
-                onChange={(e: any) => setNovoBloqueio({ ...novoBloqueio, motivo: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNovoBloqueio({ ...novoBloqueio, motivo: e.target.value })}
                 placeholder="Ex: Feriado nacional, Folga do barbeiro, Manutenção..."
                 rows={3}
                 className="w-full"
