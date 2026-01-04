@@ -301,9 +301,9 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
   ]
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-zinc-50 dark:bg-black transition-colors">
       {/* Header minimalista */}
-      <header className="border-b border-zinc-800/50">
+      <header className="border-b border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-black">
         <div className="max-w-3xl mx-auto px-4 py-4">
           <Link href="/">
             <LogoMarca className="h-8" />
@@ -320,10 +320,10 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
           transition={{ delay: 0.1 }}
           className="mb-12"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-4">
             {dados.nome || tenant.nome} está no ar
           </h1>
-          <p className="text-lg text-zinc-400 max-w-xl">
+          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl">
             Sua barbearia está configurada e pronta para receber agendamentos. 
             Veja abaixo os próximos passos para começar.
           </p>
@@ -336,28 +336,28 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
           transition={{ delay: 0.2 }}
           className="mb-12"
         >
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-            <h2 className="text-sm font-medium text-zinc-400 mb-4 uppercase tracking-wider">
+          <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm dark:shadow-none">
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 uppercase tracking-wider">
               Resumo
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
-                <p className="text-2xl font-bold text-white">{totalServicos}</p>
+                <p className="text-2xl font-bold text-zinc-900 dark:text-white">{totalServicos}</p>
                 <p className="text-sm text-zinc-500">Serviços</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{totalBarbeiros}</p>
+                <p className="text-2xl font-bold text-zinc-900 dark:text-white">{totalBarbeiros}</p>
                 <p className="text-sm text-zinc-500">Profissionais</p>
               </div>
               <div className="col-span-2">
                 <p className="text-sm text-zinc-500 mb-1">Seu link</p>
                 <div className="flex items-center gap-2">
-                  <code className="text-white font-mono text-sm bg-zinc-800 px-3 py-1.5 rounded-lg flex-1 truncate">
+                  <code className="text-zinc-900 dark:text-white font-mono text-sm bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-lg flex-1 truncate">
                     {linkPublico}
                   </code>
                   <button
                     onClick={copiarLink}
-                    className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                    className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                     title="Copiar link"
                   >
                     {linkCopiado ? (
@@ -378,7 +378,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h2 className="text-sm font-medium text-zinc-400 mb-6 uppercase tracking-wider">
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-6 uppercase tracking-wider">
             Próximos passos
           </h2>
           
@@ -392,28 +392,28 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 + index * 0.1 }}
-                  className={`group relative bg-zinc-900/50 border rounded-2xl p-6 transition-all hover:bg-zinc-900 ${
+                  className={`group relative bg-white dark:bg-zinc-900/50 border rounded-2xl p-6 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 shadow-sm dark:shadow-none ${
                     passo.destaque 
-                      ? 'border-white/20 hover:border-white/40' 
-                      : 'border-zinc-800 hover:border-zinc-700'
+                      ? 'border-zinc-900/20 dark:border-white/20 hover:border-zinc-900/40 dark:hover:border-white/40' 
+                      : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
                   }`}
                 >
                   <div className="flex items-start gap-4">
                     {/* Número */}
                     <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
                       passo.destaque 
-                        ? 'bg-white text-black' 
-                        : 'bg-zinc-800 text-zinc-400'
+                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-black' 
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
                     }`}>
                       {passo.numero}
                     </div>
                     
                     {/* Conteúdo */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-white mb-1">
+                      <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">
                         {passo.titulo}
                       </h3>
-                      <p className="text-zinc-400 text-sm mb-4">
+                      <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">
                         {passo.descricao}
                       </p>
                       
@@ -424,8 +424,8 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
                           target={passo.externo ? '_blank' : undefined}
                           className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                             passo.destaque
-                              ? 'bg-white text-black hover:bg-zinc-200'
-                              : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                              ? 'bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200'
+                              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700'
                           }`}
                         >
                           <Icone className="w-4 h-4" />
@@ -435,7 +435,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
                       ) : (
                         <button
                           onClick={passo.acao}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 text-white hover:bg-zinc-700 rounded-lg font-medium text-sm transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg font-medium text-sm transition-colors"
                         >
                           <Icone className={`w-4 h-4 ${linkCopiado ? 'text-emerald-500' : ''}`} />
                           {passo.textoBotao}
@@ -446,7 +446,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
                   
                   {/* Badge de destaque */}
                   {passo.destaque && (
-                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-white text-black text-xs font-medium rounded-full">
+                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-zinc-900 dark:bg-white text-white dark:text-black text-xs font-medium rounded-full">
                       Recomendado
                     </div>
                   )}

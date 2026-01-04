@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabase'
 import { Botao } from '@/components/ui/botao'
 import { LogoMarca } from '@/components/ui/logo-marca'
@@ -35,6 +36,8 @@ interface EstadoCampo {
 
 export default function RegistrarPage() {
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
   const [etapa, setEtapa] = useState(1)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -437,15 +440,15 @@ export default function RegistrarPage() {
   const titulosEtapas = ['Dados da Barbearia', 'Seus Dados', 'Criar Senha']
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white via-zinc-50 to-zinc-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800 flex items-center justify-center p-4 transition-colors">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block" aria-label="Voltar para página inicial">
             <LogoMarca />
           </Link>
-          <h1 className="text-2xl font-bold text-white mt-4">Criar sua Barbearia</h1>
-          <p className="text-zinc-400 mt-2">14 dias grátis para testar</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mt-4">Criar sua Barbearia</h1>
+          <p className="text-zinc-600 dark:text-zinc-400 mt-2">14 dias grátis para testar</p>
         </div>
 
         {/* Progress com acessibilidade */}
@@ -459,14 +462,14 @@ export default function RegistrarPage() {
               >
                 <div
                   className={`w-16 h-1 rounded-full transition-colors ${
-                    step <= etapa ? 'bg-white' : 'bg-zinc-700'
+                    step <= etapa ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-300 dark:bg-zinc-700'
                   }`}
                   aria-label={`Etapa ${step}: ${titulosEtapas[step - 1]}${step < etapa ? ' (concluída)' : step === etapa ? ' (atual)' : ''}`}
                 />
               </li>
             ))}
           </ol>
-          <p className="text-center text-xs text-zinc-500 mt-2" aria-live="polite">
+          <p className="text-center text-xs text-zinc-500 dark:text-zinc-500 mt-2" aria-live="polite">
             Etapa {etapa} de 3: {titulosEtapas[etapa - 1]}
           </p>
         </nav>
@@ -474,21 +477,21 @@ export default function RegistrarPage() {
         {/* Form */}
         <form 
           onSubmit={handleSubmit} 
-          className="bg-zinc-800/50 backdrop-blur-sm rounded-2xl p-6 border border-zinc-700/50"
+          className="bg-white/80 dark:bg-zinc-800/50 backdrop-blur-sm rounded-2xl p-6 border border-zinc-200 dark:border-zinc-700/50 shadow-xl dark:shadow-none"
           aria-label="Formulário de cadastro"
         >
           
           {/* Etapa 1: Dados da Barbearia */}
           {etapa === 1 && (
             <fieldset className="space-y-4">
-              <legend className="text-lg font-semibold text-white mb-4">Dados da Barbearia</legend>
+              <legend className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Dados da Barbearia</legend>
               
               <div>
-                <label htmlFor="nome_barbearia" className="block text-sm text-zinc-400 mb-2">
+                <label htmlFor="nome_barbearia" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
                   Nome da Barbearia <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" aria-hidden="true" />
+                  <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
                   <input
                     ref={inputNomeBarbeariaRef}
                     id="nome_barbearia"
@@ -500,19 +503,19 @@ export default function RegistrarPage() {
                     aria-required="true"
                     aria-describedby="nome_barbearia_ajuda"
                     autoComplete="organization"
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-zinc-500 transition-all"
+                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 focus:border-zinc-400 dark:focus:border-zinc-500 transition-all"
                   />
                 </div>
-                <p id="nome_barbearia_ajuda" className="text-xs text-zinc-500 mt-1">
+                <p id="nome_barbearia_ajuda" className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
                   O nome que aparecerá para seus clientes
                 </p>
               </div>
 
               <div>
-                <label htmlFor="slug" className="block text-sm text-zinc-400 mb-2">
+                <label htmlFor="slug" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
                   Endereço da sua página <span className="text-red-400">*</span>
                 </label>
-                <div className={`flex items-center bg-zinc-900 border rounded-lg overflow-hidden transition-colors ${classesBordaValidacao(validacaoSlug)}`}>
+                <div className={`flex items-center bg-zinc-50 dark:bg-zinc-900 border rounded-lg overflow-hidden transition-colors ${classesBordaValidacao(validacaoSlug)}`}>
                   <span className="px-2 sm:px-3 text-zinc-500 text-xs sm:text-sm select-none whitespace-nowrap flex-shrink-0" aria-hidden="true">barberhub.online/</span>
                   <input
                     id="slug"
@@ -528,7 +531,7 @@ export default function RegistrarPage() {
                     aria-required="true"
                     aria-describedby="slug_ajuda slug_status"
                     aria-invalid={validacaoSlug.estado === 'invalido'}
-                    className="flex-1 min-w-0 bg-transparent px-2 py-3 text-white placeholder:text-zinc-500 focus:outline-none"
+                    className="flex-1 min-w-0 bg-transparent px-2 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
                   />
                   <div className="pr-2 sm:pr-3 flex-shrink-0" aria-hidden="true">
                     {renderizarIndicadorValidacao(validacaoSlug)}
@@ -556,14 +559,14 @@ export default function RegistrarPage() {
           {/* Etapa 2: Dados Pessoais */}
           {etapa === 2 && (
             <fieldset className="space-y-4">
-              <legend className="text-lg font-semibold text-white mb-4">Seus Dados</legend>
+              <legend className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Seus Dados</legend>
               
               <div>
-                <label htmlFor="nome_proprietario" className="block text-sm text-zinc-400 mb-2">
+                <label htmlFor="nome_proprietario" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
                   Seu Nome <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" aria-hidden="true" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
                   <input
                     ref={inputNomeProprietarioRef}
                     id="nome_proprietario"
@@ -574,17 +577,17 @@ export default function RegistrarPage() {
                     required
                     aria-required="true"
                     autoComplete="name"
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-zinc-500 transition-all"
+                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 focus:border-zinc-400 dark:focus:border-zinc-500 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm text-zinc-400 mb-2">
+                <label htmlFor="email" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
                   E-mail <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" aria-hidden="true" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
                   <input
                     id="email"
                     type="email"
@@ -596,7 +599,7 @@ export default function RegistrarPage() {
                     aria-describedby="email_status"
                     aria-invalid={validacaoEmail.estado === 'invalido'}
                     autoComplete="email"
-                    className={`w-full bg-zinc-900 border rounded-lg pl-10 pr-10 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-zinc-500 transition-all ${classesBordaValidacao(validacaoEmail)}`}
+                    className={`w-full bg-zinc-50 dark:bg-zinc-900 border rounded-lg pl-10 pr-10 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 focus:border-zinc-400 dark:focus:border-zinc-500 transition-all ${classesBordaValidacao(validacaoEmail)}`}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2" aria-hidden="true">
                     {renderizarIndicadorValidacao(validacaoEmail)}
@@ -615,11 +618,11 @@ export default function RegistrarPage() {
               </div>
 
               <div>
-                <label htmlFor="telefone" className="block text-sm text-zinc-400 mb-2">
+                <label htmlFor="telefone" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
                   Telefone/WhatsApp <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" aria-hidden="true" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
                   <input
                     id="telefone"
                     type="tel"
@@ -631,10 +634,10 @@ export default function RegistrarPage() {
                     aria-required="true"
                     aria-describedby="telefone_ajuda"
                     autoComplete="tel"
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-zinc-500 transition-all"
+                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 focus:border-zinc-400 dark:focus:border-zinc-500 transition-all"
                   />
                 </div>
-                <p id="telefone_ajuda" className="text-xs text-zinc-500 mt-1">
+                <p id="telefone_ajuda" className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
                   Usado para contato e notificações
                 </p>
               </div>
@@ -644,14 +647,14 @@ export default function RegistrarPage() {
           {/* Etapa 3: Senha */}
           {etapa === 3 && (
             <fieldset className="space-y-4">
-              <legend className="text-lg font-semibold text-white mb-4">Criar Senha</legend>
+              <legend className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Criar Senha</legend>
               
               <div>
-                <label htmlFor="senha" className="block text-sm text-zinc-400 mb-2">
+                <label htmlFor="senha" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
                   Senha <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" aria-hidden="true" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
                   <input
                     ref={inputSenhaRef}
                     id="senha"
@@ -664,25 +667,25 @@ export default function RegistrarPage() {
                     aria-describedby="senha_ajuda senha_forca"
                     autoComplete="new-password"
                     minLength={6}
-                    className={`w-full bg-zinc-900 border rounded-lg pl-10 pr-12 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-zinc-500 transition-all ${
+                    className={`w-full bg-zinc-50 dark:bg-zinc-900 border rounded-lg pl-10 pr-12 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 focus:border-zinc-400 dark:focus:border-zinc-500 transition-all ${
                       form.senha.length > 0 
                         ? form.senha.length >= 6 
                           ? 'border-emerald-500/50' 
                           : 'border-yellow-500/50'
-                        : 'border-zinc-700'
+                        : 'border-zinc-300 dark:border-zinc-700'
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setMostrarSenha(!mostrarSenha)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 p-1 rounded focus:outline-none focus:ring-2 focus:ring-white/30"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 p-1 rounded focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30"
                     aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
                     aria-pressed={mostrarSenha}
                   >
                     {mostrarSenha ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p id="senha_ajuda" className="text-xs text-zinc-500 mt-1">
+                <p id="senha_ajuda" className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
                   Use pelo menos 6 caracteres
                 </p>
                 {/* Indicador de força da senha em tempo real */}
@@ -695,7 +698,7 @@ export default function RegistrarPage() {
                           className={`h-1 flex-1 rounded-full transition-colors ${
                             form.senha.length >= nivel * 2
                               ? form.senha.length >= 8 ? 'bg-emerald-500' : form.senha.length >= 6 ? 'bg-yellow-500' : 'bg-red-500'
-                              : 'bg-zinc-700'
+                              : 'bg-zinc-300 dark:bg-zinc-700'
                           }`}
                         />
                       ))}
@@ -711,11 +714,11 @@ export default function RegistrarPage() {
               </div>
 
               <div>
-                <label htmlFor="confirmar_senha" className="block text-sm text-zinc-400 mb-2">
+                <label htmlFor="confirmar_senha" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
                   Confirmar Senha <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" aria-hidden="true" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
                   <input
                     id="confirmar_senha"
                     type={mostrarSenha ? 'text' : 'password'}
@@ -727,12 +730,12 @@ export default function RegistrarPage() {
                     aria-describedby="confirmar_senha_status"
                     aria-invalid={form.confirmar_senha.length > 0 && form.confirmar_senha !== form.senha}
                     autoComplete="new-password"
-                    className={`w-full bg-zinc-900 border rounded-lg pl-10 pr-10 py-3 text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-zinc-500 transition-all ${
+                    className={`w-full bg-zinc-50 dark:bg-zinc-900 border rounded-lg pl-10 pr-10 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 focus:border-zinc-400 dark:focus:border-zinc-500 transition-all ${
                       form.confirmar_senha.length > 0
                         ? form.confirmar_senha === form.senha && form.senha.length >= 6
                           ? 'border-emerald-500/50'
                           : 'border-red-500/50'
-                        : 'border-zinc-700'
+                        : 'border-zinc-300 dark:border-zinc-700'
                     }`}
                   />
                   {/* Indicador visual de match */}
@@ -761,20 +764,20 @@ export default function RegistrarPage() {
               </div>
 
               {/* Resumo */}
-              <div className="bg-zinc-900/50 rounded-lg p-4 mt-6" role="region" aria-label="Resumo do cadastro">
-                <h3 className="text-sm font-medium text-zinc-300 mb-3">Resumo</h3>
+              <div className="bg-zinc-100 dark:bg-zinc-900/50 rounded-lg p-4 mt-6" role="region" aria-label="Resumo do cadastro">
+                <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">Resumo</h3>
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <dt className="text-zinc-500">Barbearia:</dt>
-                    <dd className="text-white font-medium">{form.nome_barbearia}</dd>
+                    <dd className="text-zinc-900 dark:text-white font-medium">{form.nome_barbearia}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-zinc-500">Link:</dt>
-                    <dd className="text-white font-medium">barberhub.online/{form.slug}</dd>
+                    <dd className="text-zinc-900 dark:text-white font-medium">barberhub.online/{form.slug}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-zinc-500">E-mail:</dt>
-                    <dd className="text-white font-medium">{form.email}</dd>
+                    <dd className="text-zinc-900 dark:text-white font-medium">{form.email}</dd>
                   </div>
                 </dl>
               </div>
@@ -847,11 +850,11 @@ export default function RegistrarPage() {
         </form>
 
         {/* Link Login */}
-        <p className="text-center text-zinc-400 mt-6">
+        <p className="text-center text-zinc-600 dark:text-zinc-400 mt-6">
           Já tem uma conta?{' '}
           <Link 
             href="/entrar" 
-            className="text-white hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-white/30 rounded"
+            className="text-zinc-900 dark:text-white hover:underline font-medium focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 rounded"
           >
             Fazer login
           </Link>
@@ -859,16 +862,16 @@ export default function RegistrarPage() {
 
         {/* Benefícios */}
         <div className="mt-8 grid grid-cols-3 gap-4 text-center" role="list" aria-label="Benefícios">
-          <div className="text-zinc-400 text-xs" role="listitem">
-            <div className="text-white text-lg font-bold mb-1">14 dias</div>
+          <div className="text-zinc-500 dark:text-zinc-400 text-xs" role="listitem">
+            <div className="text-zinc-900 dark:text-white text-lg font-bold mb-1">14 dias</div>
             Grátis para testar
           </div>
-          <div className="text-zinc-400 text-xs" role="listitem">
-            <div className="text-white text-lg font-bold mb-1">Ilimitado</div>
+          <div className="text-zinc-500 dark:text-zinc-400 text-xs" role="listitem">
+            <div className="text-zinc-900 dark:text-white text-lg font-bold mb-1">Ilimitado</div>
             Agendamentos
           </div>
-          <div className="text-zinc-400 text-xs" role="listitem">
-            <div className="text-white text-lg font-bold mb-1">Suporte</div>
+          <div className="text-zinc-500 dark:text-zinc-400 text-xs" role="listitem">
+            <div className="text-zinc-900 dark:text-white text-lg font-bold mb-1">Suporte</div>
             Via WhatsApp
           </div>
         </div>
