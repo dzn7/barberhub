@@ -795,7 +795,7 @@ export default function ConfigurarPage() {
               {etapaAtual === 6 && (
                 <motion.div key="etapa6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[5]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <CadastroBarbeirosOnboarding tenantId={tenant.id} limiteBarbeiros={tenant.limite_barbeiros || 2} onTotalChange={setTotalBarbeiros} />
+                  <CadastroBarbeirosOnboarding tenantId={tenant.id} onTotalChange={setTotalBarbeiros} />
                 </motion.div>
               )}
             </AnimatePresence>

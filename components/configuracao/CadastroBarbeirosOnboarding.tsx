@@ -24,7 +24,12 @@ import {
   CheckCircle,
   HelpCircle,
   Trash2,
-  Edit2
+  Edit2,
+  Crown,
+  Plus,
+  MessageCircle,
+  Scissors,
+  Sparkles
 } from 'lucide-react'
 
 interface Barbeiro {
@@ -37,25 +42,64 @@ interface Barbeiro {
   ativo: boolean
   comissao_percentual: number
   token_acesso?: string
+  is_proprietario?: boolean
 }
 
 interface CadastroBarbeirosOnboardingProps {
   tenantId: string
-  limiteBarbeiros?: number
   onTotalChange?: (total: number) => void
+  nomeProprietario?: string
+  telefoneProprietario?: string
 }
 
-type EtapaFluxo = 'pergunta' | 'cadastro' | 'token' | 'lista'
+type EtapaFluxo = 'proprietario' | 'pergunta_equipe' | 'cadastro_equipe' | 'token' | 'lista'
 
-const ESPECIALIDADES_SUGERIDAS = [
-  'Corte Masculino',
-  'Degradê',
-  'Barba',
-  'Pigmentação',
-  'Química',
-  'Corte Infantil',
-  'Tratamento Capilar'
-]
+// Categorias de especialidades organizadas
+const CATEGORIAS_ESPECIALIDADES = {
+  'Cortes': [
+    'Corte Masculino',
+    'Degradê',
+    'Corte Infantil',
+    'Corte Feminino',
+    'Corte Navalhado',
+    'Corte Social',
+    'Corte Americano',
+    'Undercut',
+    'Moicano',
+    'Mullet'
+  ],
+  'Barba': [
+    'Barba Completa',
+    'Barba Desenhada',
+    'Barba Degradê',
+    'Pézinho',
+    'Bigode',
+    'Cavanhaque'
+  ],
+  'Tratamentos': [
+    'Hidratação Capilar',
+    'Tratamento Antiqueda',
+    'Cauterização',
+    'Botox Capilar',
+    'Reconstrução',
+    'Nutrição'
+  ],
+  'Química': [
+    'Pigmentação',
+    'Coloração',
+    'Luzes',
+    'Platinado',
+    'Relaxamento',
+    'Progressiva',
+    'Descoloração'
+  ],
+  'Outros': [
+    'Design de Sobrancelha',
+    'Limpeza de Pele',
+    'Depilação Facial',
+    'Massagem Capilar'
+  ]
+}
 
 /**
  * Gera token de acesso único
@@ -71,35 +115,39 @@ const gerarTokenAcesso = (): string => {
 
 /**
  * Componente de cadastro de barbeiros no onboarding
- * Fluxo step-by-step: pergunta → cadastro → token → lista
+ * Fluxo: proprietário → pergunta_equipe → cadastro_equipe → token → lista
  */
 export function CadastroBarbeirosOnboarding({
   tenantId,
-  limiteBarbeiros = 2,
-  onTotalChange
+  onTotalChange,
+  nomeProprietario = '',
+  telefoneProprietario = ''
 }: CadastroBarbeirosOnboardingProps) {
   const { toast } = useToast()
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [etapa, setEtapa] = useState<EtapaFluxo>('pergunta')
+  const [etapa, setEtapa] = useState<EtapaFluxo>('proprietario')
   const [tokenGerado, setTokenGerado] = useState<string | null>(null)
   const [tokenCopiado, setTokenCopiado] = useState(false)
   const [barbeiroAtual, setBarbeiroAtual] = useState<Barbeiro | null>(null)
   const [editando, setEditando] = useState<string | null>(null)
   const [uploadandoFoto, setUploadandoFoto] = useState(false)
   const inputFotoRef = useRef<HTMLInputElement>(null)
+  const [categoriaAberta, setCategoriaAberta] = useState<string | null>('Cortes')
+  const [novaEspecialidade, setNovaEspecialidade] = useState('')
+  const [especialidadesCustomizadas, setEspecialidadesCustomizadas] = useState<string[]>([])
   
   const [imagemParaRecortar, setImagemParaRecortar] = useState<string | null>(null)
   const [arquivoOriginal, setArquivoOriginal] = useState<File | null>(null)
 
   const [formulario, setFormulario] = useState({
-    nome: '',
+    nome: nomeProprietario,
     email: '',
-    telefone: '',
+    telefone: telefoneProprietario,
     foto_url: '',
     especialidades: [] as string[],
-    comissao_percentual: 50
+    comissao_percentual: 100
   })
 
   useEffect(() => {
@@ -111,11 +159,14 @@ export function CadastroBarbeirosOnboarding({
   }, [barbeiros, onTotalChange])
 
   useEffect(() => {
-    // Se já tem barbeiros cadastrados, mostrar lista
+    // Se já tem proprietário cadastrado, pular para pergunta da equipe ou lista
     if (!carregando && barbeiros.length > 0) {
-      setEtapa('lista')
+      const temProprietario = barbeiros.some(b => b.is_proprietario)
+      if (temProprietario) {
+        setEtapa(barbeiros.length > 1 ? 'lista' : 'pergunta_equipe')
+      }
     }
-  }, [carregando, barbeiros.length])
+  }, [carregando, barbeiros])
 
   const buscarBarbeiros = async () => {
     try {
@@ -216,17 +267,68 @@ export function CadastroBarbeirosOnboarding({
     }))
   }
 
-  const adicionarBarbeiro = async () => {
+  // Adiciona especialidade customizada
+  const adicionarEspecialidadeCustomizada = () => {
+    if (!novaEspecialidade.trim()) return
+    const nova = novaEspecialidade.trim()
+    if (!especialidadesCustomizadas.includes(nova)) {
+      setEspecialidadesCustomizadas([...especialidadesCustomizadas, nova])
+    }
+    if (!formulario.especialidades.includes(nova)) {
+      setFormulario(prev => ({
+        ...prev,
+        especialidades: [...prev.especialidades, nova]
+      }))
+    }
+    setNovaEspecialidade('')
+  }
+
+  // Cadastra o proprietário (barbeiro admin)
+  const cadastrarProprietario = async () => {
+    if (!formulario.nome.trim()) {
+      toast({ tipo: 'erro', mensagem: 'Digite seu nome' })
+      return
+    }
+
+    setSalvando(true)
+    try {
+      const { data, error } = await supabase
+        .from('barbeiros')
+        .insert([{
+          tenant_id: tenantId,
+          nome: formulario.nome.trim(),
+          email: formulario.email.trim() || null,
+          telefone: formulario.telefone.replace(/\D/g, '') || null,
+          foto_url: formulario.foto_url || null,
+          especialidades: formulario.especialidades,
+          comissao_percentual: 100,
+          is_proprietario: true,
+          ativo: true
+        }])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setBarbeiros([...barbeiros, data])
+      setEtapa('pergunta_equipe')
+      resetarFormulario()
+      toast({ tipo: 'sucesso', mensagem: 'Seu perfil foi criado!' })
+    } catch (erro) {
+      toast({ tipo: 'erro', mensagem: 'Erro ao salvar perfil' })
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  // Adiciona barbeiro da equipe
+  const adicionarBarbeiroEquipe = async () => {
     if (!formulario.nome.trim()) {
       toast({ tipo: 'erro', mensagem: 'Digite o nome do barbeiro' })
       return
     }
     if (!formulario.telefone.trim()) {
-      toast({ tipo: 'erro', mensagem: 'Digite o telefone do barbeiro' })
-      return
-    }
-    if (barbeiros.length >= limiteBarbeiros) {
-      toast({ tipo: 'aviso', mensagem: `Limite de ${limiteBarbeiros} barbeiros atingido` })
+      toast({ tipo: 'erro', mensagem: 'Digite o WhatsApp do barbeiro' })
       return
     }
 
@@ -246,6 +348,7 @@ export function CadastroBarbeirosOnboarding({
           comissao_percentual: formulario.comissao_percentual,
           token_acesso: novoToken,
           token_ativo: true,
+          is_proprietario: false,
           ativo: true
         }])
         .select()
@@ -315,6 +418,11 @@ export function CadastroBarbeirosOnboarding({
   }
 
   const removerBarbeiro = async (id: string) => {
+    const barbeiro = barbeiros.find(b => b.id === id)
+    if (barbeiro?.is_proprietario) {
+      toast({ tipo: 'erro', mensagem: 'Não é possível remover o proprietário' })
+      return
+    }
     if (!confirm('Remover este barbeiro?')) return
 
     try {
@@ -326,8 +434,8 @@ export function CadastroBarbeirosOnboarding({
       if (error) throw error
       setBarbeiros(barbeiros.filter(b => b.id !== id))
       
-      if (barbeiros.length <= 1) {
-        setEtapa('pergunta')
+      if (barbeiros.filter(b => b.id !== id && !b.is_proprietario).length === 0) {
+        setEtapa('pergunta_equipe')
       }
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao remover barbeiro' })
@@ -344,7 +452,7 @@ export function CadastroBarbeirosOnboarding({
       especialidades: barbeiro.especialidades || [],
       comissao_percentual: barbeiro.comissao_percentual || 50
     })
-    setEtapa('cadastro')
+    setEtapa(barbeiro.is_proprietario ? 'proprietario' : 'cadastro_equipe')
   }
 
   const resetarFormulario = () => {
@@ -384,17 +492,40 @@ export function CadastroBarbeirosOnboarding({
   return (
     <div className="space-y-6">
       <AnimatePresence mode="wait">
-        {/* ETAPA 1: Pergunta inicial */}
-        {etapa === 'pergunta' && (
-          <EtapaPerguntaInicial
-            onSim={() => setEtapa('cadastro')}
+        {/* ETAPA 1: Cadastro do proprietário */}
+        {etapa === 'proprietario' && (
+          <EtapaCadastroProprietario
+            formulario={formulario}
+            setFormulario={setFormulario}
+            salvando={salvando}
+            uploadandoFoto={uploadandoFoto}
+            inputFotoRef={inputFotoRef}
+            onSelecionarFoto={handleSelecionarFoto}
+            onToggleEspecialidade={toggleEspecialidade}
+            onSalvar={editando ? () => atualizarBarbeiro(editando) : cadastrarProprietario}
+            formatarTelefone={formatarTelefone}
+            categoriasEspecialidades={CATEGORIAS_ESPECIALIDADES}
+            especialidadesCustomizadas={especialidadesCustomizadas}
+            novaEspecialidade={novaEspecialidade}
+            setNovaEspecialidade={setNovaEspecialidade}
+            onAdicionarEspecialidade={adicionarEspecialidadeCustomizada}
+            categoriaAberta={categoriaAberta}
+            setCategoriaAberta={setCategoriaAberta}
+            editando={!!editando}
+          />
+        )}
+
+        {/* ETAPA 2: Pergunta sobre equipe */}
+        {etapa === 'pergunta_equipe' && (
+          <EtapaPerguntaEquipe
+            onSim={() => setEtapa('cadastro_equipe')}
             onNao={() => setEtapa('lista')}
           />
         )}
 
-        {/* ETAPA 2: Formulário de cadastro */}
-        {etapa === 'cadastro' && (
-          <EtapaFormularioBarbeiro
+        {/* ETAPA 3: Formulário de cadastro da equipe */}
+        {etapa === 'cadastro_equipe' && (
+          <EtapaFormularioEquipe
             formulario={formulario}
             setFormulario={setFormulario}
             editando={editando}
@@ -403,17 +534,24 @@ export function CadastroBarbeirosOnboarding({
             inputFotoRef={inputFotoRef}
             onSelecionarFoto={handleSelecionarFoto}
             onToggleEspecialidade={toggleEspecialidade}
-            onSalvar={() => editando ? atualizarBarbeiro(editando) : adicionarBarbeiro()}
+            onSalvar={() => editando ? atualizarBarbeiro(editando) : adicionarBarbeiroEquipe()}
             onCancelar={() => {
               setEditando(null)
               resetarFormulario()
-              setEtapa(barbeiros.length > 0 ? 'lista' : 'pergunta')
+              setEtapa(barbeiros.filter(b => !b.is_proprietario).length > 0 ? 'lista' : 'pergunta_equipe')
             }}
             formatarTelefone={formatarTelefone}
+            categoriasEspecialidades={CATEGORIAS_ESPECIALIDADES}
+            especialidadesCustomizadas={especialidadesCustomizadas}
+            novaEspecialidade={novaEspecialidade}
+            setNovaEspecialidade={setNovaEspecialidade}
+            onAdicionarEspecialidade={adicionarEspecialidadeCustomizada}
+            categoriaAberta={categoriaAberta}
+            setCategoriaAberta={setCategoriaAberta}
           />
         )}
 
-        {/* ETAPA 3: Token gerado */}
+        {/* ETAPA 4: Token gerado */}
         {etapa === 'token' && tokenGerado && barbeiroAtual && (
           <EtapaTokenGerado
             barbeiro={barbeiroAtual}
@@ -429,18 +567,16 @@ export function CadastroBarbeirosOnboarding({
             onAdicionarOutro={() => {
               setTokenGerado(null)
               setBarbeiroAtual(null)
-              setEtapa('cadastro')
+              setEtapa('cadastro_equipe')
             }}
-            podeAdicionarMais={barbeiros.length < limiteBarbeiros}
           />
         )}
 
-        {/* ETAPA 4: Lista de barbeiros */}
+        {/* ETAPA 5: Lista de barbeiros */}
         {etapa === 'lista' && (
           <EtapaListaBarbeiros
             barbeiros={barbeiros}
-            limiteBarbeiros={limiteBarbeiros}
-            onAdicionar={() => setEtapa('cadastro')}
+            onAdicionar={() => setEtapa('cadastro_equipe')}
             onEditar={iniciarEdicao}
             onRemover={removerBarbeiro}
             formatarTelefone={formatarTelefone}
@@ -466,83 +602,155 @@ export function CadastroBarbeirosOnboarding({
 // COMPONENTES DAS ETAPAS (MODULARES)
 // =============================================
 
+// Interface para props de especialidades
+interface EspecialidadesProps {
+  categoriasEspecialidades: Record<string, string[]>
+  especialidadesCustomizadas: string[]
+  especialidadesSelecionadas: string[]
+  novaEspecialidade: string
+  setNovaEspecialidade: (valor: string) => void
+  onToggleEspecialidade: (esp: string) => void
+  onAdicionarEspecialidade: () => void
+  categoriaAberta: string | null
+  setCategoriaAberta: (cat: string | null) => void
+}
+
 /**
- * Etapa 1: Pergunta se tem barbeiros além do proprietário
+ * Componente de seleção de especialidades com categorias
  */
-function EtapaPerguntaInicial({
-  onSim,
-  onNao
-}: {
-  onSim: () => void
-  onNao: () => void
-}) {
+function SeletorEspecialidades({
+  categoriasEspecialidades,
+  especialidadesCustomizadas,
+  especialidadesSelecionadas,
+  novaEspecialidade,
+  setNovaEspecialidade,
+  onToggleEspecialidade,
+  onAdicionarEspecialidade,
+  categoriaAberta,
+  setCategoriaAberta
+}: EspecialidadesProps) {
   return (
-    <motion.div
-      key="pergunta"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-6"
-    >
-      <div className="text-center py-8 px-4 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
-        <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <Users className="w-8 h-8 text-zinc-400" />
+    <div className="space-y-4">
+      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        Especialidades
+      </label>
+      
+      {/* Categorias */}
+      <div className="space-y-2">
+        {Object.entries(categoriasEspecialidades).map(([categoria, especialidades]) => (
+          <div key={categoria} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setCategoriaAberta(categoriaAberta === categoria ? null : categoria)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors"
+            >
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{categoria}</span>
+              <div className="flex items-center gap-2">
+                {especialidadesSelecionadas.filter(e => especialidades.includes(e)).length > 0 && (
+                  <span className="px-2 py-0.5 bg-zinc-900 dark:bg-white text-white dark:text-black text-xs rounded-full">
+                    {especialidadesSelecionadas.filter(e => especialidades.includes(e)).length}
+                  </span>
+                )}
+                <Scissors className={`w-4 h-4 text-zinc-500 dark:text-zinc-400 transition-transform ${categoriaAberta === categoria ? 'rotate-90' : ''}`} />
+              </div>
+            </button>
+            
+            {categoriaAberta === categoria && (
+              <div className="p-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="flex flex-wrap gap-2">
+                  {especialidades.map((esp) => (
+                    <button
+                      key={esp}
+                      type="button"
+                      onClick={() => onToggleEspecialidade(esp)}
+                      className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
+                        especialidadesSelecionadas.includes(esp)
+                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      {esp}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Especialidades customizadas */}
+      {especialidadesCustomizadas.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {especialidadesCustomizadas.map((esp) => (
+            <button
+              key={esp}
+              type="button"
+              onClick={() => onToggleEspecialidade(esp)}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
+                especialidadesSelecionadas.includes(esp)
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
+                  : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-600'
+              }`}
+            >
+              <Sparkles className="w-3 h-3 inline mr-1" />
+              {esp}
+            </button>
+          ))}
         </div>
-        
-        <h3 className="text-xl font-semibold text-white mb-2">
-          Você trabalha com outros barbeiros?
-        </h3>
-        <p className="text-zinc-400 text-sm mb-8 max-w-md mx-auto">
-          Além de você, há outros profissionais que atendem na sua barbearia? 
-          Cada um terá seu próprio acesso ao sistema.
+      )}
+
+      {/* Adicionar nova especialidade */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={novaEspecialidade}
+          onChange={(e) => setNovaEspecialidade(e.target.value)}
+          placeholder="Adicionar especialidade..."
+          className="flex-1 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 text-sm"
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), onAdicionarEspecialidade())}
+        />
+        <button
+          type="button"
+          onClick={onAdicionarEspecialidade}
+          disabled={!novaEspecialidade.trim()}
+          className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Selecionadas */}
+      {especialidadesSelecionadas.length > 0 && (
+        <p className="text-xs text-zinc-600 dark:text-zinc-500">
+          {especialidadesSelecionadas.length} especialidade(s) selecionada(s)
         </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={onSim}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-black rounded-xl font-medium hover:bg-zinc-200 transition-colors"
-          >
-            <UserPlus className="w-5 h-5" />
-            Sim, quero cadastrar
-          </button>
-          <button
-            onClick={onNao}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-800 text-white rounded-xl font-medium hover:bg-zinc-700 transition-colors"
-          >
-            Não, trabalho sozinho
-          </button>
-        </div>
-      </div>
-
-      <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-        <HelpCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-        <div className="text-sm">
-          <p className="text-blue-300 font-medium mb-1">Como funciona?</p>
-          <p className="text-blue-200/70">
-            Cada barbeiro cadastrado receberá um código de acesso único para entrar 
-            no painel dele, onde poderá ver seus agendamentos e comissões.
-          </p>
-        </div>
-      </div>
-    </motion.div>
+      )}
+    </div>
   )
 }
 
 /**
- * Etapa 2: Formulário de cadastro do barbeiro
+ * Etapa 1: Cadastro do proprietário (barbeiro admin)
  */
-function EtapaFormularioBarbeiro({
+function EtapaCadastroProprietario({
   formulario,
   setFormulario,
-  editando,
   salvando,
   uploadandoFoto,
   inputFotoRef,
   onSelecionarFoto,
   onToggleEspecialidade,
   onSalvar,
-  onCancelar,
-  formatarTelefone
+  formatarTelefone,
+  categoriasEspecialidades,
+  especialidadesCustomizadas,
+  novaEspecialidade,
+  setNovaEspecialidade,
+  onAdicionarEspecialidade,
+  categoriaAberta,
+  setCategoriaAberta,
+  editando
 }: {
   formulario: {
     nome: string
@@ -553,43 +761,48 @@ function EtapaFormularioBarbeiro({
     comissao_percentual: number
   }
   setFormulario: React.Dispatch<React.SetStateAction<typeof formulario>>
-  editando: string | null
   salvando: boolean
   uploadandoFoto: boolean
   inputFotoRef: React.RefObject<HTMLInputElement>
   onSelecionarFoto: (e: React.ChangeEvent<HTMLInputElement>) => void
   onToggleEspecialidade: (esp: string) => void
   onSalvar: () => void
-  onCancelar: () => void
   formatarTelefone: (valor: string) => string
+  categoriasEspecialidades: Record<string, string[]>
+  especialidadesCustomizadas: string[]
+  novaEspecialidade: string
+  setNovaEspecialidade: (valor: string) => void
+  onAdicionarEspecialidade: () => void
+  categoriaAberta: string | null
+  setCategoriaAberta: (cat: string | null) => void
+  editando: boolean
 }) {
   return (
     <motion.div
-      key="cadastro"
+      key="proprietario"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className="space-y-6"
     >
-      <div className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl space-y-6">
-        <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
-          <div className="p-2 bg-zinc-800 rounded-lg">
-            <UserPlus className="w-5 h-5 text-zinc-400" />
-          </div>
-          <div>
-            <h3 className="font-medium text-white">
-              {editando ? 'Editar Barbeiro' : 'Novo Barbeiro'}
-            </h3>
-            <p className="text-xs text-zinc-500">
-              Preencha os dados do profissional
-            </p>
-          </div>
+      {/* Header */}
+      <div className="text-center py-4">
+        <div className="w-16 h-16 bg-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Crown className="w-8 h-8 text-amber-500" />
         </div>
+        <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mb-2">
+          {editando ? 'Editar seu Perfil' : 'Configure seu Perfil'}
+        </h3>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm max-w-md mx-auto">
+          Como proprietário, você terá acesso total ao painel administrativo em <strong>/admin</strong>
+        </p>
+      </div>
 
+      <div className="p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-6">
         {/* Foto */}
         <div className="flex items-center gap-4">
           <div className="relative flex-shrink-0">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center relative">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center relative">
               {formulario.foto_url ? (
                 <Image
                   src={formulario.foto_url}
@@ -599,7 +812,7 @@ function EtapaFormularioBarbeiro({
                   unoptimized
                 />
               ) : (
-                <User className="w-8 h-8 text-zinc-600" />
+                <User className="w-8 h-8 text-zinc-500 dark:text-zinc-600" />
               )}
               {uploadandoFoto && (
                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
@@ -623,16 +836,270 @@ function EtapaFormularioBarbeiro({
               className="hidden"
             />
           </div>
-          <div className="text-sm text-zinc-500">
-            <p className="text-zinc-300">Foto do profissional</p>
-            <p className="text-xs">Opcional • JPG, PNG, WebP</p>
+          <div className="text-sm">
+            <p className="text-zinc-700 dark:text-zinc-300">Sua foto</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-500">Opcional • JPG, PNG, WebP</p>
           </div>
         </div>
 
         {/* Campos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              Seu Nome *
+            </label>
+            <input
+              type="text"
+              value={formulario.nome}
+              onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
+              placeholder="Ex: João Silva"
+              className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              Telefone/WhatsApp
+            </label>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-500" />
+              <input
+                type="tel"
+                value={formulario.telefone}
+                onChange={(e) => setFormulario({ ...formulario, telefone: formatarTelefone(e.target.value) })}
+                placeholder="(00) 00000-0000"
+                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              E-mail
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-500" />
+              <input
+                type="email"
+                value={formulario.email}
+                onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
+                placeholder="email@exemplo.com"
+                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Especialidades */}
+        <SeletorEspecialidades
+          categoriasEspecialidades={categoriasEspecialidades}
+          especialidadesCustomizadas={especialidadesCustomizadas}
+          especialidadesSelecionadas={formulario.especialidades}
+          novaEspecialidade={novaEspecialidade}
+          setNovaEspecialidade={setNovaEspecialidade}
+          onToggleEspecialidade={onToggleEspecialidade}
+          onAdicionarEspecialidade={onAdicionarEspecialidade}
+          categoriaAberta={categoriaAberta}
+          setCategoriaAberta={setCategoriaAberta}
+        />
+
+        {/* Botão */}
+        <button
+          onClick={onSalvar}
+          disabled={salvando || !formulario.nome.trim()}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50"
+        >
+          {salvando ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <ArrowRight className="w-5 h-5" />
+          )}
+          {editando ? 'Salvar Alterações' : 'Continuar'}
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
+/**
+ * Etapa 2: Pergunta se tem equipe
+ */
+function EtapaPerguntaEquipe({
+  onSim,
+  onNao
+}: {
+  onSim: () => void
+  onNao: () => void
+}) {
+  return (
+    <motion.div
+      key="pergunta_equipe"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center py-8 px-4 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+        <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <Users className="w-8 h-8 text-zinc-600 dark:text-zinc-400" />
+        </div>
+        
+        <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mb-2">
+          Você tem outros barbeiros na equipe?
+        </h3>
+        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8 max-w-md mx-auto">
+          Cada barbeiro terá seu próprio acesso pelo <strong>/barbeiro</strong> e será notificado via WhatsApp com o link e código de acesso.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={onSim}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+          >
+            <UserPlus className="w-5 h-5" />
+            Sim, cadastrar equipe
+          </button>
+          <button
+            onClick={onNao}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+          >
+            Não, trabalho sozinho
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-3 p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl">
+        <MessageCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+        <div className="text-sm">
+          <p className="text-emerald-700 dark:text-emerald-300 font-medium mb-1">Notificação automática via WhatsApp</p>
+          <p className="text-emerald-600/80 dark:text-emerald-200/70">
+            Cada barbeiro cadastrado receberá uma mensagem no WhatsApp com o link de acesso e código único.
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+/**
+ * Etapa 3: Formulário de cadastro da equipe
+ */
+function EtapaFormularioEquipe({
+  formulario,
+  setFormulario,
+  editando,
+  salvando,
+  uploadandoFoto,
+  inputFotoRef,
+  onSelecionarFoto,
+  onToggleEspecialidade,
+  onSalvar,
+  onCancelar,
+  formatarTelefone,
+  categoriasEspecialidades,
+  especialidadesCustomizadas,
+  novaEspecialidade,
+  setNovaEspecialidade,
+  onAdicionarEspecialidade,
+  categoriaAberta,
+  setCategoriaAberta
+}: {
+  formulario: {
+    nome: string
+    email: string
+    telefone: string
+    foto_url: string
+    especialidades: string[]
+    comissao_percentual: number
+  }
+  setFormulario: React.Dispatch<React.SetStateAction<typeof formulario>>
+  editando: string | null
+  salvando: boolean
+  uploadandoFoto: boolean
+  inputFotoRef: React.RefObject<HTMLInputElement>
+  onSelecionarFoto: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onToggleEspecialidade: (esp: string) => void
+  onSalvar: () => void
+  onCancelar: () => void
+  formatarTelefone: (valor: string) => string
+  categoriasEspecialidades: Record<string, string[]>
+  especialidadesCustomizadas: string[]
+  novaEspecialidade: string
+  setNovaEspecialidade: (valor: string) => void
+  onAdicionarEspecialidade: () => void
+  categoriaAberta: string | null
+  setCategoriaAberta: (cat: string | null) => void
+}) {
+  return (
+    <motion.div
+      key="cadastro_equipe"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
+      <div className="p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+            <UserPlus className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+          </div>
+          <div>
+            <h3 className="font-medium text-zinc-900 dark:text-white">
+              {editando ? 'Editar Barbeiro' : 'Novo Barbeiro da Equipe'}
+            </h3>
+            <p className="text-xs text-zinc-600 dark:text-zinc-500">
+              Ele receberá acesso via WhatsApp para usar o /barbeiro
+            </p>
+          </div>
+        </div>
+
+        {/* Foto */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-shrink-0">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center relative">
+              {formulario.foto_url ? (
+                <Image
+                  src={formulario.foto_url}
+                  alt="Foto"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <User className="w-8 h-8 text-zinc-500 dark:text-zinc-600" />
+              )}
+              {uploadandoFoto && (
+                <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => inputFotoRef.current?.click()}
+              disabled={uploadandoFoto}
+              className="absolute -bottom-1 -right-1 p-2 bg-zinc-700 rounded-full hover:bg-zinc-600 transition-colors disabled:opacity-50"
+            >
+              <Camera className="w-4 h-4 text-white" />
+            </button>
+            <input
+              ref={inputFotoRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={onSelecionarFoto}
+              className="hidden"
+            />
+          </div>
+          <div className="text-sm">
+            <p className="text-zinc-700 dark:text-zinc-300">Foto do profissional</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-500">Opcional • JPG, PNG, WebP</p>
+          </div>
+        </div>
+
+        {/* Campos */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
               Nome Completo *
             </label>
             <input
@@ -640,38 +1107,38 @@ function EtapaFormularioBarbeiro({
               value={formulario.nome}
               onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
               placeholder="Ex: João Silva"
-              className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Telefone *
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              WhatsApp * <span className="text-xs font-normal text-zinc-600 dark:text-zinc-500">(para notificação)</span>
             </label>
             <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
               <input
                 type="tel"
                 value={formulario.telefone}
                 onChange={(e) => setFormulario({ ...formulario, telefone: formatarTelefone(e.target.value) })}
                 placeholder="(00) 00000-0000"
-                className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-700 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
               E-mail
             </label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-500" />
               <input
                 type="email"
                 value={formulario.email}
                 onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
                 placeholder="email@exemplo.com"
-                className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-700 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
               />
             </div>
           </div>
@@ -679,19 +1146,19 @@ function EtapaFormularioBarbeiro({
 
         {/* Comissão */}
         <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
             Comissão por atendimento
           </label>
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
-              <Percent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Percent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-500" />
               <input
                 type="number"
                 min="0"
                 max="100"
                 value={formulario.comissao_percentual}
                 onChange={(e) => setFormulario({ ...formulario, comissao_percentual: Number(e.target.value) })}
-                className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
               />
             </div>
             <div className="flex gap-2">
@@ -702,8 +1169,8 @@ function EtapaFormularioBarbeiro({
                   onClick={() => setFormulario({ ...formulario, comissao_percentual: valor })}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     formulario.comissao_percentual === valor
-                      ? 'bg-white text-black'
-                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-black'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                   }`}
                 >
                   {valor}%
@@ -711,46 +1178,36 @@ function EtapaFormularioBarbeiro({
               ))}
             </div>
           </div>
-          <p className="text-xs text-zinc-500 mt-2">
+          <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">
             Porcentagem que o barbeiro recebe de cada atendimento realizado
           </p>
         </div>
 
         {/* Especialidades */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-300 mb-2">
-            Especialidades
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {ESPECIALIDADES_SUGERIDAS.map((esp) => (
-              <button
-                key={esp}
-                type="button"
-                onClick={() => onToggleEspecialidade(esp)}
-                className={`px-3 py-2 text-sm rounded-lg border transition-all ${
-                  formulario.especialidades.includes(esp)
-                    ? 'bg-white text-black border-white'
-                    : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:border-zinc-600'
-                }`}
-              >
-                {esp}
-              </button>
-            ))}
-          </div>
-        </div>
+        <SeletorEspecialidades
+          categoriasEspecialidades={categoriasEspecialidades}
+          especialidadesCustomizadas={especialidadesCustomizadas}
+          especialidadesSelecionadas={formulario.especialidades}
+          novaEspecialidade={novaEspecialidade}
+          setNovaEspecialidade={setNovaEspecialidade}
+          onToggleEspecialidade={onToggleEspecialidade}
+          onAdicionarEspecialidade={onAdicionarEspecialidade}
+          categoriaAberta={categoriaAberta}
+          setCategoriaAberta={setCategoriaAberta}
+        />
 
         {/* Botões */}
-        <div className="flex gap-3 pt-4 border-t border-zinc-800">
+        <div className="flex gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           <button
             onClick={onCancelar}
-            className="flex-1 px-4 py-3 text-zinc-400 hover:text-white transition-colors"
+            className="flex-1 px-4 py-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={onSalvar}
             disabled={salvando}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-black rounded-xl font-medium hover:bg-zinc-200 transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50"
           >
             {salvando ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -766,7 +1223,7 @@ function EtapaFormularioBarbeiro({
 }
 
 /**
- * Etapa 3: Token gerado com instruções
+ * Etapa 4: Token gerado com instruções
  */
 function EtapaTokenGerado({
   barbeiro,
@@ -775,8 +1232,7 @@ function EtapaTokenGerado({
   linkAcesso,
   onCopiar,
   onContinuar,
-  onAdicionarOutro,
-  podeAdicionarMais
+  onAdicionarOutro
 }: {
   barbeiro: Barbeiro
   token: string
@@ -785,7 +1241,6 @@ function EtapaTokenGerado({
   onCopiar: () => void
   onContinuar: () => void
   onAdicionarOutro: () => void
-  podeAdicionarMais: boolean
 }) {
   return (
     <motion.div
@@ -796,43 +1251,43 @@ function EtapaTokenGerado({
       className="space-y-6"
     >
       {/* Sucesso */}
-      <div className="text-center py-6 px-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl">
-        <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-8 h-8 text-emerald-400" />
+      <div className="text-center py-6 px-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-2xl">
+        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
         </div>
-        <h3 className="text-xl font-semibold text-white mb-1">
+        <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mb-1">
           {barbeiro.nome} foi cadastrado!
         </h3>
-        <p className="text-emerald-300/70 text-sm">
-          Envie as informações abaixo para o barbeiro acessar o sistema
+        <p className="text-emerald-600 dark:text-emerald-300/70 text-sm">
+          Uma mensagem foi enviada via WhatsApp com o link e código de acesso
         </p>
       </div>
 
       {/* Token */}
-      <div className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl space-y-4">
+      <div className="p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-amber-500/20 rounded-lg">
-            <Key className="w-5 h-5 text-amber-400" />
+          <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-lg">
+            <Key className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <p className="font-medium text-white">Código de Acesso</p>
-            <p className="text-xs text-zinc-500">O barbeiro usa este código para entrar</p>
+            <p className="font-medium text-zinc-900 dark:text-white">Código de Acesso</p>
+            <p className="text-xs text-zinc-500">O barbeiro usa este código para entrar no /barbeiro</p>
           </div>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-4">
-          <p className="text-center text-3xl font-mono font-bold tracking-[0.4em] text-white">
+        <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
+          <p className="text-center text-3xl font-mono font-bold tracking-[0.4em] text-zinc-900 dark:text-white">
             {token}
           </p>
         </div>
 
         <button
           onClick={onCopiar}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800 text-white rounded-xl font-medium hover:bg-zinc-700 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
         >
           {tokenCopiado ? (
             <>
-              <Check className="w-5 h-5 text-emerald-400" />
+              <Check className="w-5 h-5 text-emerald-500" />
               Copiado!
             </>
           ) : (
@@ -845,58 +1300,36 @@ function EtapaTokenGerado({
       </div>
 
       {/* Link de acesso */}
-      <div className="p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl space-y-4">
+      <div className="p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-500/20 rounded-lg">
-            <ExternalLink className="w-5 h-5 text-blue-400" />
+          <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
+            <ExternalLink className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p className="font-medium text-white">Link de Acesso</p>
+            <p className="font-medium text-zinc-900 dark:text-white">Link de Acesso</p>
             <p className="text-xs text-zinc-500">Onde o barbeiro faz login</p>
           </div>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-3">
-          <code className="text-sm text-blue-400 break-all">
+        <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3">
+          <code className="text-sm text-blue-600 dark:text-blue-400 break-all">
             {linkAcesso}
           </code>
         </div>
-
-        <a
-          href={linkAcesso}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800 text-white rounded-xl font-medium hover:bg-zinc-700 transition-colors"
-        >
-          <ExternalLink className="w-5 h-5" />
-          Abrir Página de Login
-        </a>
-      </div>
-
-      {/* Instruções */}
-      <div className="p-4 bg-zinc-800/50 rounded-xl">
-        <p className="text-sm text-zinc-400">
-          <strong className="text-zinc-300">Instruções para o barbeiro:</strong><br/>
-          1. Acessar o link acima<br/>
-          2. Digitar o código de 8 caracteres<br/>
-          3. Pronto! Acesso ao painel liberado
-        </p>
       </div>
 
       {/* Ações */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {podeAdicionarMais && (
-          <button
-            onClick={onAdicionarOutro}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800 text-white rounded-xl font-medium hover:bg-zinc-700 transition-colors"
-          >
-            <UserPlus className="w-5 h-5" />
-            Adicionar outro barbeiro
-          </button>
-        )}
+        <button
+          onClick={onAdicionarOutro}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+        >
+          <UserPlus className="w-5 h-5" />
+          Adicionar outro barbeiro
+        </button>
         <button
           onClick={onContinuar}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-black rounded-xl font-medium hover:bg-zinc-200 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
         >
           Continuar
           <ArrowRight className="w-5 h-5" />
@@ -907,23 +1340,24 @@ function EtapaTokenGerado({
 }
 
 /**
- * Etapa 4: Lista de barbeiros cadastrados
+ * Etapa 5: Lista de barbeiros cadastrados (ilimitados)
  */
 function EtapaListaBarbeiros({
   barbeiros,
-  limiteBarbeiros,
   onAdicionar,
   onEditar,
   onRemover,
   formatarTelefone
 }: {
   barbeiros: Barbeiro[]
-  limiteBarbeiros: number
   onAdicionar: () => void
   onEditar: (barbeiro: Barbeiro) => void
   onRemover: (id: string) => void
   formatarTelefone: (valor: string) => string
 }) {
+  const proprietario = barbeiros.find(b => b.is_proprietario)
+  const equipe = barbeiros.filter(b => !b.is_proprietario)
+
   return (
     <motion.div
       key="lista"
@@ -935,107 +1369,149 @@ function EtapaListaBarbeiros({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-zinc-500" />
-          <span className="text-sm text-zinc-400">
-            {barbeiros.length}/{limiteBarbeiros} profissionais
+          <Users className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            {barbeiros.length} profissional{barbeiros.length !== 1 ? 'is' : ''}
           </span>
         </div>
-        {barbeiros.length < limiteBarbeiros && (
-          <button
-            onClick={onAdicionar}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            Adicionar
-          </button>
-        )}
+        <button
+          onClick={onAdicionar}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+        >
+          <UserPlus className="w-4 h-4" />
+          Adicionar
+        </button>
       </div>
 
-      {/* Lista vazia */}
-      {barbeiros.length === 0 && (
-        <div className="text-center py-8 px-4 bg-zinc-900/30 border border-dashed border-zinc-800 rounded-xl">
-          <User className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
-          <p className="text-zinc-400 mb-1">Nenhum profissional cadastrado</p>
-          <p className="text-xs text-zinc-600 mb-4">
-            Você pode continuar sem cadastrar ou adicionar barbeiros depois
+      {/* Proprietário */}
+      {proprietario && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+            <Crown className="w-3 h-3 text-amber-500" />
+            Proprietário (Admin)
+          </p>
+          <div
+            className="group flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl"
+          >
+            {/* Foto */}
+            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-amber-100 dark:bg-amber-500/20 flex-shrink-0">
+              {proprietario.foto_url ? (
+                <Image
+                  src={proprietario.foto_url}
+                  alt={proprietario.nome}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-amber-500" />
+                </div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-zinc-900 dark:text-white truncate">{proprietario.nome}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Acesso via /admin
+              </p>
+            </div>
+
+            {/* Ações */}
+            <button
+              onClick={() => onEditar(proprietario)}
+              className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20 rounded-lg transition-colors"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Equipe */}
+      {equipe.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+            Equipe ({equipe.length})
+          </p>
+          <div className="space-y-2">
+            {equipe.map((barbeiro) => (
+              <div
+                key={barbeiro.id}
+                className="group flex items-center gap-4 p-4 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+              >
+                {/* Foto */}
+                <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
+                  {barbeiro.foto_url ? (
+                    <Image
+                      src={barbeiro.foto_url}
+                      alt={barbeiro.nome}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-zinc-500 dark:text-zinc-600" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-zinc-900 dark:text-white truncate">{barbeiro.nome}</p>
+                  <div className="flex items-center gap-3 text-xs text-zinc-600 dark:text-zinc-500 mt-0.5">
+                    <span>{formatarTelefone(barbeiro.telefone)}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">{barbeiro.comissao_percentual}%</span>
+                  </div>
+                </div>
+
+                {/* Token badge */}
+                {barbeiro.token_acesso && (
+                  <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-xs text-zinc-600 dark:text-zinc-400">
+                    <Key className="w-3 h-3" />
+                    {barbeiro.token_acesso}
+                  </div>
+                )}
+
+                {/* Ações */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => onEditar(barbeiro)}
+                    className="p-2 text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => onRemover(barbeiro.id)}
+                    className="p-2 text-zinc-500 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sem equipe ainda */}
+      {equipe.length === 0 && proprietario && (
+        <div className="text-center py-6 px-4 bg-zinc-50 dark:bg-zinc-900/30 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+          <Users className="w-8 h-8 text-zinc-400 dark:text-zinc-700 mx-auto mb-2" />
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-1">Nenhum barbeiro na equipe ainda</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-600 mb-3">
+            Você pode adicionar mais barbeiros a qualquer momento
           </p>
           <button
             onClick={onAdicionar}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors text-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm"
           >
             <UserPlus className="w-4 h-4" />
-            Cadastrar barbeiro
+            Adicionar barbeiro
           </button>
         </div>
-      )}
-
-      {/* Lista de barbeiros */}
-      {barbeiros.length > 0 && (
-        <div className="space-y-2">
-          {barbeiros.map((barbeiro) => (
-            <div
-              key={barbeiro.id}
-              className="group flex items-center gap-4 p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors"
-            >
-              {/* Foto */}
-              <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-800 flex-shrink-0">
-                {barbeiro.foto_url ? (
-                  <Image
-                    src={barbeiro.foto_url}
-                    alt={barbeiro.nome}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-zinc-600" />
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-white truncate">{barbeiro.nome}</p>
-                <div className="flex items-center gap-3 text-xs text-zinc-500 mt-0.5">
-                  <span>{formatarTelefone(barbeiro.telefone)}</span>
-                  <span className="text-emerald-400">{barbeiro.comissao_percentual}%</span>
-                </div>
-              </div>
-
-              {/* Token badge */}
-              {barbeiro.token_acesso && (
-                <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-400">
-                  <Key className="w-3 h-3" />
-                  {barbeiro.token_acesso}
-                </div>
-              )}
-
-              {/* Ações */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => onEditar(barbeiro)}
-                  className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => onRemover(barbeiro.id)}
-                  className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Limite atingido */}
-      {barbeiros.length >= limiteBarbeiros && (
-        <p className="text-xs text-zinc-600 text-center">
-          Limite de {limiteBarbeiros} profissionais do seu plano atingido
-        </p>
       )}
     </motion.div>
   )
