@@ -41,6 +41,9 @@ interface Servico {
   descricao: string | null
   preco: number
   duracao: number
+  precoOriginal?: number
+  duracaoOriginal?: number
+  personalizado?: boolean
 }
 
 interface Barbeiro {
@@ -69,6 +72,8 @@ export default function PaginaAgendar() {
   
   const [tenant, setTenant] = useState<Tenant | null>(null)
   const [servicos, setServicos] = useState<Servico[]>([])
+  const [servicosBase, setServicosBase] = useState<Servico[]>([])
+  const [precosBarbeiro, setPrecosBarbeiro] = useState<Map<string, { preco: number; duracao: number }>>(new Map())
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
   const [carregando, setCarregando] = useState(true)
   
@@ -315,10 +320,14 @@ export default function PaginaAgendar() {
       }
 
       setBarbeiros(barbeirosRes.data || [])
+      setServicosBase(servicosRes.data || [])
       setServicos(servicosRes.data || [])
 
       if (barbeirosRes.data && barbeirosRes.data.length > 0) {
-        setBarbeiroSelecionado(barbeirosRes.data[0].id)
+        const primeiroBarbeiro = barbeirosRes.data[0].id
+        setBarbeiroSelecionado(primeiroBarbeiro)
+        // Buscar preços personalizados do primeiro barbeiro
+        await buscarPrecosBarbeiro(tenantData.id, primeiroBarbeiro, servicosRes.data || [])
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -326,6 +335,54 @@ export default function PaginaAgendar() {
       setCarregando(false)
     }
   }
+
+  // Buscar preços personalizados do barbeiro
+  const buscarPrecosBarbeiro = async (tenantId: string, barbeiroId: string, servicosLista: Servico[]) => {
+    try {
+      const { data: precosData, error } = await supabase
+        .from('precos_barbeiro')
+        .select('servico_id, preco, duracao')
+        .eq('tenant_id', tenantId)
+        .eq('barbeiro_id', barbeiroId)
+        .eq('ativo', true)
+
+      if (error) {
+        console.error('Erro ao buscar preços personalizados:', error)
+        return
+      }
+
+      // Criar mapa de preços personalizados
+      const mapaPrecos = new Map<string, { preco: number; duracao: number }>()
+      precosData?.forEach(p => mapaPrecos.set(p.servico_id, { preco: p.preco, duracao: p.duracao }))
+      setPrecosBarbeiro(mapaPrecos)
+
+      // Atualizar serviços com preços personalizados
+      const servicosAtualizados = servicosLista.map(servico => {
+        const precoPersonalizado = mapaPrecos.get(servico.id)
+        if (precoPersonalizado) {
+          return {
+            ...servico,
+            precoOriginal: servico.preco,
+            duracaoOriginal: servico.duracao,
+            preco: precoPersonalizado.preco,
+            duracao: precoPersonalizado.duracao,
+            personalizado: true
+          }
+        }
+        return { ...servico, personalizado: false }
+      })
+      setServicos(servicosAtualizados)
+    } catch (error) {
+      console.error('Erro ao buscar preços:', error)
+    }
+  }
+
+  // Atualizar preços quando barbeiro muda
+  useEffect(() => {
+    if (tenant && barbeiroSelecionado && servicosBase.length > 0) {
+      buscarPrecosBarbeiro(tenant.id, barbeiroSelecionado, servicosBase)
+    }
+  }, [barbeiroSelecionado, tenant])
 
   const verificarStatusBarbearia = async () => {
     if (!tenant) return

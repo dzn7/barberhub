@@ -47,11 +47,13 @@ const TAMANHOS_HORA: Record<TamanhoHora, number> = {
 };
 
 const STATUS_CORES = {
-  pendente: { bg: 'bg-amber-500', border: 'border-amber-600', light: 'bg-amber-100 text-amber-800' },
-  confirmado: { bg: 'bg-blue-500', border: 'border-blue-600', light: 'bg-blue-100 text-blue-800' },
-  concluido: { bg: 'bg-emerald-500', border: 'border-emerald-600', light: 'bg-emerald-100 text-emerald-800' },
-  cancelado: { bg: 'bg-zinc-400', border: 'border-zinc-500', light: 'bg-zinc-100 text-zinc-600' }
+  pendente: { bg: 'bg-amber-400', border: 'border-amber-500', text: 'text-amber-900', light: 'bg-amber-100 text-amber-800' },
+  confirmado: { bg: 'bg-emerald-500', border: 'border-emerald-600', text: 'text-white', light: 'bg-emerald-100 text-emerald-800' },
+  concluido: { bg: 'bg-blue-500', border: 'border-blue-600', text: 'text-white', light: 'bg-blue-100 text-blue-800' },
+  cancelado: { bg: 'bg-zinc-300', border: 'border-zinc-400', text: 'text-zinc-600', light: 'bg-zinc-100 text-zinc-600' }
 };
+
+type ModoVisualizacao = 'timeline' | 'lista';
 
 export function CalendarioSemanalNovo() {
   const { tenant } = useAuth();
@@ -68,6 +70,7 @@ export function CalendarioSemanalNovo() {
   // Configurações de visualização
   const [visualizacao, setVisualizacao] = useState<TipoVisualizacao>('semana');
   const [tamanhoHora, setTamanhoHora] = useState<TamanhoHora>('normal');
+  const [modoVisualizacao, setModoVisualizacao] = useState<ModoVisualizacao>('lista');
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const subscriptionRef = useRef<any>(null);
@@ -444,13 +447,9 @@ export function CalendarioSemanalNovo() {
         </div>
       </div>
 
-      {/* Cabeçalho dos Dias */}
-      <div className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-        <div className="flex">
-          {/* Coluna de horas - espaço */}
-          <div className="w-14 sm:w-16 flex-shrink-0" />
-          
-          {/* Dias */}
+      {/* Cabeçalho dos Dias - Estilo Verde */}
+      <div className="flex-shrink-0 bg-emerald-800 dark:bg-emerald-900">
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${diasExibidos.length}, 1fr)` }}>
           {diasExibidos.map((dia, idx) => {
             const ehHoje = isToday(dia);
             const agDia = agendamentosPorDia[format(dia, 'yyyy-MM-dd')] || [];
@@ -458,25 +457,23 @@ export function CalendarioSemanalNovo() {
             return (
               <div
                 key={idx}
-                className={`flex-1 min-w-0 py-2 px-1 text-center border-l border-zinc-200 dark:border-zinc-800 first:border-l-0 ${
-                  ehHoje ? 'bg-blue-50 dark:bg-blue-950/20' : ''
+                className={`py-3 px-2 text-center border-l border-emerald-700/50 first:border-l-0 ${
+                  ehHoje ? 'bg-emerald-700/50' : ''
                 }`}
               >
-                <div className={`text-[10px] sm:text-xs font-medium uppercase ${
-                  ehHoje ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500'
-                }`}>
-                  {format(dia, 'EEE', { locale: ptBR })}
+                <div className="text-xs font-medium uppercase text-emerald-200">
+                  {format(dia, 'EEEE', { locale: ptBR })}
                 </div>
-                <div className={`text-lg sm:text-xl font-bold mt-0.5 ${
+                <div className={`text-2xl font-bold mt-1 ${
                   ehHoje 
-                    ? 'w-8 h-8 sm:w-9 sm:h-9 mx-auto rounded-full bg-blue-600 text-white flex items-center justify-center' 
-                    : 'text-zinc-900 dark:text-white'
+                    ? 'w-10 h-10 mx-auto rounded-full bg-white text-emerald-800 flex items-center justify-center' 
+                    : 'text-white'
                 }`}>
                   {format(dia, 'd')}
                 </div>
                 {agDia.length > 0 && (
-                  <div className="text-[10px] text-zinc-500 mt-0.5">
-                    {agDia.length} agend.
+                  <div className="inline-flex items-center justify-center mt-1 px-2 py-0.5 bg-emerald-600/50 rounded-full">
+                    <span className="text-[10px] text-emerald-100 font-medium">{agDia.length}</span>
                   </div>
                 )}
               </div>
@@ -485,123 +482,77 @@ export function CalendarioSemanalNovo() {
         </div>
       </div>
 
-      {/* Grid de Horários */}
-      <div ref={scrollRef} className="flex-1 overflow-auto">
+      {/* Área de Agendamentos - Modo Lista */}
+      <div ref={scrollRef} className="flex-1 overflow-auto bg-zinc-100 dark:bg-zinc-900">
         {carregando ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center gap-2">
               <div className="w-8 h-8 border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-white rounded-full animate-spin" />
               <span className="text-sm text-zinc-500">Carregando...</span>
             </div>
           </div>
         ) : (
-          <div className="flex min-h-full">
-            {/* Coluna de Horas */}
-            <div className="w-14 sm:w-16 flex-shrink-0 bg-zinc-50 dark:bg-zinc-900/30">
-              {HORAS_DIA.map(hora => (
-                <div
-                  key={hora}
-                  className="relative border-b border-zinc-100 dark:border-zinc-800/50"
-                  style={{ height: `${alturaHora}px` }}
-                >
-                  <span className="absolute -top-2 right-2 text-[10px] sm:text-xs text-zinc-400 font-medium">
-                    {String(hora).padStart(2, '0')}:00
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Colunas dos Dias */}
+          <div 
+            className="grid h-full min-h-[400px]" 
+            style={{ gridTemplateColumns: `repeat(${diasExibidos.length}, 1fr)` }}
+          >
             {diasExibidos.map((dia, diaIdx) => {
               const dataKey = format(dia, 'yyyy-MM-dd');
-              const agDia = agendamentosPorDia[dataKey] || [];
+              const agDia = (agendamentosPorDia[dataKey] || []).sort((a, b) => 
+                new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime()
+              );
               const ehHoje = isToday(dia);
 
               return (
                 <div
                   key={diaIdx}
-                  className={`flex-1 min-w-0 relative border-l border-zinc-100 dark:border-zinc-800/50 first:border-l-0 ${
-                    ehHoje ? 'bg-blue-50/30 dark:bg-blue-950/10' : ''
+                  className={`border-l border-zinc-200 dark:border-zinc-800 first:border-l-0 ${
+                    ehHoje ? 'bg-emerald-50/50 dark:bg-emerald-950/20' : 'bg-white dark:bg-zinc-900/50'
                   }`}
                 >
-                  {/* Linhas de hora */}
-                  {HORAS_DIA.map(hora => (
-                    <div
-                      key={hora}
-                      className="border-b border-zinc-100 dark:border-zinc-800/50"
-                      style={{ height: `${alturaHora}px` }}
-                    />
-                  ))}
-
-                  {/* Linha do horário atual */}
-                  {ehHoje && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="absolute left-0 right-0 z-20 pointer-events-none"
-                      style={{
-                        top: `${((new Date().getHours() - 7) * alturaHora) + ((new Date().getMinutes() / 60) * alturaHora)}px`
-                      }}
-                    >
-                      <div className="flex items-center">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1 shadow-sm" />
-                        <div className="flex-1 h-0.5 bg-red-500" />
+                  {/* Lista de Agendamentos do Dia */}
+                  <div className="p-2 space-y-2">
+                    {agDia.length === 0 ? (
+                      <div className="flex items-center justify-center h-32 text-zinc-400 text-sm">
+                        <span className="hidden sm:inline">Sem agendamentos</span>
                       </div>
-                    </motion.div>
-                  )}
+                    ) : (
+                      agDia.map((ag) => {
+                        const status = STATUS_CORES[ag.status as keyof typeof STATUS_CORES] || STATUS_CORES.pendente;
+                        const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
 
-                  {/* Agendamentos */}
-                  <div className="absolute inset-0 p-px">
-                    {agDia.map((ag, index) => {
-                      const { top, height } = calcularPosicao(ag.data_hora, ag.servicos?.duracao || 30);
-                      const status = STATUS_CORES[ag.status as keyof typeof STATUS_CORES] || STATUS_CORES.pendente;
-                      const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
-                      
-                      // Calcular sobreposições para posicionar cards lado a lado
-                      const agendamentosMesmoHorario = agDia.filter(a => {
-                        const posA = calcularPosicao(a.data_hora, a.servicos?.duracao || 30);
-                        return (posA.top < top + height && posA.top + posA.height > top);
-                      });
-                      const indexNoGrupo = agendamentosMesmoHorario.findIndex(a => a.id === ag.id);
-                      const totalNoGrupo = agendamentosMesmoHorario.length;
-                      const largura = totalNoGrupo > 1 ? `${100 / totalNoGrupo}%` : '100%';
-                      const left = totalNoGrupo > 1 ? `${(indexNoGrupo / totalNoGrupo) * 100}%` : '0';
-
-                      return (
-                        <motion.div
-                          key={ag.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          onClick={() => {
-                            setAgendamentoSelecionado(ag);
-                            setModalDetalhesAberto(true);
-                          }}
-                          className={`absolute ${status.bg} rounded-md cursor-pointer overflow-hidden shadow-sm hover:shadow-lg hover:brightness-110 hover:z-30 transition-all border-l-2 ${status.border}`}
-                          style={{ 
-                            top: `${top}px`, 
-                            height: `${Math.max(height, 44)}px`,
-                            left: left,
-                            width: `calc(${largura} - 4px)`,
-                            marginLeft: '2px',
-                            zIndex: 10 + index
-                          }}
-                        >
-                          <div className="p-1.5 h-full flex flex-col text-white overflow-hidden">
-                            <div className="flex items-center gap-1 text-[10px] font-bold opacity-95">
-                              <span>{format(dataBrasilia, 'HH:mm')}</span>
-                            </div>
-                            <div className="text-[11px] font-semibold truncate leading-tight mt-0.5">
-                              {ag.clientes?.nome?.split(' ')[0] || 'Cliente'}
-                            </div>
-                            {height > 55 && (
-                              <div className="text-[10px] opacity-80 truncate mt-auto">
+                        return (
+                          <motion.div
+                            key={ag.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            onClick={() => {
+                              setAgendamentoSelecionado(ag);
+                              setModalDetalhesAberto(true);
+                            }}
+                            className={`${status.bg} rounded-lg p-3 cursor-pointer hover:shadow-md hover:scale-[1.02] transition-all`}
+                          >
+                            <div className={`${status.text}`}>
+                              {/* Horário */}
+                              <div className="flex items-center gap-1.5 text-sm font-bold">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{format(dataBrasilia, 'HH:mm')}</span>
+                              </div>
+                              
+                              {/* Nome do Cliente */}
+                              <div className="font-semibold text-base mt-1 truncate">
+                                {ag.clientes?.nome || 'Cliente'}
+                              </div>
+                              
+                              {/* Serviço */}
+                              <div className="text-sm opacity-80 truncate">
                                 {ag.servicos?.nome}
                               </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
+                            </div>
+                          </motion.div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               );

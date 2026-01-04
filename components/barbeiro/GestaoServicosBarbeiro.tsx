@@ -12,7 +12,8 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
-  Info
+  Info,
+  RotateCcw
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useBarbeiroAuth } from '@/contexts/BarbeiroAuthContext'
@@ -45,6 +46,7 @@ export function GestaoServicosBarbeiro() {
   const [servicoEditando, setServicoEditando] = useState<string | null>(null)
   const [processando, setProcessando] = useState(false)
   const [mensagem, setMensagem] = useState<{ tipo: 'sucesso' | 'erro' | 'info'; texto: string } | null>(null)
+  const [usarPrecosBarbearia, setUsarPrecosBarbearia] = useState(true)
   
   // Estado temporário para edição
   const [edicao, setEdicao] = useState<{
@@ -88,6 +90,9 @@ export function GestaoServicosBarbeiro() {
       const mapaPrecos = new Map<string, PrecoBarbeiro>()
       precosData?.forEach(p => mapaPrecos.set(p.servico_id, p))
       setPrecosBarbeiro(mapaPrecos)
+      
+      // Se não tem preços personalizados, usar preços da barbearia
+      setUsarPrecosBarbearia(mapaPrecos.size === 0)
 
       setServicos(servicosData || [])
     } catch (error) {
@@ -184,6 +189,47 @@ export function GestaoServicosBarbeiro() {
     }).format(valor)
   }
 
+  // Resetar para preços da barbearia (deletar preços personalizados)
+  const resetarParaPrecosBarbearia = async () => {
+    if (!tenant || !barbeiro) return
+    
+    setProcessando(true)
+    try {
+      // Deletar todos os preços personalizados deste barbeiro
+      const { error } = await supabase
+        .from('precos_barbeiro')
+        .delete()
+        .eq('tenant_id', tenant.id)
+        .eq('barbeiro_id', barbeiro.id)
+
+      if (error) throw error
+
+      // Limpar mapa local
+      setPrecosBarbeiro(new Map())
+      setUsarPrecosBarbearia(true)
+      setMensagem({ tipo: 'sucesso', texto: 'Agora você está usando os preços da barbearia!' })
+      setTimeout(() => setMensagem(null), 3000)
+    } catch (error) {
+      console.error('Erro ao resetar preços:', error)
+      setMensagem({ tipo: 'erro', texto: 'Erro ao resetar preços' })
+    } finally {
+      setProcessando(false)
+    }
+  }
+
+  // Toggle entre preços da barbearia e personalizados
+  const alternarModoPrecos = async () => {
+    if (usarPrecosBarbearia) {
+      // Mudar para preços personalizados - não precisa fazer nada, apenas permitir edição
+      setUsarPrecosBarbearia(false)
+      setMensagem({ tipo: 'info', texto: 'Agora você pode personalizar os preços dos serviços' })
+      setTimeout(() => setMensagem(null), 3000)
+    } else {
+      // Voltar para preços da barbearia - deletar personalizações
+      await resetarParaPrecosBarbearia()
+    }
+  }
+
   if (!barbeiro || !tenant) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -195,13 +241,37 @@ export function GestaoServicosBarbeiro() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Cabeçalho */}
-      <div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-          Serviços
-        </h2>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Visualize e edite os serviços disponíveis
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+            Serviços
+          </h2>
+          <p className="text-zinc-600 dark:text-zinc-400">
+            Visualize e edite os serviços disponíveis
+          </p>
+        </div>
+
+        {/* Toggle usar preços da barbearia */}
+        <div className="flex items-center gap-3 p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            Usar preços da barbearia
+          </span>
+          <button
+            onClick={alternarModoPrecos}
+            disabled={processando}
+            className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${
+              usarPrecosBarbearia 
+                ? 'bg-emerald-500' 
+                : 'bg-zinc-300 dark:bg-zinc-600'
+            } ${processando ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                usarPrecosBarbearia ? 'translate-x-6' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Mensagem */}
@@ -232,10 +302,21 @@ export function GestaoServicosBarbeiro() {
       </AnimatePresence>
 
       {/* Info */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-        <p className="text-sm text-blue-700 dark:text-blue-400 flex items-start gap-2">
+      <div className={`p-4 border rounded-xl ${
+        usarPrecosBarbearia 
+          ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
+          : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+      }`}>
+        <p className={`text-sm flex items-start gap-2 ${
+          usarPrecosBarbearia 
+            ? 'text-emerald-700 dark:text-emerald-400' 
+            : 'text-blue-700 dark:text-blue-400'
+        }`}>
           <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          Você pode ajustar o preço e a duração dos serviços. Para adicionar novos serviços, entre em contato com o proprietário da barbearia.
+          {usarPrecosBarbearia 
+            ? 'Você está usando os preços padrão definidos pela barbearia. Desative o toggle acima para personalizar seus preços.'
+            : 'Você pode ajustar o preço e a duração dos serviços. Ative o toggle "Usar preços da barbearia" para voltar aos preços padrão.'
+          }
         </p>
       </div>
 
@@ -383,13 +464,15 @@ export function GestaoServicosBarbeiro() {
                             </div>
                           </div>
 
-                          <button
-                            onClick={() => iniciarEdicao(servico)}
-                            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                            Editar
-                          </button>
+                          {!usarPrecosBarbearia && (
+                            <button
+                              onClick={() => iniciarEdicao(servico)}
+                              className="flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                              Editar
+                            </button>
+                          )}
                         </div>
                       )
                     })()
