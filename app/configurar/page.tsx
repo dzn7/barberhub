@@ -151,17 +151,6 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-12 md:py-20">
-        {/* Indicador de sucesso sutil */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-            <span className="text-sm text-emerald-400 font-medium">Configuração concluída</span>
-          </div>
-        </motion.div>
 
         {/* Título principal */}
         <motion.div
@@ -475,7 +464,6 @@ export default function ConfigurarPage() {
     try {
       await salvarDadosAtuais()
       setConcluido(true)
-      setTimeout(() => { router.push('/admin') }, 3000)
     } catch (error) {
       toast({ tipo: 'erro', mensagem: 'Erro ao finalizar configuração' })
     } finally {
