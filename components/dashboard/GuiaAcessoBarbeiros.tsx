@@ -57,8 +57,8 @@ export function GuiaAcessoBarbeiros() {
   const [regenerando, setRegenerando] = useState<string | null>(null)
 
   const linkAcesso = typeof window !== 'undefined' 
-    ? `${window.location.origin}/barbeiro/entrar`
-    : '/barbeiro/entrar'
+    ? `${window.location.origin}/colaborador/entrar`
+    : '/colaborador/entrar'
 
   useEffect(() => {
     if (tenant) {
@@ -235,7 +235,7 @@ export function GuiaAcessoBarbeiros() {
                     Códigos de Acesso
                   </label>
                   <span className="text-xs text-zinc-500">
-                    {barbeiros.length} barbeiro(s)
+                    {barbeiros.length} colaborador(es)
                   </span>
                 </div>
 

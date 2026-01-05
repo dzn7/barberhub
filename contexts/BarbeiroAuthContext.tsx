@@ -25,6 +25,7 @@ interface TenantBarbeiro {
   id: string
   slug: string
   nome: string
+  tipo_negocio: 'barbearia' | 'nail_designer'
   logo_url: string | null
   cor_primaria: string
   cor_secundaria: string
@@ -79,7 +80,7 @@ export function BarbeiroAuthProvider({ children }: { children: ReactNode }) {
       // Buscar dados do tenant
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
-        .select('id, slug, nome, logo_url, cor_primaria, cor_secundaria, cor_destaque')
+        .select('id, slug, nome, tipo_negocio, logo_url, cor_primaria, cor_secundaria, cor_destaque')
         .eq('id', barbeiroData.tenant_id)
         .eq('ativo', true)
         .single()

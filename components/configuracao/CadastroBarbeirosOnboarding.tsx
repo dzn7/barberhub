@@ -29,7 +29,7 @@ import {
   Plus,
   MessageCircle,
   Scissors,
-  Sparkles
+  Hand
 } from 'lucide-react'
 
 interface Barbeiro {
@@ -693,7 +693,7 @@ function SeletorEspecialidades({
                   : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-600'
               }`}
             >
-              <Sparkles className="w-3 h-3 inline mr-1" />
+              <Check className="w-3 h-3 inline mr-1" />
               {esp}
             </button>
           ))}

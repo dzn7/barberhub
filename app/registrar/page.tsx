@@ -21,8 +21,13 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Scissors,
+  Hand
 } from 'lucide-react'
+import Image from 'next/image'
+import { TipoNegocio, OPCOES_TIPO_NEGOCIO } from '@/lib/tipos-negocio'
+import { obterTerminologia } from '@/lib/configuracoes-negocio'
 
 /**
  * Estados de validação para campos do formulário
@@ -49,7 +54,8 @@ export default function RegistrarPage() {
   const inputSenhaRef = useRef<HTMLInputElement>(null)
   
   const [form, setForm] = useState({
-    nome_barbearia: '',
+    tipo_negocio: '' as TipoNegocio | '',
+    nome_estabelecimento: '',
     slug: '',
     nome_proprietario: '',
     email: '',
@@ -57,6 +63,11 @@ export default function RegistrarPage() {
     senha: '',
     confirmar_senha: ''
   })
+  
+  // Terminologia baseada no tipo selecionado
+  const terminologia = form.tipo_negocio 
+    ? obterTerminologia(form.tipo_negocio as TipoNegocio) 
+    : null
   
   // Estados de validação em tempo real
   const [validacaoSlug, setValidacaoSlug] = useState<EstadoCampo>({ estado: 'idle' })
@@ -191,17 +202,22 @@ export default function RegistrarPage() {
     return () => clearTimeout(timer)
   }, [etapa])
 
-  const handleNomeBarbearia = (valor: string) => {
+  const handleNomeEstabelecimento = (valor: string) => {
     const novoSlug = gerarSlug(valor)
     setForm({
       ...form,
-      nome_barbearia: valor,
+      nome_estabelecimento: valor,
       slug: novoSlug
     })
     // Reset validação do slug quando muda
     if (novoSlug.length < 3) {
       setValidacaoSlug({ estado: 'idle' })
     }
+  }
+  
+  const handleTipoNegocio = (tipo: TipoNegocio) => {
+    setForm({ ...form, tipo_negocio: tipo })
+    setErro(null)
   }
 
   const handleEmailChange = (valor: string) => {
@@ -229,8 +245,13 @@ export default function RegistrarPage() {
   }
 
   const validarEtapa1 = (): boolean => {
-    if (!form.nome_barbearia.trim()) {
-      setErro('Digite o nome da sua barbearia')
+    if (!form.tipo_negocio) {
+      setErro('Selecione o tipo do seu negócio')
+      return false
+    }
+    if (!form.nome_estabelecimento.trim()) {
+      const termo = terminologia?.estabelecimento.singular || 'estabelecimento'
+      setErro(`Digite o nome ${terminologia?.estabelecimento.artigo || 'do'} ${termo.toLowerCase()}`)
       inputNomeBarbeariaRef.current?.focus()
       return false
     }
@@ -374,15 +395,17 @@ export default function RegistrarPage() {
       const { data: tenantId, error: tenantError } = await supabase
         .rpc('criar_novo_tenant', {
           p_slug: form.slug,
-          p_nome: form.nome_barbearia,
+          p_nome: form.nome_estabelecimento,
           p_email: form.email,
           p_telefone: form.telefone,
-          p_user_id: userId
+          p_user_id: userId,
+          p_tipo_negocio: form.tipo_negocio || 'barbearia'
         })
 
       if (tenantError) {
         console.error('Erro ao criar tenant:', tenantError)
-        setErro('Erro ao criar barbearia. Tente novamente.')
+        const termoErro = terminologia?.estabelecimento.singular.toLowerCase() || 'negócio'
+        setErro(`Erro ao criar ${termoErro}. Tente novamente.`)
         setCarregando(false)
         return
       }
@@ -447,7 +470,9 @@ export default function RegistrarPage() {
           <Link href="/" className="inline-block" aria-label="Voltar para página inicial">
             <LogoMarca />
           </Link>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mt-4">Criar sua Barbearia</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mt-4">
+            {terminologia ? `Criar ${terminologia.estabelecimento.artigo} ${terminologia.estabelecimento.singular}` : 'Criar seu Negócio'}
+          </h1>
           <p className="text-zinc-600 dark:text-zinc-400 mt-2">14 dias grátis para testar</p>
         </div>
 
@@ -481,78 +506,136 @@ export default function RegistrarPage() {
           aria-label="Formulário de cadastro"
         >
           
-          {/* Etapa 1: Dados da Barbearia */}
+          {/* Etapa 1: Tipo de Negócio e Dados */}
           {etapa === 1 && (
-            <fieldset className="space-y-4">
-              <legend className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Dados da Barbearia</legend>
+            <fieldset className="space-y-6">
+              <legend className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+                {terminologia ? `Dados ${terminologia.estabelecimento.artigo} ${terminologia.estabelecimento.singular}` : 'Dados do Estabelecimento'}
+              </legend>
               
+              {/* Seletor de Tipo de Negócio */}
               <div>
-                <label htmlFor="nome_barbearia" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                  Nome da Barbearia <span className="text-red-400">*</span>
+                <label className="block text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+                  Tipo do seu negócio <span className="text-red-400">*</span>
                 </label>
-                <div className="relative">
-                  <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
-                  <input
-                    ref={inputNomeBarbeariaRef}
-                    id="nome_barbearia"
-                    type="text"
-                    value={form.nome_barbearia}
-                    onChange={e => handleNomeBarbearia(e.target.value)}
-                    placeholder="Ex: Barbearia do João"
-                    required
-                    aria-required="true"
-                    aria-describedby="nome_barbearia_ajuda"
-                    autoComplete="organization"
-                    className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 focus:border-zinc-400 dark:focus:border-zinc-500 transition-all"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  {OPCOES_TIPO_NEGOCIO.map((opcao) => {
+                    const selecionado = form.tipo_negocio === opcao.tipo
+                    
+                    return (
+                      <button
+                        key={opcao.tipo}
+                        type="button"
+                        onClick={() => handleTipoNegocio(opcao.tipo)}
+                        className={`
+                          relative flex flex-col items-center p-4 rounded-xl border-2 transition-all
+                          ${selecionado 
+                            ? 'border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white' 
+                            : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500'
+                          }
+                        `}
+                      >
+                        {selecionado && (
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                        <div className="relative w-16 h-16 mb-2 rounded-xl overflow-hidden">
+                          <Image
+                            src={opcao.imagem}
+                            alt={opcao.titulo}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <span className={`text-sm font-semibold ${selecionado ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}>
+                          {opcao.titulo}
+                        </span>
+                        <span className={`text-xs text-center mt-1 ${selecionado ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-500'}`}>
+                          {opcao.descricao}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
-                <p id="nome_barbearia_ajuda" className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
-                  O nome que aparecerá para seus clientes
-                </p>
               </div>
-
-              <div>
-                <label htmlFor="slug" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                  Endereço da sua página <span className="text-red-400">*</span>
-                </label>
-                <div className={`flex items-center bg-zinc-50 dark:bg-zinc-900 border rounded-lg overflow-hidden transition-colors ${classesBordaValidacao(validacaoSlug)}`}>
-                  <span className="px-2 sm:px-3 text-zinc-500 text-xs sm:text-sm select-none whitespace-nowrap flex-shrink-0" aria-hidden="true">barberhub.online/</span>
-                  <input
-                    id="slug"
-                    type="text"
-                    value={form.slug}
-                    onChange={e => {
-                      const novoSlug = gerarSlug(e.target.value)
-                      setForm({ ...form, slug: novoSlug })
-                      if (novoSlug.length < 3) setValidacaoSlug({ estado: 'idle' })
-                    }}
-                    placeholder="sua-barbearia"
-                    required
-                    aria-required="true"
-                    aria-describedby="slug_ajuda slug_status"
-                    aria-invalid={validacaoSlug.estado === 'invalido'}
-                    className="flex-1 min-w-0 bg-transparent px-2 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
-                  />
-                  <div className="pr-2 sm:pr-3 flex-shrink-0" aria-hidden="true">
-                    {renderizarIndicadorValidacao(validacaoSlug)}
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-1">
-                  <p id="slug_ajuda" className="text-xs text-zinc-500">
-                    Este será o link da sua página de agendamentos
-                  </p>
-                  {validacaoSlug.mensagem && (
-                    <p 
-                      id="slug_status" 
-                      className={`text-xs ${validacaoSlug.estado === 'valido' ? 'text-emerald-400' : 'text-red-400'}`}
-                      role="status"
-                      aria-live="polite"
-                    >
-                      {validacaoSlug.mensagem}
+              
+              {/* Nome do Estabelecimento - só aparece após selecionar tipo */}
+              {form.tipo_negocio && (
+                <>
+                  <div>
+                    <label htmlFor="nome_estabelecimento" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
+                      Nome {terminologia?.estabelecimento.artigo} {terminologia?.estabelecimento.singular} <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      {form.tipo_negocio === 'barbearia' ? (
+                        <Scissors className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
+                      ) : (
+                        <Hand className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
+                      )}
+                      <input
+                        ref={inputNomeBarbeariaRef}
+                        id="nome_estabelecimento"
+                        type="text"
+                        value={form.nome_estabelecimento}
+                        onChange={e => handleNomeEstabelecimento(e.target.value)}
+                        placeholder={form.tipo_negocio === 'barbearia' ? 'Ex: Barbearia do João' : 'Ex: Studio da Maria'}
+                        required
+                        aria-required="true"
+                        aria-describedby="nome_estabelecimento_ajuda"
+                        autoComplete="organization"
+                        className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg pl-10 pr-4 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/30 focus:border-zinc-400 dark:focus:border-zinc-500 transition-all"
+                      />
+                    </div>
+                    <p id="nome_estabelecimento_ajuda" className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
+                      O nome que aparecerá para seus clientes
                     </p>
-                  )}
-                </div>
-              </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="slug" className="block text-sm text-zinc-600 dark:text-zinc-400 mb-2">
+                      Endereço da sua página <span className="text-red-400">*</span>
+                    </label>
+                    <div className={`flex items-center bg-zinc-50 dark:bg-zinc-900 border rounded-lg overflow-hidden transition-colors ${classesBordaValidacao(validacaoSlug)}`}>
+                      <span className="px-2 sm:px-3 text-zinc-500 text-xs sm:text-sm select-none whitespace-nowrap flex-shrink-0" aria-hidden="true">barberhub.online/</span>
+                      <input
+                        id="slug"
+                        type="text"
+                        value={form.slug}
+                        onChange={e => {
+                          const novoSlug = gerarSlug(e.target.value)
+                          setForm({ ...form, slug: novoSlug })
+                          if (novoSlug.length < 3) setValidacaoSlug({ estado: 'idle' })
+                        }}
+                        placeholder={form.tipo_negocio === 'barbearia' ? 'sua-barbearia' : 'seu-studio'}
+                        required
+                        aria-required="true"
+                        aria-describedby="slug_ajuda slug_status"
+                        aria-invalid={validacaoSlug.estado === 'invalido'}
+                        className="flex-1 min-w-0 bg-transparent px-2 py-3 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
+                      />
+                      <div className="pr-2 sm:pr-3 flex-shrink-0" aria-hidden="true">
+                        {renderizarIndicadorValidacao(validacaoSlug)}
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-1">
+                      <p id="slug_ajuda" className="text-xs text-zinc-500">
+                        Este será o link da sua página de agendamentos
+                      </p>
+                      {validacaoSlug.mensagem && (
+                        <p 
+                          id="slug_status" 
+                          className={`text-xs ${validacaoSlug.estado === 'valido' ? 'text-emerald-400' : 'text-red-400'}`}
+                          role="status"
+                          aria-live="polite"
+                        >
+                          {validacaoSlug.mensagem}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </fieldset>
           )}
 
@@ -768,8 +851,8 @@ export default function RegistrarPage() {
                 <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">Resumo</h3>
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <dt className="text-zinc-500">Barbearia:</dt>
-                    <dd className="text-zinc-900 dark:text-white font-medium">{form.nome_barbearia}</dd>
+                    <dt className="text-zinc-500">{terminologia?.estabelecimento.singular || 'Estabelecimento'}:</dt>
+                    <dd className="text-zinc-900 dark:text-white font-medium">{form.nome_estabelecimento}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-zinc-500">Link:</dt>

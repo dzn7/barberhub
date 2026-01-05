@@ -20,11 +20,15 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/WhatsAppIcon'
+import { TipoNegocio } from '@/lib/tipos-negocio'
+import { obterTerminologia, obterIconePrincipal } from '@/lib/configuracoes-negocio'
+import { Hand } from 'lucide-react'
 
 interface Tenant {
   id: string
   slug: string
   nome: string
+  tipo_negocio: TipoNegocio
   logo_url: string | null
   cor_primaria: string
   cor_secundaria: string
@@ -137,7 +141,7 @@ export default function PaginaBarbearia() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black px-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">Barbearia não encontrada</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Estabelecimento não encontrado</h1>
           <p className="text-zinc-400 mb-6">Verifique o endereço e tente novamente.</p>
           <Link href="/" className="text-white hover:underline">
             Voltar ao início
@@ -195,7 +199,11 @@ export default function PaginaBarbearia() {
                 className="w-24 h-24 mx-auto mb-6 rounded-2xl flex items-center justify-center"
                 style={{ backgroundColor: cores.destaque + '20' }}
               >
-                <Scissors className="w-10 h-10" style={{ color: cores.secundaria }} />
+                {tenant.tipo_negocio === 'nail_designer' ? (
+                  <Hand className="w-10 h-10" style={{ color: cores.secundaria }} />
+                ) : (
+                  <Scissors className="w-10 h-10" style={{ color: cores.secundaria }} />
+                )}
               </div>
             )}
             
@@ -274,7 +282,11 @@ export default function PaginaBarbearia() {
                 className="w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: cores.destaque + '20' }}
               >
-                <Scissors className="w-5 h-5" style={{ color: cores.secundaria }} />
+                {tenant.tipo_negocio === 'nail_designer' ? (
+                  <Hand className="w-5 h-5" style={{ color: cores.secundaria }} />
+                ) : (
+                  <Scissors className="w-5 h-5" style={{ color: cores.secundaria }} />
+                )}
               </div>
               <div className="text-2xl font-bold" style={{ color: cores.secundaria }}>{servicos.length}</div>
               <div className="text-sm" style={{ color: cores.destaque }}>Serviços</div>

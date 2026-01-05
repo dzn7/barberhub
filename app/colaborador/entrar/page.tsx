@@ -60,7 +60,7 @@ export default function PaginaLoginBarbeiro() {
   // Redirecionar se já autenticado
   useEffect(() => {
     if (!carregandoAuth && autenticado) {
-      router.push('/barbeiro')
+      router.push('/colaborador')
     }
   }, [carregandoAuth, autenticado, router])
 
@@ -129,7 +129,7 @@ export default function PaginaLoginBarbeiro() {
         console.error('Erro ao salvar no histórico:', error)
       }
 
-      router.push('/barbeiro')
+      router.push('/colaborador')
     } else {
       setErro(resultado.erro || 'Erro ao fazer login')
     }
@@ -199,7 +199,7 @@ export default function PaginaLoginBarbeiro() {
           {/* Título */}
           <div className="text-center mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              Área do Barbeiro
+              Área do Colaborador
             </h1>
             <p className="text-zinc-400">
               Acesse sua conta para gerenciar agendamentos

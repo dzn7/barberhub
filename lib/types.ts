@@ -3,11 +3,13 @@
 export type PlanoAssinatura = 'trial' | 'basico' | 'profissional' | 'enterprise'
 export type StatusAssinatura = 'ativa' | 'pendente' | 'cancelada' | 'expirada' | 'suspensa'
 export type RoleUsuario = 'super_admin' | 'owner' | 'admin' | 'manager' | 'operator'
+export type TipoNegocio = 'barbearia' | 'nail_designer'
 
 export interface Tenant {
   id: string
   slug: string
   nome: string
+  tipo_negocio: TipoNegocio
   logo_url: string | null
   icone_pwa_192: string | null
   icone_pwa_512: string | null
@@ -31,7 +33,7 @@ export interface Tenant {
   ativo: boolean
   suspenso: boolean
   motivo_suspensao: string | null
-  limite_barbeiros: number
+  limite_profissionais: number
   limite_servicos: number
   limite_agendamentos_mes: number
   criado_em: string

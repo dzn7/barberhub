@@ -12,7 +12,8 @@ import {
   X, 
   TrendingUp,
   Settings,
-  Star
+  Star,
+  Hand
 } from 'lucide-react'
 import { Tabs } from '@radix-ui/themes'
 import { useBarbeiroAuth } from '@/contexts/BarbeiroAuthContext'
@@ -38,13 +39,13 @@ export default function DashboardBarbeiro() {
   // Redirecionar se não autenticado
   useEffect(() => {
     if (!carregando && !autenticado) {
-      router.push('/barbeiro/entrar')
+      router.push('/colaborador/entrar')
     }
   }, [carregando, autenticado, router])
 
   const handleLogout = () => {
     sair()
-    router.push('/barbeiro/entrar')
+    router.push('/colaborador/entrar')
   }
 
   // Loading state
@@ -52,7 +53,10 @@ export default function DashboardBarbeiro() {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Scissors className="w-12 h-12 text-emerald-500 animate-pulse" />
+          {tenant?.tipo_negocio === 'nail_designer' 
+            ? <Hand className="w-12 h-12 text-emerald-500 animate-pulse" />
+            : <Scissors className="w-12 h-12 text-emerald-500 animate-pulse" />
+          }
           <p className="text-zinc-500">Carregando...</p>
         </div>
       </div>
@@ -84,7 +88,9 @@ export default function DashboardBarbeiro() {
                     className="object-cover"
                   />
                 ) : (
-                  <Scissors className="w-5 h-5 text-zinc-500" />
+                  tenant.tipo_negocio === 'nail_designer' 
+                    ? <Hand className="w-5 h-5 text-zinc-500" />
+                    : <Scissors className="w-5 h-5 text-zinc-500" />
                 )}
               </div>
               <div className="hidden sm:block">

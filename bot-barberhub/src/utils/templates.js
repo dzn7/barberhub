@@ -321,18 +321,23 @@ export function templateBoasVindasBarbeiro({
   nomeBarbeiro, 
   nomeBarbearia,
   tokenAcesso,
-  slug
+  slug,
+  tipoNegocio = 'barbearia'
 }) {
-  return `👋 *Bem-vindo à equipe, ${nomeBarbeiro}!*
+  const ehNail = tipoNegocio === 'nail_designer';
+  const termo = ehNail ? 'nail designer' : 'barbeiro';
+  const emoji = ehNail ? '💅' : '💈';
+  
+  return `👋 *Bem-vindo(a) à equipe, ${nomeBarbeiro}!*
 
-Você foi cadastrado como barbeiro na *${nomeBarbearia}*! 🎉
+Você foi cadastrado(a) como ${termo} no(a) *${nomeBarbearia}*! 🎉
 
 ━━━━━━━━━━━━━━━━━━━
 🔐 *ACESSE SEU PAINEL:*
 ━━━━━━━━━━━━━━━━━━━
 
 1️⃣ *Acesse o link:*
-barberhub.online/barbeiro/entrar
+barberhub.online/colaborador/entrar
 
 2️⃣ *Digite seu token de acesso:*
 *${tokenAcesso}*
@@ -350,9 +355,9 @@ barberhub.online/barbeiro/entrar
 🔔 *Notificações:*
 Você receberá alertas de novos agendamentos diretamente aqui no WhatsApp!
 
-Qualquer dúvida, fale com o proprietário da barbearia.
+Qualquer dúvida, fale com o proprietário.
 
-Bom trabalho! 💈✨
+Bom trabalho! ${emoji}✨
 *${nomeBarbearia}*`;
 }
 

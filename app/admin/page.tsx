@@ -25,6 +25,7 @@ import { ConfiguracaoBarbearia } from "@/components/dashboard/ConfiguracaoBarbea
 import { TelaTesteExpirado } from "@/components/dashboard/TelaTesteExpirado";
 import { GuiaAcessoBarbeiros } from "@/components/dashboard/GuiaAcessoBarbeiros";
 import { AlternadorTema } from "@/components/AlternadorTema";
+import { useTerminologia } from "@/hooks/useTerminologia";
 // PWA removido temporariamente
 // import { NotificationPermission } from "@/components/NotificationPermission";
 // import { useAgendamentosRealtime } from "@/hooks/useAgendamentosRealtime";
@@ -39,6 +40,7 @@ import { ptBR } from "date-fns/locale";
 export default function DashboardCompleto() {
   const router = useRouter();
   const { user, tenant, carregando: carregandoAuth, sair } = useAuth();
+  const { profissional, estabelecimento, ehNailDesigner } = useTerminologia();
   const [abaAtiva, setAbaAtiva] = useState("visao-geral");
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [filtroAberto, setFiltroAberto] = useState(false);
@@ -391,7 +393,7 @@ export default function DashboardCompleto() {
           </div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Erro ao carregar dados</h2>
           <p className="text-zinc-600 dark:text-zinc-400 mb-4">
-            Não foi possível carregar os dados da sua barbearia. Isso pode acontecer se sua conta não está vinculada a uma barbearia.
+            Não foi possível carregar os dados do seu {estabelecimento().toLowerCase()}. Isso pode acontecer se sua conta não está vinculada a uma barbearia.
           </p>
           <div className="space-y-2">
             <button
@@ -722,7 +724,7 @@ export default function DashboardCompleto() {
 
                 <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800">
                   <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
-                    Atendimentos por Barbeiro
+                    Atendimentos por {profissional()}
                   </h3>
                   <GraficoBarbeiros dados={metricas.atendimentosPorBarbeiro} carregando={carregando} />
                 </div>
@@ -796,7 +798,7 @@ export default function DashboardCompleto() {
                     Gestão da Equipe
                   </h2>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Gerencie barbeiros, usuários e comissões
+                    Gerencie {profissional(true).toLowerCase()}, usuários e comissões
                   </p>
                 </div>
               </div>
@@ -805,7 +807,7 @@ export default function DashboardCompleto() {
                 <Tabs.List className="mb-6 flex-wrap">
                   <Tabs.Trigger value="barbeiros">
                     <Scissors className="w-4 h-4 mr-2" />
-                    Barbeiros
+                    {profissional(true)}
                   </Tabs.Trigger>
                   <Tabs.Trigger value="usuarios">
                     <Users className="w-4 h-4 mr-2" />
@@ -852,7 +854,7 @@ export default function DashboardCompleto() {
                     Configurações
                   </h2>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Gerencie sua barbearia: identidade visual, horários e acessos
+                    Gerencie seu {estabelecimento().toLowerCase()}: identidade visual, horários e acessos
                   </p>
                 </div>
               </div>
@@ -862,7 +864,7 @@ export default function DashboardCompleto() {
                 <Tabs.List className="mb-6 flex-wrap">
                   <Tabs.Trigger value="barbearia">
                     <Store className="w-4 h-4 mr-2" />
-                    Barbearia
+                    {estabelecimento()}
                   </Tabs.Trigger>
                   <Tabs.Trigger value="horarios">
                     <Clock className="w-4 h-4 mr-2" />
@@ -870,7 +872,7 @@ export default function DashboardCompleto() {
                   </Tabs.Trigger>
                   <Tabs.Trigger value="acesso">
                     <Users className="w-4 h-4 mr-2" />
-                    Acesso Barbeiros
+                    Acesso {profissional(true)}
                   </Tabs.Trigger>
                 </Tabs.List>
 
@@ -917,10 +919,10 @@ export default function DashboardCompleto() {
                       <Users className="w-5 h-5 text-zinc-500" />
                       <div>
                         <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                          Acesso dos Barbeiros
+                          Acesso {profissional(true, true)}
                         </h3>
                         <p className="text-sm text-zinc-500">
-                          Gerencie tokens de acesso e permissões dos barbeiros
+                          Gerencie tokens de acesso e permissões {profissional(true, true).toLowerCase()}
                         </p>
                       </div>
                     </div>

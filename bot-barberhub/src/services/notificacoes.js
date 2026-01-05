@@ -400,7 +400,7 @@ export async function enviarBoasVindasBarbeiro(barbeiroId) {
       .from('barbeiros')
       .select(`
         *,
-        tenants (id, nome, slug, whatsapp, telefone)
+        tenants (id, nome, slug, whatsapp, telefone, tipo_negocio)
       `)
       .eq('id', barbeiroId)
       .single();
@@ -422,9 +422,10 @@ export async function enviarBoasVindasBarbeiro(barbeiroId) {
 
     const mensagem = templateBoasVindasBarbeiro({
       nomeBarbeiro: barbeiro.nome,
-      nomeBarbearia: barbeiro.tenants?.nome || 'Barbearia',
+      nomeBarbearia: barbeiro.tenants?.nome || 'Estabelecimento',
       tokenAcesso: barbeiro.token_acesso,
-      slug: barbeiro.tenants?.slug
+      slug: barbeiro.tenants?.slug,
+      tipoNegocio: barbeiro.tenants?.tipo_negocio || 'barbearia'
     });
 
     const resultado = await enviarMensagem(barbeiro.telefone, mensagem);

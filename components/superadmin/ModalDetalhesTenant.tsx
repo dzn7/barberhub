@@ -182,7 +182,7 @@ export function ModalDetalhesTenant({ tenant, aberto, onFechar }: ModalDetalhesT
                   <BarraProgresso
                     label="Barbeiros"
                     atual={tenant.total_barbeiros}
-                    limite={planoConfig.limite_barbeiros}
+                    limite={planoConfig.limite_profissionais}
                   />
                   <BarraProgresso
                     label="Serviços"

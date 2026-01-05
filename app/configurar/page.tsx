@@ -37,9 +37,11 @@ import {
   Copy,
   CheckCircle2,
   Sun,
-  Moon
+  Moon,
+  Hand
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useTerminologia } from '@/hooks/useTerminologia'
 
 const PALETAS_SOFISTICADAS = [
   // Tons escuros clássicos

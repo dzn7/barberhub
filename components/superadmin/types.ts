@@ -113,7 +113,7 @@ export interface PlanoConfig {
   nome: string
   cor: string
   bg: string
-  limite_barbeiros: number
+  limite_profissionais: number
   limite_servicos: number
   limite_agendamentos: number
   preco: number
@@ -124,7 +124,7 @@ export const PLANOS_CONFIG: Record<string, PlanoConfig> = {
     nome: 'Trial',
     cor: 'text-amber-600',
     bg: 'bg-amber-100 dark:bg-amber-900/30',
-    limite_barbeiros: 2,
+    limite_profissionais: 2,
     limite_servicos: 10,
     limite_agendamentos: 100,
     preco: 0
@@ -133,7 +133,7 @@ export const PLANOS_CONFIG: Record<string, PlanoConfig> = {
     nome: 'Básico',
     cor: 'text-blue-600',
     bg: 'bg-blue-100 dark:bg-blue-900/30',
-    limite_barbeiros: 3,
+    limite_profissionais: 3,
     limite_servicos: 20,
     limite_agendamentos: 500,
     preco: 49.90
@@ -142,7 +142,7 @@ export const PLANOS_CONFIG: Record<string, PlanoConfig> = {
     nome: 'Profissional',
     cor: 'text-emerald-600',
     bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-    limite_barbeiros: 10,
+    limite_profissionais: 10,
     limite_servicos: 50,
     limite_agendamentos: 2000,
     preco: 99.90
@@ -151,7 +151,7 @@ export const PLANOS_CONFIG: Record<string, PlanoConfig> = {
     nome: 'Enterprise',
     cor: 'text-purple-600',
     bg: 'bg-purple-100 dark:bg-purple-900/30',
-    limite_barbeiros: 999,
+    limite_profissionais: 999,
     limite_servicos: 999,
     limite_agendamentos: 999999,
     preco: 199.90
