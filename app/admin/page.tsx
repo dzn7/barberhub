@@ -488,7 +488,7 @@ export default function DashboardCompleto() {
             </button>
           </div>
 
-          {/* Menu Desktop */}
+          {/* Menu Desktop - 8 abas principais reorganizadas */}
           <Tabs.List className="mb-8 hidden lg:flex">
             <Tabs.Trigger value="visao-geral">
               <TrendingUp className="w-4 h-4 mr-2" />
@@ -502,33 +502,17 @@ export default function DashboardCompleto() {
               <DollarSign className="w-4 h-4 mr-2" />
               Financeiro
             </Tabs.Trigger>
-            <Tabs.Trigger value="atendimentos">
+            <Tabs.Trigger value="equipe">
               <Users className="w-4 h-4 mr-2" />
-              Atendimentos
+              Equipe
+            </Tabs.Trigger>
+            <Tabs.Trigger value="servicos">
+              <Scissors className="w-4 h-4 mr-2" />
+              Serviços
             </Tabs.Trigger>
             <Tabs.Trigger value="estoque">
               <Package className="w-4 h-4 mr-2" />
               Estoque
-            </Tabs.Trigger>
-            <Tabs.Trigger value="comissoes">
-              <Percent className="w-4 h-4 mr-2" />
-              Comissões
-            </Tabs.Trigger>
-            <Tabs.Trigger value="usuarios">
-              <Users className="w-4 h-4 mr-2" />
-              Usuários
-            </Tabs.Trigger>
-            <Tabs.Trigger value="servicos">
-              <Edit3 className="w-4 h-4 mr-2" />
-              Serviços
-            </Tabs.Trigger>
-            <Tabs.Trigger value="barbeiros">
-              <Scissors className="w-4 h-4 mr-2" />
-              Barbeiros
-            </Tabs.Trigger>
-            <Tabs.Trigger value="remarcacao">
-              <Clock className="w-4 h-4 mr-2" />
-              Remarcação
             </Tabs.Trigger>
             <Tabs.Trigger value="relatorios">
               <BarChart3 className="w-4 h-4 mr-2" />
@@ -553,13 +537,9 @@ export default function DashboardCompleto() {
                   { value: "visao-geral", icon: TrendingUp, label: "Visão Geral" },
                   { value: "agendamentos", icon: Calendar, label: "Agendamentos" },
                   { value: "financeiro", icon: DollarSign, label: "Financeiro" },
-                  { value: "atendimentos", icon: Users, label: "Atendimentos" },
+                  { value: "equipe", icon: Users, label: "Equipe" },
+                  { value: "servicos", icon: Scissors, label: "Serviços" },
                   { value: "estoque", icon: Package, label: "Estoque" },
-                  { value: "comissoes", icon: Percent, label: "Comissões" },
-                  { value: "usuarios", icon: Users, label: "Usuários" },
-                  { value: "servicos", icon: Edit3, label: "Serviços" },
-                  { value: "barbeiros", icon: Scissors, label: "Barbeiros" },
-                  { value: "remarcacao", icon: Clock, label: "Remarcação" },
                   { value: "relatorios", icon: BarChart3, label: "Relatórios" },
                   { value: "configuracoes", icon: Settings, label: "Configurações" },
                 ].map((item) => {
@@ -750,9 +730,50 @@ export default function DashboardCompleto() {
             </div>
           </Tabs.Content>
 
-          {/* Agendamentos */}
+          {/* Agendamentos (Gestão + Remarcação + Atendimentos) */}
           <Tabs.Content value="agendamentos">
-            <GestaoAgendamentos />
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Calendar className="w-8 h-8 text-zinc-700 dark:text-zinc-300" />
+                <div>
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                    Gestão de Agendamentos
+                  </h2>
+                  <p className="text-zinc-600 dark:text-zinc-400">
+                    Agendamentos online, atendimentos presenciais e remarcações
+                  </p>
+                </div>
+              </div>
+
+              <Tabs.Root defaultValue="agenda">
+                <Tabs.List className="mb-6 flex-wrap">
+                  <Tabs.Trigger value="agenda">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Agenda
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="atendimentos">
+                    <Users className="w-4 h-4 mr-2" />
+                    Atendimentos Presenciais
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="remarcacao">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Remarcação
+                  </Tabs.Trigger>
+                </Tabs.List>
+
+                <Tabs.Content value="agenda">
+                  <GestaoAgendamentos />
+                </Tabs.Content>
+
+                <Tabs.Content value="atendimentos">
+                  <AtendimentosPresenciais />
+                </Tabs.Content>
+
+                <Tabs.Content value="remarcacao">
+                  <RemarcacaoAgendamento />
+                </Tabs.Content>
+              </Tabs.Root>
+            </div>
           </Tabs.Content>
 
           {/* Financeiro */}
@@ -760,44 +781,60 @@ export default function DashboardCompleto() {
             <GestaoFinanceira />
           </Tabs.Content>
 
-          {/* Atendimentos Presenciais */}
-          <Tabs.Content value="atendimentos">
-            <AtendimentosPresenciais />
-          </Tabs.Content>
-
           {/* Estoque */}
           <Tabs.Content value="estoque">
             <GestaoEstoque />
           </Tabs.Content>
 
-          {/* Comissões */}
-          <Tabs.Content value="comissoes">
-            <GestaoComissoes />
-          </Tabs.Content>
+          {/* Equipe (Barbeiros + Usuários) */}
+          <Tabs.Content value="equipe">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Users className="w-8 h-8 text-zinc-700 dark:text-zinc-300" />
+                <div>
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                    Gestão da Equipe
+                  </h2>
+                  <p className="text-zinc-600 dark:text-zinc-400">
+                    Gerencie barbeiros, usuários e comissões
+                  </p>
+                </div>
+              </div>
 
-          {/* Usuários */}
-          <Tabs.Content value="usuarios">
-            <GestaoUsuarios />
+              <Tabs.Root defaultValue="barbeiros">
+                <Tabs.List className="mb-6 flex-wrap">
+                  <Tabs.Trigger value="barbeiros">
+                    <Scissors className="w-4 h-4 mr-2" />
+                    Barbeiros
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="usuarios">
+                    <Users className="w-4 h-4 mr-2" />
+                    Usuários
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="comissoes">
+                    <Percent className="w-4 h-4 mr-2" />
+                    Comissões
+                  </Tabs.Trigger>
+                </Tabs.List>
+
+                <Tabs.Content value="barbeiros">
+                  <GestaoBarbeiros />
+                </Tabs.Content>
+
+                <Tabs.Content value="usuarios">
+                  <GestaoUsuarios />
+                </Tabs.Content>
+
+                <Tabs.Content value="comissoes">
+                  <GestaoComissoes />
+                </Tabs.Content>
+              </Tabs.Root>
+            </div>
           </Tabs.Content>
 
           {/* Serviços */}
           <Tabs.Content value="servicos">
             <GestaoServicos />
-          </Tabs.Content>
-
-          {/* Barbeiros */}
-          <Tabs.Content value="barbeiros">
-            <GestaoBarbeiros />
-          </Tabs.Content>
-
-          {/* Remarcação */}
-          <Tabs.Content value="remarcacao">
-            <RemarcacaoAgendamento />
-          </Tabs.Content>
-
-          {/* Horários */}
-          <Tabs.Content value="horarios">
-            <GestaoHorarios />
           </Tabs.Content>
 
           {/* Relatórios */}
@@ -812,36 +849,83 @@ export default function DashboardCompleto() {
                 <Settings className="w-8 h-8 text-zinc-700 dark:text-zinc-300" />
                 <div>
                   <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                    Configurações da Barbearia
+                    Configurações
                   </h2>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Personalize sua barbearia: logo, cores, dados e horários
+                    Gerencie sua barbearia: identidade visual, horários e acessos
                   </p>
                 </div>
               </div>
-              
-              {/* Guia de Acesso dos Barbeiros */}
-              <GuiaAcessoBarbeiros />
 
-              {/* Tabs internas para configurações */}
-              <Tabs.Root defaultValue="personalizacao">
-                <Tabs.List className="mb-6">
-                  <Tabs.Trigger value="personalizacao">
-                    <Palette className="w-4 h-4 mr-2" />
-                    Personalização
+              {/* Tabs internas para configurações - reorganizadas */}
+              <Tabs.Root defaultValue="barbearia">
+                <Tabs.List className="mb-6 flex-wrap">
+                  <Tabs.Trigger value="barbearia">
+                    <Store className="w-4 h-4 mr-2" />
+                    Barbearia
                   </Tabs.Trigger>
                   <Tabs.Trigger value="horarios">
                     <Clock className="w-4 h-4 mr-2" />
-                    Horários e Bloqueios
+                    Horários
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="acesso">
+                    <Users className="w-4 h-4 mr-2" />
+                    Acesso Barbeiros
                   </Tabs.Trigger>
                 </Tabs.List>
 
-                <Tabs.Content value="personalizacao">
-                  <ConfiguracaoBarbearia />
+                {/* Aba: Configurar Barbearia (identidade visual, cores, dados) */}
+                <Tabs.Content value="barbearia">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Palette className="w-5 h-5 text-zinc-500" />
+                      <div>
+                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          Identidade Visual e Dados
+                        </h3>
+                        <p className="text-sm text-zinc-500">
+                          Logo, cores, informações de contato e localização
+                        </p>
+                      </div>
+                    </div>
+                    <ConfiguracaoBarbearia />
+                  </div>
                 </Tabs.Content>
 
+                {/* Aba: Configuração de Horários (horários de funcionamento, bloqueios) */}
                 <Tabs.Content value="horarios">
-                  <GestaoHorariosAvancada />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Clock className="w-5 h-5 text-zinc-500" />
+                      <div>
+                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          Horários de Funcionamento
+                        </h3>
+                        <p className="text-sm text-zinc-500">
+                          Configure horários de abertura, fechamento, almoço e bloqueios
+                        </p>
+                      </div>
+                    </div>
+                    <GestaoHorariosAvancada />
+                  </div>
+                </Tabs.Content>
+
+                {/* Aba: Acesso dos Barbeiros */}
+                <Tabs.Content value="acesso">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Users className="w-5 h-5 text-zinc-500" />
+                      <div>
+                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          Acesso dos Barbeiros
+                        </h3>
+                        <p className="text-sm text-zinc-500">
+                          Gerencie tokens de acesso e permissões dos barbeiros
+                        </p>
+                      </div>
+                    </div>
+                    <GuiaAcessoBarbeiros />
+                  </div>
                 </Tabs.Content>
               </Tabs.Root>
             </div>
