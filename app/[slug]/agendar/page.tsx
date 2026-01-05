@@ -21,8 +21,7 @@ import {
   X,
   Sun,
   Sunset,
-  Moon,
-  Sparkles
+  Moon
 } from 'lucide-react'
 import { format, parse } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -1089,7 +1088,7 @@ export default function PaginaAgendar() {
                             }}
                           >
                             <div className="flex items-center justify-center gap-3">
-                              <Sparkles className="w-5 h-5" style={{ color: cores.secundaria }} />
+                              <Clock className="w-5 h-5" style={{ color: cores.secundaria }} />
                               <span className="font-medium" style={{ color: cores.secundaria }}>
                                 Próximo disponível: <strong>{proximoDisponivel}</strong>
                               </span>
