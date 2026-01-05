@@ -17,13 +17,15 @@ import { format, formatDistanceToNow, parseISO, differenceInDays } from 'date-fn
 import { ptBR } from 'date-fns/locale'
 import {
   ModalDetalhesTenant, GestaoUsuariosAuth, SistemaBackup, RelatoriosGlobais,
-  PLANOS_CONFIG
+  PainelBotFly, PLANOS_CONFIG
 } from '@/components/superadmin'
+import { Hand } from 'lucide-react'
 
 const ADMIN_USUARIO = 'dzndev'
 const ADMIN_SENHA = '1503'
 
-type AbaAtiva = 'visao-geral' | 'barbearias' | 'usuarios' | 'relatorios' | 'infraestrutura' | 'backup'
+type AbaAtiva = 'visao-geral' | 'negocios' | 'usuarios' | 'relatorios' | 'bot' | 'infraestrutura' | 'backup'
+type FiltroTipoNegocio = 'todos' | 'barbearia' | 'nail_designer'
 
 interface Tenant {
   id: string
@@ -40,6 +42,7 @@ interface Tenant {
   trial_fim: string | null
   criado_em: string
   atualizado_em: string
+  tipo_negocio: 'barbearia' | 'nail_designer'
   total_barbeiros: number
   total_servicos: number
   total_agendamentos: number
@@ -55,6 +58,8 @@ interface Estatisticas {
   totalAgendamentos: number
   totalClientes: number
   totalBarbeiros: number
+  totalBarbearias: number
+  totalNailDesigners: number
 }
 
 interface StatusBot {
@@ -94,6 +99,7 @@ export default function PainelSuperAdmin() {
   // Filtros
   const [busca, setBusca] = useState('')
   const [filtroPlano, setFiltroPlano] = useState('todos')
+  const [filtroTipoNegocio, setFiltroTipoNegocio] = useState<FiltroTipoNegocio>('todos')
 
   // Modais
   const [modalExcluir, setModalExcluir] = useState<{ aberto: boolean; tenant: Tenant | null }>({ aberto: false, tenant: null })
@@ -178,6 +184,8 @@ export default function PainelSuperAdmin() {
         totalAgendamentos: tenantsComStats.reduce((acc, t) => acc + t.total_agendamentos, 0),
         totalClientes: tenantsComStats.reduce((acc, t) => acc + t.total_clientes, 0),
         totalBarbeiros: tenantsComStats.reduce((acc, t) => acc + t.total_barbeiros, 0),
+        totalBarbearias: tenantsComStats.filter(t => t.tipo_negocio === 'barbearia' || !t.tipo_negocio).length,
+        totalNailDesigners: tenantsComStats.filter(t => t.tipo_negocio === 'nail_designer').length,
       })
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -318,6 +326,13 @@ export default function PainelSuperAdmin() {
     const matchBusca = t.nome.toLowerCase().includes(busca.toLowerCase()) ||
       t.email.toLowerCase().includes(busca.toLowerCase()) ||
       t.slug.toLowerCase().includes(busca.toLowerCase())
+    
+    // Filtro por tipo de negócio
+    const matchTipoNegocio = filtroTipoNegocio === 'todos' || 
+      (filtroTipoNegocio === 'barbearia' && (t.tipo_negocio === 'barbearia' || !t.tipo_negocio)) ||
+      (filtroTipoNegocio === 'nail_designer' && t.tipo_negocio === 'nail_designer')
+    
+    if (!matchTipoNegocio) return false
     if (filtroPlano === 'todos') return matchBusca
     if (filtroPlano === 'expirados') return matchBusca && t.trial_fim && new Date(t.trial_fim) < new Date()
     return matchBusca && t.plano === filtroPlano
@@ -487,9 +502,10 @@ export default function PainelSuperAdmin() {
           >
             {[
               { id: 'visao-geral', label: 'Visão Geral', labelCurto: 'Geral', icone: BarChart3 },
-              { id: 'barbearias', label: 'Barbearias', labelCurto: 'Barb.', icone: Store },
+              { id: 'negocios', label: 'Negócios', labelCurto: 'Neg.', icone: Store },
               { id: 'usuarios', label: 'Usuários Auth', labelCurto: 'Users', icone: UserCog },
               { id: 'relatorios', label: 'Relatórios', labelCurto: 'Relat.', icone: FileText },
+              { id: 'bot', label: 'Bot WhatsApp', labelCurto: 'Bot', icone: Bot },
               { id: 'infraestrutura', label: 'Infraestrutura', labelCurto: 'Infra', icone: Database },
               { id: 'backup', label: 'Backup', labelCurto: 'Backup', icone: Download },
             ].map((aba) => (
@@ -526,24 +542,45 @@ export default function PainelSuperAdmin() {
             {/* Visão Geral */}
             {abaAtiva === 'visao-geral' && (
               <motion.div key="visao-geral" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                {/* Cards */}
+                {/* Cards por Tipo de Negócio */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <CardStat titulo="Total Barbearias" valor={estatisticas?.totalTenants || 0} icone={Store} cor="bg-zinc-900 dark:bg-white" corIcone="text-white dark:text-zinc-900" />
-                  <CardStat titulo="Em Trial" valor={estatisticas?.emTrial || 0} icone={Clock} cor="bg-amber-500" />
-                  <CardStat titulo="Trial Expirado" valor={estatisticas?.trialExpirado || 0} icone={AlertCircle} cor="bg-red-500" />
+                  <CardStat titulo="Total Negócios" valor={estatisticas?.totalTenants || 0} icone={Store} cor="bg-zinc-900 dark:bg-white" corIcone="text-white dark:text-zinc-900" />
+                  <CardStat titulo="Barbearias" valor={estatisticas?.totalBarbearias || 0} icone={Scissors} cor="bg-blue-500" />
+                  <CardStat titulo="Nail Designers" valor={estatisticas?.totalNailDesigners || 0} icone={Hand} cor="bg-pink-500" />
                   <CardStat titulo="Planos Pagos" valor={estatisticas?.planosPagos || 0} icone={CheckCircle} cor="bg-emerald-500" />
                 </div>
 
+                {/* Cards de Status */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <CardStatSecundario titulo="Em Trial" valor={estatisticas?.emTrial || 0} icone={Clock} />
+                  <CardStatSecundario titulo="Trial Expirado" valor={estatisticas?.trialExpirado || 0} icone={AlertCircle} />
+                  <CardStatSecundario titulo="Ativos" valor={estatisticas?.tenantsAtivos || 0} icone={CheckCircle} />
+                  <CardStatSecundario titulo="Profissionais" valor={estatisticas?.totalBarbeiros || 0} icone={Users} />
+                </div>
+
+                {/* Métricas Gerais */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <CardStatSecundario titulo="Agendamentos" valor={estatisticas?.totalAgendamentos || 0} icone={Calendar} />
                   <CardStatSecundario titulo="Clientes" valor={estatisticas?.totalClientes || 0} icone={Users} />
-                  <CardStatSecundario titulo="Barbeiros" valor={estatisticas?.totalBarbeiros || 0} icone={Scissors} />
-                  <CardStatSecundario titulo="Ativos" valor={estatisticas?.tenantsAtivos || 0} icone={CheckCircle} />
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 col-span-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-zinc-500 mb-1">Status do Bot</p>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${statusBot.online ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                          <span className={`text-sm font-medium ${statusBot.online ? 'text-emerald-600' : 'text-zinc-500'}`}>
+                            {verificandoBot ? 'Verificando...' : statusBot.online ? 'Online' : 'Verificando...'}
+                          </span>
+                        </div>
+                      </div>
+                      <Bot className={`w-6 h-6 ${statusBot.online ? 'text-emerald-500' : 'text-zinc-400'}`} />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Últimas Barbearias */}
+                {/* Últimos Negócios */}
                 <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Últimas Barbearias</h3>
+                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Últimos Negócios Cadastrados</h3>
                   <div className="space-y-3">
                     {tenants.slice(0, 5).map((tenant) => {
                       const status = getStatusTrial(tenant)
@@ -583,10 +620,47 @@ export default function PainelSuperAdmin() {
               </motion.div>
             )}
 
-            {/* Barbearias */}
-            {abaAtiva === 'barbearias' && (
-              <motion.div key="barbearias" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                {/* Filtros */}
+            {/* Negócios (Barbearias e Nail Designers) */}
+            {abaAtiva === 'negocios' && (
+              <motion.div key="negocios" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                {/* Filtros por Tipo de Negócio */}
+                <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl w-fit">
+                  <button
+                    onClick={() => setFiltroTipoNegocio('todos')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                      filtroTipoNegocio === 'todos'
+                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Store className="w-4 h-4" />
+                    Todos ({estatisticas?.totalTenants || 0})
+                  </button>
+                  <button
+                    onClick={() => setFiltroTipoNegocio('barbearia')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                      filtroTipoNegocio === 'barbearia'
+                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Scissors className="w-4 h-4" />
+                    Barbearias ({estatisticas?.totalBarbearias || 0})
+                  </button>
+                  <button
+                    onClick={() => setFiltroTipoNegocio('nail_designer')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                      filtroTipoNegocio === 'nail_designer'
+                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Hand className="w-4 h-4" />
+                    Nail Designers ({estatisticas?.totalNailDesigners || 0})
+                  </button>
+                </div>
+
+                {/* Filtros de Busca e Plano */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -632,7 +706,7 @@ export default function PainelSuperAdmin() {
                 {tenantsFiltrados.length === 0 && (
                   <div className="text-center py-12">
                     <Store className="w-12 h-12 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-                    <p className="text-zinc-500">Nenhuma barbearia encontrada</p>
+                    <p className="text-zinc-500">Nenhum negócio encontrado</p>
                   </div>
                 )}
               </motion.div>
@@ -649,6 +723,13 @@ export default function PainelSuperAdmin() {
             {abaAtiva === 'relatorios' && (
               <motion.div key="relatorios" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <RelatoriosGlobais />
+              </motion.div>
+            )}
+
+            {/* Bot WhatsApp */}
+            {abaAtiva === 'bot' && (
+              <motion.div key="bot" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <PainelBotFly />
               </motion.div>
             )}
 
@@ -936,15 +1017,36 @@ function CardTenantItem({ tenant, onExcluir, onAlterarPlano, onToggleAtivo, onVe
     >
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
+          <div className="relative w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
             {tenant.logo_url ? (
               <Image src={tenant.logo_url} alt={`Logo de ${tenant.nome}`} width={48} height={48} className="object-cover w-full h-full" unoptimized />
+            ) : tenant.tipo_negocio === 'nail_designer' ? (
+              <Hand className="w-6 h-6 text-pink-400" aria-hidden="true" />
             ) : (
-              <Building2 className="w-6 h-6 text-zinc-400" aria-hidden="true" />
+              <Scissors className="w-6 h-6 text-blue-400" aria-hidden="true" />
             )}
+            {/* Badge de tipo */}
+            <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center ${
+              tenant.tipo_negocio === 'nail_designer' ? 'bg-pink-500' : 'bg-blue-500'
+            }`}>
+              {tenant.tipo_negocio === 'nail_designer' ? (
+                <Hand className="w-2.5 h-2.5 text-white" />
+              ) : (
+                <Scissors className="w-2.5 h-2.5 text-white" />
+              )}
+            </div>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{tenant.nome}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{tenant.nome}</h3>
+              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                tenant.tipo_negocio === 'nail_designer' 
+                  ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-600' 
+                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
+              }`}>
+                {tenant.tipo_negocio === 'nail_designer' ? 'Nail' : 'Barber'}
+              </span>
+            </div>
             <p className="text-xs text-zinc-500 truncate">/{tenant.slug}</p>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${plano.bg} ${plano.cor}`}>

@@ -42,7 +42,12 @@ export function SecaoVantagens() {
   const estaVisivel = useInView(ref, { once: true, amount: 0.2 })
 
   return (
-    <section id="vantagens" ref={ref} className="py-24 md:py-32 bg-white dark:bg-zinc-950">
+    <section 
+      id="vantagens" 
+      ref={ref} 
+      className="py-24 md:py-32 bg-white dark:bg-zinc-950"
+      aria-labelledby="vantagens-titulo"
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           {/* Cabeçalho */}
@@ -52,11 +57,14 @@ export function SecaoVantagens() {
             transition={{ duration: 0.5 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white mb-4">
-              Por que usar o BarberHub?
+            <h2 
+              id="vantagens-titulo"
+              className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white mb-4"
+            >
+              Funcionalidades do Sistema de Agendamento para Barbearias
             </h2>
             <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-              Menos trabalho manual. Mais tempo pra fazer o que você faz de melhor.
+              Menos trabalho manual, mais tempo para atender seus clientes. Conheça os recursos do BarberHub.
             </p>
           </motion.div>
 

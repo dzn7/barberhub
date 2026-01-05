@@ -13,11 +13,42 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
+const URL_BASE = 'https://barberhub.online'
+
 export const metadata: Metadata = {
-  title: 'Barber Hub - Sistema Completo de Gestão para Barbearias',
-  description: 'Transforme sua barbearia com gestão inteligente. Agendamento online 24/7, controle financeiro completo, gestão de comissões e integração WhatsApp. Pagamento único, sem mensalidades.',
-  keywords: 'barbearia, gestão, agendamento online, sistema para barbearia, controle financeiro, comissões, WhatsApp',
-  authors: [{ name: 'Barber Hub' }],
+  metadataBase: new URL(URL_BASE),
+  title: {
+    default: 'BarberHub - Sistema de Agendamento Online para Barbearias e Salões | Gestão Completa',
+    template: '%s | BarberHub'
+  },
+  description: 'Sistema completo de gestão para barbearias, salões de beleza e nail designers. Agendamento online 24h, controle financeiro, gestão de equipe, comissões automáticas e notificações WhatsApp. Teste grátis por 14 dias!',
+  keywords: [
+    'sistema para barbearia',
+    'agendamento online barbearia',
+    'software para barbearia',
+    'gestão de barbearia',
+    'sistema de agendamento',
+    'app para barbearia',
+    'controle financeiro barbearia',
+    'agenda online barbeiro',
+    'sistema para salão de beleza',
+    'nail designer sistema',
+    'agendamento manicure',
+    'gestão de salão',
+    'comissão barbeiro',
+    'WhatsApp barbearia',
+    'agenda barbeiro online',
+    'sistema SaaS barbearia',
+    'software gestão beleza',
+    'aplicativo barbearia',
+    'controle de clientes barbearia',
+    'sistema agendamento grátis'
+  ],
+  authors: [{ name: 'BarberHub', url: URL_BASE }],
+  creator: 'BarberHub',
+  publisher: 'BarberHub',
+  category: 'Software',
+  classification: 'Business Software',
   icons: {
     icon: [
       { url: '/assets/favicon/favicon.ico' },
@@ -25,29 +56,62 @@ export const metadata: Metadata = {
       { url: '/assets/favicon/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
     ],
     apple: [
-      { url: '/assets/favicon/apple-touch-icon.png' },
+      { url: '/assets/favicon/apple-touch-icon.png', sizes: '180x180' },
     ],
     other: [
-      { rel: 'android-chrome-192x192', url: '/assets/favicon/android-chrome-192x192.png' },
-      { rel: 'android-chrome-512x512', url: '/assets/favicon/android-chrome-512x512.png' },
+      { rel: 'mask-icon', url: '/assets/favicon/safari-pinned-tab.svg', color: '#000000' },
     ],
   },
+  manifest: '/manifest.json',
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    url: 'https://barberhub.com.br',
-    title: 'Barber Hub - Sistema Completo de Gestão para Barbearias',
-    description: 'Transforme sua barbearia com gestão inteligente. Pagamento único, sem mensalidades.',
-    siteName: 'Barber Hub',
+    url: URL_BASE,
+    title: 'BarberHub - Sistema de Agendamento Online para Barbearias',
+    description: 'Transforme sua barbearia com gestão inteligente. Agendamento online 24h, controle financeiro, gestão de equipe e notificações WhatsApp. Teste grátis!',
+    siteName: 'BarberHub',
+    images: [
+      {
+        url: '/assets/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'BarberHub - Sistema de Gestão para Barbearias',
+        type: 'image/png',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Barber Hub - Sistema Completo de Gestão para Barbearias',
-    description: 'Transforme sua barbearia com gestão inteligente. Pagamento único, sem mensalidades.',
+    title: 'BarberHub - Sistema de Agendamento Online para Barbearias',
+    description: 'Agendamento online 24h, controle financeiro e gestão de equipe. Teste grátis por 14 dias!',
+    images: ['/assets/og-image.png'],
+    creator: '@barberhub',
+    site: '@barberhub',
   },
   robots: {
     index: true,
     follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: URL_BASE,
+    languages: {
+      'pt-BR': URL_BASE,
+    },
+  },
+  verification: {
+    google: 'google-site-verification-code',
+  },
+  other: {
+    'msapplication-TileColor': '#000000',
+    'theme-color': '#000000',
   },
 }
 

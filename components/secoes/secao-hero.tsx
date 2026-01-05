@@ -14,37 +14,46 @@ export function SecaoHero() {
   }
 
   return (
-    <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white dark:bg-black pt-20">
+    <section 
+      id="inicio" 
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white dark:bg-black pt-20"
+      aria-labelledby="hero-titulo"
+      itemScope
+      itemType="https://schema.org/WebPageElement"
+    >
       {/* Fundo com gradiente sutil */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-100 via-white to-white dark:from-zinc-900 dark:via-black dark:to-black" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-100 via-white to-white dark:from-zinc-900 dark:via-black dark:to-black" aria-hidden="true" />
       
       {/* Linhas decorativas sutis */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-zinc-800 to-transparent" />
         <div className="absolute top-3/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-zinc-800 to-transparent" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl flex flex-col items-center justify-center w-full px-4 py-10 md:py-20">
         
-        {/* Título principal */}
+        {/* Título principal - H1 único da página */}
         <motion.h1
+          id="hero-titulo"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-center text-4xl md:text-5xl lg:text-6xl font-bold text-zinc-900 dark:text-white leading-tight max-w-4xl"
+          itemProp="headline"
         >
-          Pare de perder clientes por falta de organização
+          Sistema de Agendamento Online para Barbearias e Salões de Beleza
         </motion.h1>
 
-        {/* Subtítulo */}
+        {/* Subtítulo otimizado para SEO */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-6 text-center text-lg md:text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed"
+          itemProp="description"
         >
-          Sistema completo para seu negócio de beleza: agendamento online 24h, controle financeiro 
-          e gestão de equipe. Seus clientes agendam sozinhos, você foca no atendimento.
+          Pare de perder clientes por falta de organização. Sistema completo com agendamento online 24h, 
+          controle financeiro e gestão de equipe. Seus clientes agendam sozinhos, você foca no atendimento.
         </motion.p>
 
         {/* CTAs */}
@@ -133,10 +142,12 @@ export function SecaoHero() {
             <div className="hidden md:block w-[200px] lg:w-[260px] opacity-40 dark:opacity-60">
               <Image
                 src="/assets/mockup-left.png"
-                alt="Painel de agendamentos"
+                alt="Painel de controle do BarberHub mostrando lista de agendamentos do dia com horários e clientes"
                 width={260}
                 height={400}
                 className="w-full h-auto rounded-t-xl shadow-2xl dark:shadow-2xl shadow-zinc-300/50"
+                loading="eager"
+                priority
               />
             </div>
 
@@ -144,10 +155,12 @@ export function SecaoHero() {
             <div className="w-[220px] sm:w-[260px] relative z-20">
               <Image
                 src="/assets/dashboard-lista-portrait.png"
-                alt="App de agendamento"
+                alt="Aplicativo BarberHub em smartphone exibindo agenda de agendamentos online para barbearia"
                 width={260}
                 height={520}
                 className="w-full h-auto rounded-t-2xl shadow-2xl dark:shadow-2xl shadow-zinc-400/30"
+                loading="eager"
+                priority
               />
             </div>
 
@@ -155,10 +168,11 @@ export function SecaoHero() {
             <div className="hidden md:block w-[200px] lg:w-[260px] opacity-40 dark:opacity-60">
               <Image
                 src="/assets/mockup_invertido.png"
-                alt="Dashboard financeiro"
+                alt="Dashboard financeiro do BarberHub com relatórios de faturamento e comissões da barbearia"
                 width={260}
                 height={400}
                 className="w-full h-auto rounded-t-xl shadow-2xl dark:shadow-2xl shadow-zinc-300/50 scale-x-[-1]"
+                loading="eager"
               />
             </div>
           </div>

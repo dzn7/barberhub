@@ -21,7 +21,14 @@ export function SecaoPrecos() {
   const estaVisivel = useInView(ref, { once: true, amount: 0.2 })
 
   return (
-    <section id="precos" ref={ref} className="py-24 md:py-32 bg-zinc-50 dark:bg-black">
+    <section 
+      id="precos" 
+      ref={ref} 
+      className="py-24 md:py-32 bg-zinc-50 dark:bg-black"
+      aria-labelledby="precos-titulo"
+      itemScope
+      itemType="https://schema.org/Offer"
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Cabeçalho */}
@@ -31,11 +38,14 @@ export function SecaoPrecos() {
             transition={{ duration: 0.5 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white mb-4">
-              Preço único e simples
+            <h2 
+              id="precos-titulo"
+              className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white mb-4"
+            >
+              Preços do Sistema para Barbearias - Plano Acessível
             </h2>
             <p className="text-lg text-zinc-600 dark:text-zinc-400">
-              Sem planos confusos. Tudo incluído por um valor que cabe no bolso.
+              Sem planos confusos. Sistema completo de agendamento por um valor que cabe no bolso.
             </p>
           </motion.div>
 
