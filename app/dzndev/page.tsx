@@ -876,9 +876,35 @@ function CardTenantItem({ tenant, onExcluir, onAlterarPlano, onToggleAtivo, onVe
 }) {
   const [menuAberto, setMenuAberto] = useState(false)
   const [copiado, setCopiado] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const plano = PLANOS_CONFIG[tenant.plano] || PLANOS_CONFIG.trial
   const diasTrial = tenant.trial_fim ? differenceInDays(new Date(tenant.trial_fim), new Date()) : null
+
+  const abrirMenu = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      const menuWidth = 224 // w-56 = 14rem = 224px
+      const menuHeight = 400 // altura estimada do menu
+      
+      // Calcular posição
+      let top = rect.bottom + 4
+      let left = rect.right - menuWidth
+      
+      // Se não cabe embaixo, abre em cima
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4
+      }
+      
+      // Se não cabe à esquerda, ajusta
+      if (left < 8) {
+        left = 8
+      }
+      
+      setMenuPosition({ top, left })
+    }
+    setMenuAberto(true)
+  }
 
   const copiarLink = async () => {
     const url = `${window.location.origin}/${tenant.slug}`
@@ -945,9 +971,10 @@ function CardTenantItem({ tenant, onExcluir, onAlterarPlano, onToggleAtivo, onVe
               )}
             </div>
           </div>
-          <div className="relative" ref={menuRef}>
+          <div className="relative">
             <button 
-              onClick={() => setMenuAberto(!menuAberto)} 
+              ref={buttonRef}
+              onClick={abrirMenu} 
               className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
               aria-label="Abrir menu de opções"
               aria-expanded={menuAberto}
@@ -957,10 +984,10 @@ function CardTenantItem({ tenant, onExcluir, onAlterarPlano, onToggleAtivo, onVe
             </button>
             
             <AnimatePresence>
-              {menuAberto && (
+              {menuAberto && menuPosition && (
                 <>
                   <div 
-                    className="fixed inset-0 z-40" 
+                    className="fixed inset-0 z-[9998]" 
                     onClick={() => setMenuAberto(false)} 
                     aria-hidden="true"
                   />
@@ -969,7 +996,8 @@ function CardTenantItem({ tenant, onExcluir, onAlterarPlano, onToggleAtivo, onVe
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 bottom-full mb-1 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700 py-1.5 z-50 overflow-hidden max-h-[70vh] overflow-y-auto"
+                    style={{ top: menuPosition.top, left: menuPosition.left }}
+                    className="fixed w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 py-1.5 z-[9999] overflow-hidden max-h-[70vh] overflow-y-auto"
                     role="menu"
                     aria-orientation="vertical"
                   >

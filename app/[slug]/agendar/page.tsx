@@ -856,13 +856,9 @@ export default function PaginaAgendar() {
         <AnimatePresence mode="wait" initial={false}>
           {/* Etapa 1: Serviço e Barbeiro */}
           {etapa === 1 && (
-            <motion.div
+            <div
               key="etapa1"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="space-y-8"
+              className="space-y-8 animate-in fade-in duration-200"
             >
               {/* Serviços */}
               <div>
@@ -959,18 +955,14 @@ export default function PaginaAgendar() {
                   ))}
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Etapa 2: Data e Horário */}
           {etapa === 2 && (
-            <motion.div
+            <div
               key="etapa2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="space-y-8"
+              className="space-y-8 animate-in fade-in duration-200"
             >
               {/* Datas */}
               <div>
@@ -1025,51 +1017,91 @@ export default function PaginaAgendar() {
                     Escolha o Horário
                   </h2>
                   {todosHorarios.length === 0 ? (
-                    <p className="text-center py-8" style={{ color: cores.destaque }}>
-                      Nenhum horário disponível para esta data.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                      {todosHorarios.map((h) => (
-                        <button
-                          key={h.horario}
-                          onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
-                          disabled={!h.disponivel}
-                          className="py-3 px-2 rounded-lg text-sm font-medium transition-all"
-                          style={{
-                            backgroundColor: !h.disponivel 
-                              ? cores.destaque + '10'
-                              : horarioSelecionado === h.horario 
-                                ? cores.secundaria 
-                                : cores.destaque + '15',
-                            color: !h.disponivel 
-                              ? cores.destaque + '50'
-                              : horarioSelecionado === h.horario 
-                                ? cores.primaria 
-                                : cores.secundaria,
-                            cursor: h.disponivel ? 'pointer' : 'not-allowed',
-                            textDecoration: h.disponivel ? 'none' : 'line-through'
-                          }}
-                        >
-                          {h.horario}
-                        </button>
-                      ))}
+                    <div 
+                      className="text-center py-12 rounded-xl border-2 border-dashed"
+                      style={{ borderColor: cores.destaque + '30' }}
+                    >
+                      <Clock className="w-12 h-12 mx-auto mb-3 opacity-30" style={{ color: cores.destaque }} />
+                      <p style={{ color: cores.destaque }}>
+                        Nenhum horário disponível para esta data.
+                      </p>
+                      <p className="text-sm mt-1 opacity-60" style={{ color: cores.destaque }}>
+                        Tente selecionar outra data.
+                      </p>
                     </div>
+                  ) : (
+                    <>
+                      {/* Legenda */}
+                      <div className="flex items-center gap-4 mb-4 text-xs" style={{ color: cores.destaque }}>
+                        <div className="flex items-center gap-1.5">
+                          <div 
+                            className="w-3 h-3 rounded"
+                            style={{ backgroundColor: cores.destaque + '15' }}
+                          />
+                          <span>Disponível</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded bg-red-500/20" />
+                          <span>Ocupado</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div 
+                            className="w-3 h-3 rounded"
+                            style={{ backgroundColor: cores.secundaria }}
+                          />
+                          <span>Selecionado</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                        {todosHorarios.map((h) => {
+                          const estaOcupado = !h.disponivel
+                          const estaSelecionado = horarioSelecionado === h.horario
+                          
+                          return (
+                            <button
+                              key={h.horario}
+                              onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
+                              disabled={estaOcupado}
+                              className={`
+                                py-3 px-2 rounded-xl text-sm font-medium 
+                                transition-all duration-200 ease-out
+                                ${estaOcupado 
+                                  ? 'bg-red-500/10 text-red-400 cursor-not-allowed line-through opacity-60' 
+                                  : estaSelecionado
+                                    ? 'scale-[1.02] shadow-lg'
+                                    : 'hover:scale-[1.02] active:scale-[0.98]'
+                                }
+                              `}
+                              style={!estaOcupado ? {
+                                backgroundColor: estaSelecionado 
+                                  ? cores.secundaria 
+                                  : cores.destaque + '12',
+                                color: estaSelecionado 
+                                  ? cores.primaria 
+                                  : cores.secundaria,
+                                boxShadow: estaSelecionado 
+                                  ? `0 4px 14px ${cores.secundaria}40` 
+                                  : 'none'
+                              } : undefined}
+                            >
+                              {h.horario}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* Etapa 3: Dados do Cliente */}
           {etapa === 3 && (
-            <motion.div
+            <div
               key="etapa3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="space-y-6"
+              className="space-y-6 animate-in fade-in duration-200"
             >
               <h2 
                 className="text-lg font-semibold mb-4 flex items-center gap-2"
@@ -1149,18 +1181,14 @@ export default function PaginaAgendar() {
                   />
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Etapa 4: Confirmação */}
           {etapa === 4 && (
-            <motion.div
+            <div
               key="etapa4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="space-y-6"
+              className="space-y-6 animate-in fade-in duration-200"
             >
               <h2 
                 className="text-lg font-semibold mb-4 flex items-center gap-2"
@@ -1238,7 +1266,7 @@ export default function PaginaAgendar() {
                   </span>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
         </AnimatePresence>
 

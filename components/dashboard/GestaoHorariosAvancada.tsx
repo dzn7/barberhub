@@ -250,16 +250,34 @@ export function GestaoHorariosAvancada() {
   const salvarConfiguracao = async () => {
     if (!config) return;
     
+    // Validar intervalo de almoço: ambos devem estar preenchidos ou ambos vazios
+    const temInicioAlmoco = config.intervalo_almoco_inicio && config.intervalo_almoco_inicio.trim() !== '';
+    const temFimAlmoco = config.intervalo_almoco_fim && config.intervalo_almoco_fim.trim() !== '';
+    
+    if (temInicioAlmoco !== temFimAlmoco) {
+      setModalConfig({
+        title: "⚠️ Atenção",
+        message: "Para configurar o intervalo de almoço, preencha tanto o horário de início quanto o de fim. Ou deixe ambos vazios para não ter intervalo.",
+        type: "warning"
+      });
+      setModalAberto(true);
+      return;
+    }
+    
     setSalvando(true);
     try {
+      // Garantir que valores vazios sejam null
+      const intervaloAlmocoInicio = temInicioAlmoco ? config.intervalo_almoco_inicio : null;
+      const intervaloAlmocoFim = temFimAlmoco ? config.intervalo_almoco_fim : null;
+      
       const { error } = await supabase
         .from('configuracoes_barbearia')
         .update({
           horario_abertura: config.horario_abertura,
           horario_fechamento: config.horario_fechamento,
           dias_funcionamento: config.dias_funcionamento,
-          intervalo_almoco_inicio: config.intervalo_almoco_inicio,
-          intervalo_almoco_fim: config.intervalo_almoco_fim,
+          intervalo_almoco_inicio: intervaloAlmocoInicio,
+          intervalo_almoco_fim: intervaloAlmocoFim,
           intervalo_horarios: config.intervalo_horarios,
           mensagem_fechamento: config.mensagem_fechamento,
           usar_horarios_personalizados: config.usar_horarios_personalizados,
@@ -271,14 +289,14 @@ export function GestaoHorariosAvancada() {
       if (error) throw error;
 
       setModalConfig({
-        title: "Sucesso",
+        title: "✅ Sucesso",
         message: "Configurações salvas com sucesso!",
         type: "success"
       });
       setModalAberto(true);
     } catch (error: any) {
       setModalConfig({
-        title: "Erro",
+        title: "❌ Erro",
         message: `Erro ao salvar: ${error.message}`,
         type: "error"
       });
