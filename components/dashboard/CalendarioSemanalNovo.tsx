@@ -20,6 +20,8 @@ import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { obterEmojiPrincipal, obterTerminologia } from "@/lib/configuracoes-negocio";
+import { TipoNegocio } from "@/lib/tipos-negocio";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
 const BOT_URL = 'https://bot-barberhub.fly.dev';
@@ -353,7 +355,10 @@ export function CalendarioSemanalNovo() {
     try {
       const dataBrasilia = toZonedTime(parseISO(agendamento.data_hora), TIMEZONE_BRASILIA);
       const dataFormatada = format(dataBrasilia, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes?.nome}!\n\nSeu agendamento foi cancelado:\n📅 ${dataFormatada}\n✂️ ${agendamento.servicos?.nome}\n\n_BarberHub_`;
+      const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
+      const emoji = obterEmojiPrincipal(tipoNegocio);
+      const terminologia = obterTerminologia(tipoNegocio);
+      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes?.nome}!\n\nSeu agendamento foi cancelado:\n📅 ${dataFormatada}\n${emoji} ${agendamento.servicos?.nome}\n👤 ${terminologia.profissional.singular}: ${agendamento.barbeiros?.nome}\n\n_${tenant?.nome || 'BarberHub'}_`;
       let telefone = agendamento.clientes?.telefone?.replace(/\D/g, '') || '';
       if (!telefone.startsWith('55')) telefone = '55' + telefone;
       await fetch(`${BOT_URL}/api/mensagens/enviar`, {

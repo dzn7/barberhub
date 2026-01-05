@@ -19,6 +19,8 @@ import { fromZonedTime } from 'date-fns-tz'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
 import { SeletorHorarioAvancado } from './SeletorHorarioAvancado'
+import { obterTerminologia } from '@/lib/configuracoes-negocio'
+import { TipoNegocio } from '@/lib/tipos-negocio'
 
 const TIMEZONE_BRASILIA = 'America/Sao_Paulo'
 
@@ -41,6 +43,7 @@ interface ModalNovoAgendamentoProps {
   onSucesso: () => void
   dataPadrao?: string
   horaPadrao?: string
+  tipoNegocio?: TipoNegocio
 }
 
 /**
@@ -53,8 +56,10 @@ export function ModalNovoAgendamento({
   onFechar,
   onSucesso,
   dataPadrao,
-  horaPadrao = '09:00'
+  horaPadrao = '09:00',
+  tipoNegocio = 'barbearia'
 }: ModalNovoAgendamentoProps) {
+  const terminologia = obterTerminologia(tipoNegocio)
   const [etapa, setEtapa] = useState<'dados' | 'horario'>('dados')
   const [processando, setProcessando] = useState(false)
   const [erro, setErro] = useState('')
@@ -348,10 +353,10 @@ export function ModalNovoAgendamento({
                     </div>
                   </div>
 
-                  {/* Barbeiro */}
+                  {/* Profissional */}
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Barbeiro
+                      {terminologia.profissional.singular}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {barbeiros.map((barbeiro) => (

@@ -8,6 +8,8 @@ import { Button } from "@radix-ui/themes";
 import { format, addDays, setHours, setMinutes, parseISO, isSameDay, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { gerarTodosHorarios } from "@/lib/horarios";
+import { obterEmojiPrincipal, obterTerminologia } from "@/lib/configuracoes-negocio";
+import { TipoNegocio } from "@/lib/tipos-negocio";
 
 const BOT_URL = 'https://bot-barberhub.fly.dev';
 
@@ -44,13 +46,17 @@ interface ModalRemarcacaoProps {
   aberto: boolean;
   onFechar: () => void;
   onSucesso: () => void;
+  tipoNegocio?: TipoNegocio;
+  nomeEstabelecimento?: string;
 }
 
 /**
  * Modal Inteligente de Remarcação
  * Mostra disponibilidade de horários em tempo real
  */
-export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso }: ModalRemarcacaoProps) {
+export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipoNegocio = 'barbearia', nomeEstabelecimento }: ModalRemarcacaoProps) {
+  const terminologia = obterTerminologia(tipoNegocio);
+  const emoji = obterEmojiPrincipal(tipoNegocio);
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date());
   const [horarioSelecionado, setHorarioSelecionado] = useState<string>("");
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<HorarioDisponivel[]>([]);
@@ -254,7 +260,7 @@ export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso }: Mo
   const notificarCliente = async (novaDataHora: Date) => {
     try {
       const dataFormatada = format(novaDataHora, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
-      const mensagem = `🔄 *Agendamento Remarcado*\n\nOlá ${agendamento.clientes.nome}!\n\nSeu agendamento foi remarcado:\n\n📅 *Nova Data:* ${dataFormatada}\n✂️ *Serviço:* ${agendamento.servicos.nome}\n👤 *Barbeiro:* ${agendamento.barbeiros.nome}\n💰 *Valor:* R$ ${agendamento.servicos.preco.toFixed(2)}\n\n${motivo ? `📝 *Motivo:* ${motivo}\n\n` : ""}Qualquer dúvida, entre em contato!\n\n_Barbearia BR99_`;
+      const mensagem = `🔄 *Agendamento Remarcado*\n\nOlá ${agendamento.clientes.nome}!\n\nSeu agendamento foi remarcado:\n\n📅 *Nova Data:* ${dataFormatada}\n${emoji} *Serviço:* ${agendamento.servicos.nome}\n👤 *${terminologia.profissional.singular}:* ${agendamento.barbeiros.nome}\n💰 *Valor:* R$ ${agendamento.servicos.preco.toFixed(2)}\n\n${motivo ? `📝 *Motivo:* ${motivo}\n\n` : ""}Qualquer dúvida, entre em contato!\n\n_${nomeEstabelecimento || 'BarberHub'}_`;
 
       // Limpar e formatar número
       let telefone = agendamento.clientes.telefone.replace(/\D/g, '');

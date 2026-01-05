@@ -12,6 +12,38 @@ import {
 } from './tipos-negocio'
 
 /**
+ * Especialidades sugeridas para Barbeiros
+ */
+const ESPECIALIDADES_BARBEARIA: string[] = [
+  'Corte Masculino',
+  'Degradê',
+  'Barba',
+  'Pigmentação',
+  'Química',
+  'Corte Infantil',
+  'Tratamento Capilar',
+  'Sobrancelha',
+  'Relaxamento',
+  'Platinado'
+]
+
+/**
+ * Especialidades sugeridas para Nail Designers
+ */
+const ESPECIALIDADES_NAIL: string[] = [
+  'Alongamento em Gel',
+  'Fibra de Vidro',
+  'Nail Art',
+  'Esmaltação em Gel',
+  'Francesinha',
+  'Decoração 3D',
+  'Manicure Russa',
+  'Banho de Gel',
+  'Unhas de Porcelana',
+  'Spa dos Pés'
+]
+
+/**
  * Categorias de serviços para Barbearias
  */
 const CATEGORIAS_BARBEARIA: CategoriaServico[] = [
@@ -233,11 +265,54 @@ export function obterCoresSugeridas(tipo: TipoNegocio): Terminologia['cores'] {
 }
 
 /**
+ * Obtém as especialidades sugeridas para um tipo de negócio
+ * 
+ * @param tipo - O tipo de negócio
+ * @returns Array de especialidades sugeridas
+ */
+export function obterEspecialidadesSugeridas(tipo: TipoNegocio): string[] {
+  return tipo === 'nail_designer' ? ESPECIALIDADES_NAIL : ESPECIALIDADES_BARBEARIA
+}
+
+/**
+ * Obtém o emoji principal para um tipo de negócio
+ * Usado em notificações WhatsApp e mensagens
+ * 
+ * @param tipo - O tipo de negócio
+ * @returns Emoji representativo
+ */
+export function obterEmojiPrincipal(tipo: TipoNegocio): string {
+  return tipo === 'nail_designer' ? '💅' : '✂️'
+}
+
+/**
+ * Obtém textos dinâmicos para notificações
+ * 
+ * @param tipo - O tipo de negócio
+ * @returns Objeto com textos para notificações
+ */
+export function obterTextosNotificacao(tipo: TipoNegocio) {
+  const terminologia = obterTerminologia(tipo)
+  const emoji = obterEmojiPrincipal(tipo)
+  
+  return {
+    emoji,
+    profissional: terminologia.profissional.singular,
+    profissionalPlural: terminologia.profissional.plural,
+    estabelecimento: terminologia.estabelecimento.singular,
+    iconeServico: emoji,
+    ...terminologia.textos
+  }
+}
+
+/**
  * Exporta todas as configurações para uso externo
  */
 export {
   CATEGORIAS_BARBEARIA,
   CATEGORIAS_NAIL,
+  ESPECIALIDADES_BARBEARIA,
+  ESPECIALIDADES_NAIL,
   TERMINOLOGIA_BARBEARIA,
   TERMINOLOGIA_NAIL,
   CONFIGURACOES

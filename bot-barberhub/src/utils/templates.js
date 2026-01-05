@@ -1,11 +1,21 @@
 /**
  * Templates de Mensagens Dinâmicos
  * Mensagens personalizadas por tenant para envio via WhatsApp
+ * Suporta múltiplos tipos de negócio: barbearia, nail_designer
  */
 
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toZonedTime } from 'date-fns-tz';
+import { 
+  obterTerminologia, 
+  obterEmoji, 
+  obterEmojiServico,
+  obterSaudacaoFinal,
+  obterDespedida,
+  ehNailDesigner,
+  obterTextosProximosPassos
+} from './terminologia.js';
 
 const TIMEZONE_BRASIL = 'America/Sao_Paulo';
 
@@ -20,12 +30,22 @@ function formatarDataHora(dataHora, formato = "dd 'de' MMMM 'às' HH:mm") {
 /**
  * Template de boas-vindas para novo tenant (admin/proprietário)
  */
-export function templateBoasVindasTenant({ nomeBarbearia, nomeProprietario, slug }) {
-  return `🎉 *Parabéns! Sua barbearia está online!*
+export function templateBoasVindasTenant({ nomeBarbearia, nomeProprietario, slug, tipoNegocio = 'barbearia' }) {
+  const termo = obterTerminologia(tipoNegocio);
+  const ehNail = ehNailDesigner(tipoNegocio);
+  const textos = obterTextosProximosPassos(tipoNegocio);
+  const despedida = obterDespedida(tipoNegocio);
+  
+  const artigoEstabelecimento = ehNail ? 'Seu' : 'Sua';
+  const estabelecimentoOnline = ehNail 
+    ? `Seu ${termo.estabelecimento.singular.toLowerCase()} está online!`
+    : `Sua ${termo.estabelecimento.singular.toLowerCase()} está online!`;
+  
+  return `🎉 *Parabéns! ${estabelecimentoOnline}*
 
 Olá, *${nomeProprietario}*! 👋
 
-Sua barbearia *${nomeBarbearia}* foi cadastrada com sucesso no BarberHub! 🎊
+${artigoEstabelecimento} ${termo.estabelecimento.singular.toLowerCase()} *${nomeBarbearia}* foi cadastrad${ehNail ? 'o' : 'a'} com sucesso no BarberHub! 🎊
 
 ━━━━━━━━━━━━━━━━━━━
 🌐 *SEU SITE DE AGENDAMENTOS:*
@@ -37,11 +57,11 @@ barberhub.online/${slug}
 1️⃣ *Acesse o painel admin:*
    barberhub.online/entrar
 
-2️⃣ *Configure sua barbearia:*
-   • Cadastre seus serviços e preços
-   • Adicione seus barbeiros
-   • Configure os horários de funcionamento
-   • Personalize com sua logo
+2️⃣ *${textos.configurar}*
+   ${textos.cadastrarServicos}
+   ${textos.adicionarProfissionais}
+   ${textos.configurarHorarios}
+   ${textos.personalizarLogo}
 
 3️⃣ *Compartilhe com seus clientes:*
    Envie o link do seu site para seus clientes agendarem!
@@ -50,13 +70,13 @@ barberhub.online/${slug}
 • Agendamentos online 24h
 • Notificações automáticas no WhatsApp
 • Lembretes 1h antes do horário
-• Controle de comissões dos barbeiros
+${textos.recursoComissoes}
 • Relatórios e métricas
 
 💡 *Dica:* Adicione o link do seu site na bio do Instagram!
 
 Precisa de ajuda? Responda esta mensagem!
-*Equipe BarberHub* 💈✨`;
+*Equipe BarberHub* ${despedida}`;
 }
 
 /**
@@ -71,18 +91,25 @@ export function templateConfirmacaoCliente({
   dataHora,
   endereco,
   telefone,
-  slug
+  slug,
+  tipoNegocio = 'barbearia'
 }) {
   const dataFormatada = formatarDataHora(dataHora);
+  const termo = obterTerminologia(tipoNegocio);
+  const ehNail = ehNailDesigner(tipoNegocio);
+  const emojiServico = obterEmojiServico(tipoNegocio);
+  const saudacao = obterSaudacaoFinal(tipoNegocio);
+  
+  const preposicao = ehNail ? 'no' : 'na';
   
   let mensagem = `🎉 *Agendamento Confirmado!*
 
 Olá, *${nomeCliente}*!
 
-Seu agendamento na *${nomeBarbearia}* foi confirmado:
+Seu agendamento ${preposicao} *${nomeBarbearia}* foi confirmado:
 
-👨‍💼 *Barbeiro:* ${nomeBarbeiro}
-✂️ *Serviço:* ${nomeServico}
+👤 *${termo.profissional.singular}:* ${nomeBarbeiro}
+${emojiServico} *Serviço:* ${nomeServico}
 💰 *Valor:* R$ ${preco?.toFixed(2) || '0.00'}
 📅 *Data:* ${dataFormatada}`;
 
@@ -107,12 +134,12 @@ Precisa reagendar? Entre em contato:
   if (slug) {
     mensagem += `
 
-🌐 barberhub.com.br/${slug}`;
+🌐 barberhub.online/${slug}`;
   }
 
   mensagem += `
 
-Nos vemos em breve! 💈
+${saudacao}
 *${nomeBarbearia}*`;
 
   return mensagem;

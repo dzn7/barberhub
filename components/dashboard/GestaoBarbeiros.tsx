@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Barbeiro } from "@/lib/types";
 import { RecorteImagem } from "@/components/ui/recorte-imagem";
 import { useToast } from "@/hooks/useToast";
+import { useTerminologia } from "@/hooks/useTerminologia";
+import { obterEspecialidadesSugeridas, obterEmojiPrincipal } from "@/lib/configuracoes-negocio";
+import { TipoNegocio } from "@/lib/tipos-negocio";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -44,25 +47,21 @@ const gerarTokenAcesso = (): string => {
   return token;
 };
 
-const ESPECIALIDADES_SUGERIDAS = [
-  "Corte Masculino",
-  "Degradê",
-  "Barba",
-  "Pigmentação",
-  "Química",
-  "Corte Infantil",
-  "Tratamento Capilar",
-  "Sobrancelha",
-  "Relaxamento",
-];
 
 /**
- * Componente de Gestão de Barbeiros
- * Permite adicionar, editar e remover barbeiros com comissões
+ * Componente de Gestão de Profissionais
+ * Permite adicionar, editar e remover profissionais com comissões
+ * Adapta terminologia dinamicamente baseado no tipo de negócio
  */
 export function GestaoBarbeiros() {
   const { tenant } = useAuth();
   const { toast } = useToast();
+  const { terminologia } = useTerminologia();
+  
+  // Obtém tipo de negócio e especialidades dinâmicas
+  const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
+  const especialidadesSugeridas = useMemo(() => obterEspecialidadesSugeridas(tipoNegocio), [tipoNegocio]);
+  const emoji = useMemo(() => obterEmojiPrincipal(tipoNegocio), [tipoNegocio]);
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
@@ -356,10 +355,10 @@ export function GestaoBarbeiros() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            Gestão de Barbeiros
+            Gestão de {terminologia.profissional.plural}
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Gerencie os profissionais da sua barbearia
+            Gerencie os profissionais do seu {terminologia.estabelecimento.singular.toLowerCase()}
           </p>
         </div>
         <button
@@ -367,7 +366,7 @@ export function GestaoBarbeiros() {
           className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-opacity"
         >
           <Plus className="w-5 h-5" />
-          Novo Barbeiro
+          Nov{tipoNegocio === 'nail_designer' ? 'a' : 'o'} {terminologia.profissional.singular}
         </button>
       </div>
 
@@ -379,7 +378,7 @@ export function GestaoBarbeiros() {
               <Users className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
             </div>
             <div>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">Total de Barbeiros</p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Total de {terminologia.profissional.plural}</p>
               <p className="text-2xl font-bold text-zinc-900 dark:text-white">
                 {totalBarbeiros}
               </p>
@@ -437,12 +436,12 @@ export function GestaoBarbeiros() {
         <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
           <Users className="w-12 h-12 text-zinc-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-            {busca ? "Nenhum barbeiro encontrado" : "Nenhum barbeiro cadastrado"}
+            {busca ? `Nenhum ${terminologia.profissional.singular.toLowerCase()} encontrado` : terminologia.textos.semProfissionais}
           </h3>
           <p className="text-zinc-500 mb-6">
             {busca
               ? "Tente buscar por outro termo"
-              : "Adicione os profissionais que trabalham na sua barbearia"}
+              : `Adicione os profissionais que trabalham no seu ${terminologia.estabelecimento.singular.toLowerCase()}`}
           </p>
           {!busca && (
             <button
@@ -450,7 +449,7 @@ export function GestaoBarbeiros() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-opacity"
             >
               <Plus className="w-5 h-5" />
-              Adicionar Barbeiro
+              Adicionar {terminologia.profissional.singular}
             </button>
           )}
         </div>
@@ -692,7 +691,7 @@ export function GestaoBarbeiros() {
                     Especialidades
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {ESPECIALIDADES_SUGERIDAS.map((esp) => (
+                    {especialidadesSugeridas.map((esp) => (
                       <button
                         key={esp}
                         type="button"
@@ -779,7 +778,7 @@ export function GestaoBarbeiros() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                      Barbeiro Criado com Sucesso!
+                      {terminologia.profissional.singular} Criad{tipoNegocio === 'nail_designer' ? 'a' : 'o'} com Sucesso!
                     </h3>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
                       Envie as instruções de acesso para {nomeBarbeiroToken}
@@ -824,9 +823,9 @@ export function GestaoBarbeiros() {
                   <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
 {`Olá ${nomeBarbeiroToken}! 👋
 
-Você foi cadastrado como barbeiro na *${tenant?.nome || 'nossa barbearia'}*! 🎉
+Você foi cadastrad${tipoNegocio === 'nail_designer' ? 'a' : 'o'} como ${terminologia.profissional.singular.toLowerCase()} ${tipoNegocio === 'nail_designer' ? 'no' : 'na'} *${tenant?.nome || `noss${tipoNegocio === 'nail_designer' ? 'o' : 'a'} ${terminologia.estabelecimento.singular.toLowerCase()}`}*! 🎉
 
-Para acessar seu painel de barbeiro, siga os passos:
+Para acessar seu painel de ${terminologia.profissional.singular.toLowerCase()}, siga os passos:
 
 1️⃣ Acesse o link:
 ${typeof window !== 'undefined' ? window.location.origin : ''}/barbeiro/entrar
@@ -839,7 +838,7 @@ No painel você poderá:
 ✅ Acompanhar suas comissões
 ✅ Gerenciar seus serviços
 
-Qualquer dúvida, estamos à disposição! 💈`}
+Qualquer dúvida, estamos à disposição! ${emoji}`}
                   </div>
                 </div>
 
@@ -848,9 +847,9 @@ Qualquer dúvida, estamos à disposição! 💈`}
                   onClick={() => {
                     const mensagem = `Olá ${nomeBarbeiroToken}! 👋
 
-Você foi cadastrado como barbeiro na *${tenant?.nome || 'nossa barbearia'}*! 🎉
+Você foi cadastrad${tipoNegocio === 'nail_designer' ? 'a' : 'o'} como ${terminologia.profissional.singular.toLowerCase()} ${tipoNegocio === 'nail_designer' ? 'no' : 'na'} *${tenant?.nome || `noss${tipoNegocio === 'nail_designer' ? 'o' : 'a'} ${terminologia.estabelecimento.singular.toLowerCase()}`}*! 🎉
 
-Para acessar seu painel de barbeiro, siga os passos:
+Para acessar seu painel de ${terminologia.profissional.singular.toLowerCase()}, siga os passos:
 
 1️⃣ Acesse o link:
 ${typeof window !== 'undefined' ? window.location.origin : ''}/barbeiro/entrar
@@ -863,7 +862,7 @@ No painel você poderá:
 ✅ Acompanhar suas comissões
 ✅ Gerenciar seus serviços
 
-Qualquer dúvida, estamos à disposição! 💈`;
+Qualquer dúvida, estamos à disposição! ${emoji}`;
                     navigator.clipboard.writeText(mensagem);
                     setMensagemCopiada(true);
                     setTimeout(() => setMensagemCopiada(false), 2000);
@@ -886,7 +885,7 @@ Qualquer dúvida, estamos à disposição! 💈`;
                 {/* Info */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
                   <p className="text-xs text-blue-700 dark:text-blue-300">
-                    💡 <strong>Dica:</strong> Cole esta mensagem diretamente no WhatsApp do barbeiro para facilitar o acesso.
+                    💡 <strong>Dica:</strong> Cole esta mensagem diretamente no WhatsApp d{tipoNegocio === 'nail_designer' ? 'a' : 'o'} {terminologia.profissional.singular.toLowerCase()} para facilitar o acesso.
                   </p>
                 </div>
               </div>

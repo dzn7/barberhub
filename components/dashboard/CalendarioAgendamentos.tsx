@@ -26,6 +26,8 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+import { obterEmojiPrincipal, obterTerminologia } from "@/lib/configuracoes-negocio";
+import { TipoNegocio } from "@/lib/tipos-negocio";
 import { Badge, Button, TextField, Select } from "@radix-ui/themes";
 import { PortalModal } from "@/components/ui/PortalModal";
 import { ModalRemarcacao } from "./ModalRemarcacao";
@@ -290,8 +292,11 @@ export function CalendarioAgendamentos() {
   const notificarCancelamento = async (agendamento: Agendamento) => {
     try {
       const dataFormatada = format(parseISO(agendamento.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
+      const emoji = obterEmojiPrincipal(tipoNegocio);
+      const terminologia = obterTerminologia(tipoNegocio);
       
-      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes?.nome}!\n\nSeu agendamento foi cancelado:\n\n📅 *Data:* ${dataFormatada}\n✂️ *Serviço:* ${agendamento.servicos?.nome}\n👤 *Barbeiro:* ${agendamento.barbeiros?.nome}\n\nSe desejar reagendar, entre em contato ou acesse nosso site.\n\n_BarberHub_`;
+      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes?.nome}!\n\nSeu agendamento foi cancelado:\n\n📅 *Data:* ${dataFormatada}\n${emoji} *Serviço:* ${agendamento.servicos?.nome}\n👤 *${terminologia.profissional.singular}:* ${agendamento.barbeiros?.nome}\n\nSe desejar reagendar, entre em contato ou acesse nosso site.\n\n_${tenant?.nome || 'BarberHub'}_`;
 
       let telefone = agendamento.clientes?.telefone?.replace(/\D/g, '') || '';
       if (!telefone.startsWith('55')) {

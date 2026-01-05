@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTerminologia } from "@/hooks/useTerminologia";
+import { TipoNegocio } from "@/lib/tipos-negocio";
 
 interface ConfiguracaoBarbeariaProps {
   onSalvar?: () => void;
@@ -40,6 +42,9 @@ const CORES_PREDEFINIDAS = [
 
 export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) {
   const { tenant, atualizarTenant } = useAuth();
+  const { terminologia } = useTerminologia();
+  const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
+  const ehNail = tipoNegocio === 'nail_designer';
   const inputFileRef = useRef<HTMLInputElement>(null);
   
   const [carregando, setCarregando] = useState(false);
@@ -457,19 +462,19 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
               <Store className="w-5 h-5" />
-              Dados da Barbearia
+              Dados {ehNail ? 'do' : 'da'} {terminologia.estabelecimento.singular}
             </h3>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Nome da Barbearia
+                  Nome {ehNail ? 'do' : 'da'} {terminologia.estabelecimento.singular}
                 </label>
                 <input
                   type="text"
                   value={dados.nome}
                   onChange={(e) => setDados({ ...dados, nome: e.target.value })}
-                  placeholder="Ex: Barbearia Premium"
+                  placeholder={ehNail ? 'Ex: Studio Nails Premium' : 'Ex: Barbearia Premium'}
                   className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                 />
               </div>
@@ -484,7 +489,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     type="email"
                     value={dados.email}
                     onChange={(e) => setDados({ ...dados, email: e.target.value })}
-                    placeholder="contato@barbearia.com"
+                    placeholder={ehNail ? 'contato@seuestudio.com' : 'contato@barbearia.com'}
                     className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                   />
                 </div>
@@ -536,7 +541,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     type="text"
                     value={dados.instagram}
                     onChange={(e) => setDados({ ...dados, instagram: e.target.value })}
-                    placeholder="@suabarbearia"
+                    placeholder={ehNail ? '@seuestudionails' : '@suabarbearia'}
                     className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                   />
                 </div>
