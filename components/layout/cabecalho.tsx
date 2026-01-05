@@ -44,22 +44,22 @@ export function Cabecalho() {
 
           <nav className="hidden md:flex items-center space-x-8">
             <button
-              onClick={() => rolarPara('recursos')}
+              onClick={() => rolarPara('vantagens')}
               className="text-sm font-medium hover:text-primary transition-colors"
             >
-              Recursos
+              Vantagens
             </button>
             <button
               onClick={() => rolarPara('beneficios')}
               className="text-sm font-medium hover:text-primary transition-colors"
             >
-              Benefícios
+              Resultados
             </button>
             <button
-              onClick={() => rolarPara('jornada')}
+              onClick={() => rolarPara('precos')}
               className="text-sm font-medium hover:text-primary transition-colors"
             >
-              Jornada
+              Preços
             </button>
             <button
               onClick={() => rolarPara('contato')}

@@ -130,13 +130,13 @@ export function SecaoHero() {
           
           <div className="relative flex items-end justify-center gap-4 md:gap-8">
             {/* Mockup esquerdo - Desktop */}
-            <div className="hidden md:block w-[200px] lg:w-[260px] opacity-60">
+            <div className="hidden md:block w-[200px] lg:w-[260px] opacity-40 dark:opacity-60">
               <Image
                 src="/assets/mockup-left.png"
                 alt="Painel de agendamentos"
                 width={260}
                 height={400}
-                className="w-full h-auto rounded-t-xl shadow-2xl"
+                className="w-full h-auto rounded-t-xl shadow-2xl dark:shadow-2xl shadow-zinc-300/50"
               />
             </div>
 
@@ -147,18 +147,18 @@ export function SecaoHero() {
                 alt="App de agendamento"
                 width={260}
                 height={520}
-                className="w-full h-auto rounded-t-2xl shadow-2xl"
+                className="w-full h-auto rounded-t-2xl shadow-2xl dark:shadow-2xl shadow-zinc-400/30"
               />
             </div>
 
             {/* Mockup direito - Desktop */}
-            <div className="hidden md:block w-[200px] lg:w-[260px] opacity-60">
+            <div className="hidden md:block w-[200px] lg:w-[260px] opacity-40 dark:opacity-60">
               <Image
                 src="/assets/mockup_invertido.png"
                 alt="Dashboard financeiro"
                 width={260}
                 height={400}
-                className="w-full h-auto rounded-t-xl shadow-2xl scale-x-[-1]"
+                className="w-full h-auto rounded-t-xl shadow-2xl dark:shadow-2xl shadow-zinc-300/50 scale-x-[-1]"
               />
             </div>
           </div>

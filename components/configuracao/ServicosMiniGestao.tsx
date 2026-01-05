@@ -266,15 +266,15 @@ export function ServicosMiniGestao({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Scissors className="w-5 h-5 text-zinc-500" />
-          <span className="text-sm text-zinc-400">
+          <Scissors className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">
             {servicos.length}/{limiteServicos} serviços
           </span>
         </div>
         {!mostrarFormulario && !editando && servicos.length < limiteServicos && (
           <button
             onClick={() => setMostrarFormulario(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-900 dark:bg-zinc-800 text-white rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Adicionar
@@ -285,7 +285,7 @@ export function ServicosMiniGestao({
       {/* Sugestões Rápidas (quando lista vazia) */}
       {servicos.length === 0 && !mostrarFormulario && (
         <div className="space-y-3">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-zinc-600 dark:text-zinc-500">
             Adicione rapidamente serviços comuns:
           </p>
           <div className="flex flex-wrap gap-2">
@@ -294,7 +294,7 @@ export function ServicosMiniGestao({
                 key={index}
                 onClick={() => adicionarSugerido(sugerido)}
                 disabled={salvando}
-                className="px-3 py-1.5 text-sm bg-zinc-800/50 border border-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-800 hover:border-zinc-600 transition-all disabled:opacity-50"
+                className="px-3 py-1.5 text-sm bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all disabled:opacity-50"
               >
                 + {sugerido.nome}
               </button>
@@ -312,10 +312,10 @@ export function ServicosMiniGestao({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl space-y-4">
+            <div className="p-4 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">
+                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
                     Nome do Serviço *
                   </label>
                   <input
@@ -323,16 +323,16 @@ export function ServicosMiniGestao({
                     value={formulario.nome}
                     onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
                     placeholder="Ex: Corte Degradê"
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">
+                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
                     Preço (R$) *
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                     <input
                       type="text"
                       inputMode="decimal"
@@ -342,17 +342,17 @@ export function ServicosMiniGestao({
                         setFormulario({ ...formulario, preco: valor })
                       }}
                       placeholder="0,00"
-                      className="w-full pl-10 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
+                      className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">
+                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
                     Duração (min) *
                   </label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                     <input
                       type="text"
                       inputMode="numeric"
@@ -362,19 +362,19 @@ export function ServicosMiniGestao({
                         setFormulario({ ...formulario, duracao: valor })
                       }}
                       placeholder="30"
-                      className="w-full pl-10 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
+                      className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                     />
                   </div>
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">
+                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
                     Categoria
                   </label>
                   <select
                     value={formulario.categoria}
                     onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
-                    className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-zinc-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                   >
                     {CATEGORIAS.map((cat) => (
                       <option key={cat.valor} value={cat.valor}>
@@ -391,14 +391,14 @@ export function ServicosMiniGestao({
                     setMostrarFormulario(false)
                     setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
                   }}
-                  className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={adicionarServico}
                   disabled={salvando}
-                  className="flex items-center gap-2 px-4 py-2 text-sm bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50"
                 >
                   {salvando ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -427,18 +427,18 @@ export function ServicosMiniGestao({
             >
               {editando === servico.id ? (
                 // Modo edição
-                <div className="p-4 bg-zinc-900/50 border border-zinc-700 rounded-xl space-y-4">
+                <div className="p-4 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
                       <input
                         type="text"
                         value={formulario.nome}
                         onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
-                        className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-zinc-500"
+                        className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                       />
                     </div>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                       <input
                         type="text"
                         inputMode="decimal"
@@ -448,11 +448,11 @@ export function ServicosMiniGestao({
                           setFormulario({ ...formulario, preco: valor })
                         }}
                         placeholder="0,00"
-                        className="w-full pl-10 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-zinc-500"
+                        className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                       />
                     </div>
                     <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                       <input
                         type="text"
                         inputMode="numeric"
@@ -462,21 +462,21 @@ export function ServicosMiniGestao({
                           setFormulario({ ...formulario, duracao: valor })
                         }}
                         placeholder="30"
-                        className="w-full pl-10 pr-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-zinc-500"
+                        className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                       />
                     </div>
                   </div>
                   <div className="flex gap-2 justify-end">
                     <button
                       onClick={cancelarEdicao}
-                      className="p-2 text-zinc-400 hover:text-white transition-colors"
+                      className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => atualizarServico(servico.id)}
                       disabled={salvando}
-                      className="p-2 text-white bg-zinc-700 rounded-lg hover:bg-zinc-600 transition-colors disabled:opacity-50"
+                      className="p-2 text-white bg-zinc-800 dark:bg-zinc-700 rounded-lg hover:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50"
                     >
                       {salvando ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -488,15 +488,15 @@ export function ServicosMiniGestao({
                 </div>
               ) : (
                 // Modo visualização
-                <div className="flex items-center gap-3 p-3 bg-zinc-900/30 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors">
-                  <GripVertical className="w-4 h-4 text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+                <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+                  <GripVertical className="w-4 h-4 text-zinc-300 dark:text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white truncate">
+                      <span className="font-medium text-zinc-900 dark:text-white truncate">
                         {servico.nome}
                       </span>
-                      <span className="text-xs px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded">
+                      <span className="text-xs px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded">
                         {CATEGORIAS.find(c => c.valor === servico.categoria)?.label || 'Outro'}
                       </span>
                     </div>
@@ -515,14 +515,14 @@ export function ServicosMiniGestao({
                   <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => iniciarEdicao(servico)}
-                      className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                      className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                       aria-label="Editar serviço"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => removerServico(servico.id)}
-                      className="p-2 text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                      className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                       aria-label="Remover serviço"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -537,7 +537,7 @@ export function ServicosMiniGestao({
 
       {/* Dica quando tem serviços */}
       {servicos.length > 0 && servicos.length < limiteServicos && !mostrarFormulario && !editando && (
-        <p className="text-xs text-zinc-600 text-center hidden sm:block">
+        <p className="text-xs text-zinc-500 dark:text-zinc-600 text-center hidden sm:block">
           Passe o mouse sobre um serviço para editar ou remover
         </p>
       )}

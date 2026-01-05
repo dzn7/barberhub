@@ -1,11 +1,10 @@
 import { Cabecalho } from '@/components/layout/cabecalho'
 import { Rodape } from '@/components/layout/rodape'
 import { SecaoHero } from '@/components/secoes/secao-hero'
-import { SecaoRecursos } from '@/components/secoes/secao-recursos'
+import { SecaoVantagens } from '@/components/secoes/secao-vantagens'
 import { SecaoBeneficios } from '@/components/secoes/secao-beneficios'
-import { SecaoLinhaTempo } from '@/components/secoes/secao-linha-tempo'
-import { SecaoDispositivos } from '@/components/secoes/secao-dispositivos'
-import { SecaoDemonstracao } from '@/components/secoes/secao-demonstracao'
+import { SecaoShowcase } from '@/components/secoes/secao-showcase'
+import { SecaoPrecos } from '@/components/secoes/secao-precos'
 import { SecaoContato } from '@/components/secoes/secao-contato'
 
 export default function PaginaInicial() {
@@ -14,11 +13,10 @@ export default function PaginaInicial() {
       <Cabecalho />
       <main className="flex-1">
         <SecaoHero />
-        <SecaoRecursos />
+        <SecaoVantagens />
         <SecaoBeneficios />
-        <SecaoLinhaTempo />
-        <SecaoDispositivos />
-        <SecaoDemonstracao />
+        <SecaoShowcase />
+        <SecaoPrecos />
         <SecaoContato />
       </main>
       <Rodape />

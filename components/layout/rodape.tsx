@@ -50,18 +50,18 @@ export function Rodape() {
             <h3 className="font-semibold text-lg mb-4">Links Rápidos</h3>
             <ul className="space-y-3">
               <li>
-                <a href="#recursos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Recursos
+                <a href="#vantagens" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Vantagens
                 </a>
               </li>
               <li>
                 <a href="#beneficios" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Benefícios
+                  Resultados
                 </a>
               </li>
               <li>
-                <a href="#demonstracao" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Demonstração
+                <a href="#precos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Preços
                 </a>
               </li>
               <li>
@@ -72,28 +72,18 @@ export function Rodape() {
             </ul>
           </div>
 
-          {/* Suporte */}
+          {/* Legal */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Suporte</h3>
+            <h3 className="font-semibold text-lg mb-4">Legal</h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Central de Ajuda
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Documentação
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <a href="/termos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Termos de Uso
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Política de Privacidade
+                <a href="https://wa.me/5563981053014" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Suporte WhatsApp
                 </a>
               </li>
             </ul>
