@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Scissors, Edit2, Save, X, DollarSign, Clock, TrendingUp, TrendingDown, Plus } from "lucide-react";
+import { Scissors, Edit2, Save, X, DollarSign, Clock, TrendingUp, TrendingDown, Plus, Trash2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button, TextField, TextArea } from "@radix-ui/themes";
@@ -50,6 +50,8 @@ export function GestaoServicos() {
     duracao: "30",
     categoria: "geral",
   });
+  const [servicoParaExcluir, setServicoParaExcluir] = useState<Servico | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
 
   const buscarServicos = useCallback(async () => {
     if (!tenant?.id) return;
@@ -139,6 +141,49 @@ export function GestaoServicos() {
     if (!servico.preco_anterior) return null;
     const variacao = ((servico.preco - servico.preco_anterior) / servico.preco_anterior) * 100;
     return variacao;
+  };
+
+  const excluirServico = async () => {
+    if (!servicoParaExcluir || !tenant?.id) return;
+
+    setExcluindo(true);
+    try {
+      // Verificar se existem agendamentos vinculados a este serviço
+      const { data: agendamentosVinculados, error: erroConsulta } = await supabase
+        .from("agendamentos")
+        .select("id")
+        .eq("servico_id", servicoParaExcluir.id)
+        .eq("tenant_id", tenant.id)
+        .limit(1);
+
+      if (erroConsulta) throw erroConsulta;
+
+      if (agendamentosVinculados && agendamentosVinculados.length > 0) {
+        toast({ 
+          tipo: "erro", 
+          mensagem: "Não é possível excluir: existem agendamentos vinculados a este serviço" 
+        });
+        setServicoParaExcluir(null);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("servicos")
+        .delete()
+        .eq("id", servicoParaExcluir.id)
+        .eq("tenant_id", tenant.id);
+
+      if (error) throw error;
+
+      await buscarServicos();
+      setServicoParaExcluir(null);
+      toast({ tipo: "sucesso", mensagem: "Serviço excluído com sucesso!" });
+    } catch (error) {
+      console.error("Erro ao excluir serviço:", error);
+      toast({ tipo: "erro", mensagem: "Erro ao excluir serviço" });
+    } finally {
+      setExcluindo(false);
+    }
   };
 
   const criarNovoServico = async () => {
@@ -404,6 +449,76 @@ export function GestaoServicos() {
         </div>
       </ModalPortal>
 
+      {/* Modal de Confirmação de Exclusão */}
+      <ModalPortal aberto={!!servicoParaExcluir} onFechar={() => setServicoParaExcluir(null)}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+          {/* Header */}
+          <div className="relative bg-gradient-to-r from-red-600 to-red-500 p-6">
+            <button
+              onClick={() => setServicoParaExcluir(null)}
+              className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-white/70" />
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Excluir Serviço</h2>
+                <p className="text-sm text-white/60">Esta ação não pode ser desfeita</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Conteúdo */}
+          <div className="p-6">
+            <p className="text-zinc-700 dark:text-zinc-300 mb-2">
+              Tem certeza que deseja excluir o serviço:
+            </p>
+            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 mb-6">
+              <p className="font-semibold text-zinc-900 dark:text-white text-lg">
+                {servicoParaExcluir?.nome}
+              </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                R$ {servicoParaExcluir?.preco.toFixed(2)} • {servicoParaExcluir?.duracao} min
+              </p>
+            </div>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+              ⚠️ Se houver agendamentos vinculados a este serviço, a exclusão será bloqueada.
+            </p>
+          </div>
+
+          {/* Ações */}
+          <div className="flex gap-3 p-6 pt-0">
+            <button
+              onClick={() => setServicoParaExcluir(null)}
+              disabled={excluindo}
+              className="flex-1 py-3 px-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={excluirServico}
+              disabled={excluindo}
+              className="flex-1 py-3 px-4 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {excluindo ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  Excluir
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </ModalPortal>
+
       {/* Lista de Serviços */}
       <div className="grid gap-4">
         <AnimatePresence>
@@ -562,14 +677,24 @@ export function GestaoServicos() {
                       )}
                     </div>
 
-                    <Button
-                      onClick={() => iniciarEdicao(servico)}
-                      variant="soft"
-                      className="cursor-pointer"
-                    >
-                      <Edit2 className="w-4 h-4 mr-2" />
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => iniciarEdicao(servico)}
+                        variant="soft"
+                        className="cursor-pointer"
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Editar
+                      </Button>
+                      <Button
+                        onClick={() => setServicoParaExcluir(servico)}
+                        variant="soft"
+                        color="red"
+                        className="cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 )}
               </motion.div>
