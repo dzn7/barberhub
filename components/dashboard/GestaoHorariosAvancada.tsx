@@ -599,24 +599,59 @@ export function GestaoHorariosAvancada() {
             >
               <Select.Trigger className="w-full max-w-full" />
               <Select.Content position="popper" sideOffset={5}>
-                <Select.Item value="15">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <span className="font-semibold">15 minutos</span>
-                    <span className="text-xs text-zinc-500">(Ex: 08:00, 08:15, 08:30...)</span>
-                  </div>
-                </Select.Item>
-                <Select.Item value="20">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <span className="font-semibold">20 minutos</span>
-                    <span className="text-xs text-zinc-500">(Ex: 08:00, 08:20, 08:40...)</span>
-                  </div>
-                </Select.Item>
-                <Select.Item value="30">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <span className="font-semibold">30 minutos</span>
-                    <span className="text-xs text-zinc-500">(Ex: 08:00, 08:30, 09:00...)</span>
-                  </div>
-                </Select.Item>
+                <Select.Group>
+                  <Select.Label className="text-xs text-zinc-500 px-2 py-1">Intervalos Curtos</Select.Label>
+                  <Select.Item value="5">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">5 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:05, 08:10...)</span>
+                    </div>
+                  </Select.Item>
+                  <Select.Item value="10">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">10 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:10, 08:20...)</span>
+                    </div>
+                  </Select.Item>
+                  <Select.Item value="15">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">15 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:15, 08:30...)</span>
+                    </div>
+                  </Select.Item>
+                </Select.Group>
+                <Select.Separator />
+                <Select.Group>
+                  <Select.Label className="text-xs text-zinc-500 px-2 py-1">Intervalos Médios</Select.Label>
+                  <Select.Item value="20">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">20 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:20, 08:40...)</span>
+                    </div>
+                  </Select.Item>
+                  <Select.Item value="30">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">30 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:30, 09:00...)</span>
+                    </div>
+                  </Select.Item>
+                </Select.Group>
+                <Select.Separator />
+                <Select.Group>
+                  <Select.Label className="text-xs text-zinc-500 px-2 py-1">Intervalos Longos</Select.Label>
+                  <Select.Item value="45">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">45 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:45, 09:30...)</span>
+                    </div>
+                  </Select.Item>
+                  <Select.Item value="60">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">60 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 09:00, 10:00...)</span>
+                    </div>
+                  </Select.Item>
+                </Select.Group>
               </Select.Content>
             </Select.Root>
             <div className="mt-3 p-3 bg-teal-50 dark:bg-teal-950/30 rounded-lg border border-teal-200 dark:border-teal-800">

@@ -43,6 +43,20 @@ export interface HorarioComStatus {
  * @param config - Configurações de horário (abertura, fechamento, almoço)
  * @returns Array de objetos com horário e status
  */
+/**
+ * Normaliza horário para formato HH:mm
+ * Aceita formatos: HH:mm, HH:mm:ss, ou qualquer string com pelo menos HH:mm
+ */
+function normalizarHorario(horario: string | null | undefined): string | null {
+  if (!horario) return null;
+  // Remove espaços e pega apenas HH:mm
+  const limpo = horario.trim();
+  if (limpo.length >= 5 && limpo.includes(':')) {
+    return limpo.substring(0, 5);
+  }
+  return limpo;
+}
+
 export function gerarTodosHorarios(
   duracaoServico: number,
   agendamentosOcupados: Array<{horario: string, duracao: number}> = [],
@@ -51,8 +65,12 @@ export function gerarTodosHorarios(
   const horarios: HorarioComStatus[] = [];
   const dataBase = new Date(2000, 0, 1);
   
-  const horaInicio = parse(config.inicio, 'HH:mm', dataBase);
-  const horaFim = parse(config.fim, 'HH:mm', dataBase);
+  // Normalizar horários para garantir formato HH:mm
+  const inicioNormalizado = normalizarHorario(config.inicio) || '09:00';
+  const fimNormalizado = normalizarHorario(config.fim) || '19:00';
+  
+  const horaInicio = parse(inicioNormalizado, 'HH:mm', dataBase);
+  const horaFim = parse(fimNormalizado, 'HH:mm', dataBase);
   
   let horarioAtual = horaInicio;
   
@@ -60,9 +78,12 @@ export function gerarTodosHorarios(
   let almocoInicio: Date | null = null;
   let almocoFim: Date | null = null;
   
-  if (config.intervaloAlmocoInicio && config.intervaloAlmocoFim) {
-    almocoInicio = parse(config.intervaloAlmocoInicio, 'HH:mm', dataBase);
-    almocoFim = parse(config.intervaloAlmocoFim, 'HH:mm', dataBase);
+  const almocoInicioNormalizado = normalizarHorario(config.intervaloAlmocoInicio);
+  const almocoFimNormalizado = normalizarHorario(config.intervaloAlmocoFim);
+  
+  if (almocoInicioNormalizado && almocoFimNormalizado) {
+    almocoInicio = parse(almocoInicioNormalizado, 'HH:mm', dataBase);
+    almocoFim = parse(almocoFimNormalizado, 'HH:mm', dataBase);
   }
   
   // Intervalo entre horários (padrão 20 minutos)
@@ -76,15 +97,21 @@ export function gerarTodosHorarios(
     // Verificar se o término não ultrapassa o horário de fechamento
     if (isBefore(horarioTermino, horaFim) || isEqual(horarioTermino, horaFim)) {
       // Verificar se está no intervalo de almoço
+      // Bloqueia se:
+      // 1. O horário de início está dentro do almoço
+      // 2. O horário de término está dentro do almoço
+      // 3. O serviço atravessa todo o período de almoço (começa antes e termina depois)
       let estaNoAlmoco = false;
       if (almocoInicio && almocoFim) {
-        estaNoAlmoco = (
-          (isAfter(horarioAtual, almocoInicio) || isEqual(horarioAtual, almocoInicio)) && 
-          isBefore(horarioAtual, almocoFim)
-        ) || (
-          isAfter(horarioTermino, almocoInicio) && 
-          (isBefore(horarioTermino, almocoFim) || isEqual(horarioTermino, almocoFim))
-        );
+        const inicioNoAlmoco = (isAfter(horarioAtual, almocoInicio) || isEqual(horarioAtual, almocoInicio)) && 
+          isBefore(horarioAtual, almocoFim);
+        
+        const terminoNoAlmoco = isAfter(horarioTermino, almocoInicio) && 
+          (isBefore(horarioTermino, almocoFim) || isEqual(horarioTermino, almocoFim));
+        
+        const atravessaAlmoco = isBefore(horarioAtual, almocoInicio) && isAfter(horarioTermino, almocoFim);
+        
+        estaNoAlmoco = inicioNoAlmoco || terminoNoAlmoco || atravessaAlmoco;
       }
       
       // Verificar se conflita com agendamentos ocupados

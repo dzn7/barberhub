@@ -9,7 +9,9 @@ import {
   Database, Cloud, Trash2, ExternalLink, RefreshCw, AlertTriangle,
   CheckCircle, Clock, Wifi, WifiOff, Search, LogOut, BarChart3,
   Scissors, Building2, FileText, Power, Download, UserCog, Bot,
-  AlertCircle, Globe, ChevronDown
+  AlertCircle, Globe, ChevronDown, MoreVertical, Copy, Mail,
+  MessageSquare, CreditCard, Settings, Activity, TrendingUp,
+  Pause, Play, RotateCcw, Link2, QrCode, Bell, X
 } from 'lucide-react'
 import { format, formatDistanceToNow, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -102,6 +104,7 @@ export default function PainelSuperAdmin() {
   const [statusBot, setStatusBot] = useState<StatusBot>({ online: false, ultimaVerificacao: null })
   const [metricas, setMetricas] = useState<MetricasInfra>({})
   const [carregandoMetricas, setCarregandoMetricas] = useState(false)
+  const [verificandoBot, setVerificandoBot] = useState(false)
 
   // Realtime
   const subscriptionRef = useRef<any>(null)
@@ -184,11 +187,36 @@ export default function PainelSuperAdmin() {
   }, [])
 
   const verificarBot = async () => {
+    setVerificandoBot(true)
     try {
-      const res = await fetch('https://bot-barberhub.fly.dev/health', { mode: 'cors' })
+      // Primeiro tenta a API de métricas que usa o Fly.io GraphQL API
+      const resMetricas = await fetch('/api/admin/metricas', { 
+        headers: { 'x-admin-auth': 'dzndev-1503' } 
+      })
+      
+      if (resMetricas.ok) {
+        const dados = await resMetricas.json()
+        const flyOnline = dados.fly_io?.online || dados.fly_io?.status === 'started'
+        setStatusBot({ online: flyOnline, ultimaVerificacao: new Date() })
+        return
+      }
+      
+      // Fallback: tenta health check direto (pode falhar por CORS)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      
+      const res = await fetch('https://bot-barberhub.fly.dev/health', { 
+        mode: 'cors',
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
       setStatusBot({ online: res.ok, ultimaVerificacao: new Date() })
     } catch {
-      setStatusBot({ online: false, ultimaVerificacao: new Date() })
+      // Se falhar, assume online baseado nas métricas já carregadas
+      const flyOnline = metricas.fly?.online || metricas.fly?.status === 'started'
+      setStatusBot({ online: flyOnline, ultimaVerificacao: new Date() })
+    } finally {
+      setVerificandoBot(false)
     }
   }
 
@@ -299,52 +327,95 @@ export default function PainelSuperAdmin() {
   if (!autenticado) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="w-full max-w-md"
+        >
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-zinc-900" />
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-white/10">
+              <Shield className="w-8 h-8 text-zinc-900" aria-hidden="true" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Super Admin</h1>
             <p className="text-zinc-500">BarberHub SaaS</p>
           </div>
 
-          <form onSubmit={fazerLogin} className="space-y-4">
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input
-                type="text"
-                value={usuario}
-                onChange={(e) => setUsuario(e.target.value)}
-                placeholder="Usuário"
-                className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20"
-              />
+          <form onSubmit={fazerLogin} className="space-y-4" aria-label="Formulário de login">
+            <div className="space-y-1">
+              <label htmlFor="usuario" className="sr-only">Usuário</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" aria-hidden="true" />
+                <input
+                  id="usuario"
+                  type="text"
+                  value={usuario}
+                  onChange={(e) => setUsuario(e.target.value)}
+                  placeholder="Usuário"
+                  autoComplete="username"
+                  className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-colors"
+                  aria-required="true"
+                />
+              </div>
             </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input
-                type={mostrarSenha ? 'text' : 'password'}
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                placeholder="Senha"
-                className="w-full pl-12 pr-12 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20"
-              />
-              <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">
-                {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+            
+            <div className="space-y-1">
+              <label htmlFor="senha" className="sr-only">Senha</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" aria-hidden="true" />
+                <input
+                  id="senha"
+                  type={mostrarSenha ? 'text' : 'password'}
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  placeholder="Senha"
+                  autoComplete="current-password"
+                  className="w-full pl-12 pr-12 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-zinc-700 transition-colors"
+                  aria-required="true"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setMostrarSenha(!mostrarSenha)} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors p-1"
+                  aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {mostrarSenha ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
+            
             {erroLogin && (
-              <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-400 text-sm flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> {erroLogin}
+              <div 
+                className="p-3 bg-red-900/30 border border-red-800 rounded-xl text-red-400 text-sm flex items-center gap-2"
+                role="alert"
+                aria-live="polite"
+              >
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" aria-hidden="true" /> 
+                <span>{erroLogin}</span>
               </div>
             )}
+            
             <button
               type="submit"
               disabled={tentandoLogin || !usuario || !senha}
-              className="w-full py-3 bg-white text-zinc-900 font-semibold rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-3 bg-white text-zinc-900 font-semibold rounded-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-white/10"
             >
-              {tentandoLogin ? <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</> : <><Shield className="w-4 h-4" /> Entrar</>}
+              {tentandoLogin ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> 
+                  <span>Verificando...</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="w-4 h-4" aria-hidden="true" /> 
+                  <span>Entrar</span>
+                </>
+              )}
             </button>
           </form>
+          
+          <p className="text-center text-xs text-zinc-600 mt-6">
+            Acesso restrito a administradores
+          </p>
         </motion.div>
       </div>
     )
@@ -368,43 +439,79 @@ export default function PainelSuperAdmin() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${statusBot.online ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'bg-red-100 dark:bg-red-900/30 text-red-600'}`}>
-                {statusBot.online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                Bot {statusBot.online ? 'Online' : 'Offline'}
+              <div 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  verificandoBot 
+                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500' 
+                    : statusBot.online 
+                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' 
+                      : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600'
+                }`}
+                role="status"
+                aria-label={`Status do bot: ${verificandoBot ? 'Verificando' : statusBot.online ? 'Online' : 'Verificando conexão'}`}
+              >
+                {verificandoBot ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : statusBot.online ? (
+                  <Wifi className="w-3 h-3" />
+                ) : (
+                  <Activity className="w-3 h-3" />
+                )}
+                Bot {verificandoBot ? 'Verificando...' : statusBot.online ? 'Online' : 'Conectando...'}
               </div>
-              <button onClick={() => { carregarDados(); carregarMetricas(); verificarBot() }} disabled={carregando} className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg">
-                <RefreshCw className={`w-5 h-5 ${carregando ? 'animate-spin' : ''}`} />
+              <button 
+                onClick={() => { carregarDados(); carregarMetricas(); verificarBot() }} 
+                disabled={carregando} 
+                className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
+                aria-label="Atualizar dados"
+                title="Atualizar dados"
+              >
+                <RefreshCw className={`w-5 h-5 ${carregando ? 'animate-spin' : ''}`} aria-hidden="true" />
               </button>
-              <button onClick={fazerLogout} className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
-                <LogOut className="w-4 h-4" /> Sair
+              <button 
+                onClick={fazerLogout} 
+                className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                aria-label="Sair do painel"
+              >
+                <LogOut className="w-4 h-4" aria-hidden="true" /> 
+                <span className="hidden sm:inline">Sair</span>
               </button>
             </div>
           </div>
 
           {/* Abas */}
-          <div className="flex gap-1 mt-4 -mb-px overflow-x-auto">
+          <nav 
+            className="flex gap-1 mt-4 -mb-px overflow-x-auto scrollbar-hide pb-px"
+            role="tablist"
+            aria-label="Navegação do painel"
+          >
             {[
-              { id: 'visao-geral', label: 'Visão Geral', icone: BarChart3 },
-              { id: 'barbearias', label: 'Barbearias', icone: Store },
-              { id: 'usuarios', label: 'Usuários Auth', icone: UserCog },
-              { id: 'relatorios', label: 'Relatórios', icone: FileText },
-              { id: 'infraestrutura', label: 'Infraestrutura', icone: Database },
-              { id: 'backup', label: 'Backup', icone: Download },
+              { id: 'visao-geral', label: 'Visão Geral', labelCurto: 'Geral', icone: BarChart3 },
+              { id: 'barbearias', label: 'Barbearias', labelCurto: 'Barb.', icone: Store },
+              { id: 'usuarios', label: 'Usuários Auth', labelCurto: 'Users', icone: UserCog },
+              { id: 'relatorios', label: 'Relatórios', labelCurto: 'Relat.', icone: FileText },
+              { id: 'infraestrutura', label: 'Infraestrutura', labelCurto: 'Infra', icone: Database },
+              { id: 'backup', label: 'Backup', labelCurto: 'Backup', icone: Download },
             ].map((aba) => (
               <button
                 key={aba.id}
                 onClick={() => setAbaAtiva(aba.id as AbaAtiva)}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors ${
+                role="tab"
+                aria-selected={abaAtiva === aba.id}
+                aria-controls={`painel-${aba.id}`}
+                id={`aba-${aba.id}`}
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg whitespace-nowrap transition-all ${
                   abaAtiva === aba.id
-                    ? 'bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white border-t border-x border-zinc-200 dark:border-zinc-800'
-                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    ? 'bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-white border-t border-x border-zinc-200 dark:border-zinc-800 shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
                 }`}
               >
-                <aba.icone className="w-4 h-4" />
-                <span className="hidden sm:inline">{aba.label}</span>
+                <aba.icone className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                <span className="hidden md:inline">{aba.label}</span>
+                <span className="md:hidden">{aba.labelCurto}</span>
               </button>
             ))}
-          </div>
+          </nav>
         </div>
       </header>
 
@@ -624,52 +731,92 @@ export default function PainelSuperAdmin() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => !excluindo && setModalExcluir({ aberto: false, tenant: null })}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-excluir-titulo"
+            aria-describedby="modal-excluir-descricao"
           >
             <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', duration: 0.3 }}
               onClick={(e) => e.stopPropagation()}
               className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-md shadow-2xl"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
+              {/* Header com botão fechar */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-6 h-6 text-red-600" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <h3 id="modal-excluir-titulo" className="text-lg font-bold text-zinc-900 dark:text-white">
+                      Excluir Barbearia
+                    </h3>
+                    <p className="text-sm text-zinc-500">Esta ação é irreversível</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Excluir Barbearia</h3>
-                  <p className="text-sm text-zinc-500">Esta ação é irreversível</p>
-                </div>
+                <button
+                  onClick={() => setModalExcluir({ aberto: false, tenant: null })}
+                  disabled={excluindo}
+                  className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  aria-label="Fechar modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-4">
-                <p className="text-sm text-red-800 dark:text-red-200">
-                  <strong>{modalExcluir.tenant.nome}</strong> e todos os dados serão excluídos:
+              <div id="modal-excluir-descricao" className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl mb-4">
+                <p className="text-sm text-red-800 dark:text-red-200 mb-3">
+                  <strong>{modalExcluir.tenant.nome}</strong> e todos os dados associados serão excluídos permanentemente:
                 </p>
-                <ul className="text-sm text-red-700 dark:text-red-300 mt-2 space-y-1">
-                  <li>• {modalExcluir.tenant.total_barbeiros} barbeiros</li>
-                  <li>• {modalExcluir.tenant.total_servicos} serviços</li>
-                  <li>• {modalExcluir.tenant.total_agendamentos} agendamentos</li>
-                  <li>• {modalExcluir.tenant.total_clientes} clientes</li>
-                </ul>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+                    <Scissors className="w-4 h-4" aria-hidden="true" />
+                    <span>{modalExcluir.tenant.total_barbeiros} barbeiros</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+                    <Settings className="w-4 h-4" aria-hidden="true" />
+                    <span>{modalExcluir.tenant.total_servicos} serviços</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+                    <Calendar className="w-4 h-4" aria-hidden="true" />
+                    <span>{modalExcluir.tenant.total_agendamentos} agendamentos</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+                    <Users className="w-4 h-4" aria-hidden="true" />
+                    <span>{modalExcluir.tenant.total_clientes} clientes</span>
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={() => setModalExcluir({ aberto: false, tenant: null })}
                   disabled={excluindo}
-                  className="flex-1 px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+                  className="flex-1 px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl font-medium transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={excluirTenant}
                   disabled={excluindo}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
                 >
-                  {excluindo ? <><Loader2 className="w-4 h-4 animate-spin" /> Excluindo...</> : <><Trash2 className="w-4 h-4" /> Excluir</>}
+                  {excluindo ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> 
+                      <span>Excluindo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" aria-hidden="true" /> 
+                      <span>Excluir Definitivamente</span>
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -728,82 +875,267 @@ function CardTenantItem({ tenant, onExcluir, onAlterarPlano, onToggleAtivo, onVe
   onVerDetalhes: () => void
 }) {
   const [menuAberto, setMenuAberto] = useState(false)
+  const [copiado, setCopiado] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const plano = PLANOS_CONFIG[tenant.plano] || PLANOS_CONFIG.trial
   const diasTrial = tenant.trial_fim ? differenceInDays(new Date(tenant.trial_fim), new Date()) : null
 
+  const copiarLink = async () => {
+    const url = `${window.location.origin}/${tenant.slug}`
+    await navigator.clipboard.writeText(url)
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2000)
+  }
+
+  const abrirWhatsApp = () => {
+    if (tenant.whatsapp) {
+      const numero = tenant.whatsapp.replace(/\D/g, '')
+      window.open(`https://wa.me/${numero}`, '_blank')
+    }
+  }
+
+  const enviarEmail = () => {
+    if (tenant.email) {
+      window.open(`mailto:${tenant.email}`, '_blank')
+    }
+  }
+
   return (
-    <div className={`bg-white dark:bg-zinc-900 rounded-xl border overflow-hidden ${!tenant.ativo ? 'opacity-60' : ''} border-zinc-200 dark:border-zinc-800`}>
+    <div 
+      className={`bg-white dark:bg-zinc-900 rounded-xl border overflow-hidden transition-all ${
+        !tenant.ativo ? 'opacity-60 grayscale-[30%]' : 'hover:shadow-lg hover:shadow-zinc-200/50 dark:hover:shadow-zinc-900/50'
+      } border-zinc-200 dark:border-zinc-800`}
+      role="article"
+      aria-label={`Barbearia ${tenant.nome}`}
+    >
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
             {tenant.logo_url ? (
-              <Image src={tenant.logo_url} alt={tenant.nome} width={48} height={48} className="object-cover" />
+              <Image src={tenant.logo_url} alt={`Logo de ${tenant.nome}`} width={48} height={48} className="object-cover w-full h-full" unoptimized />
             ) : (
-              <Building2 className="w-6 h-6 text-zinc-400" />
+              <Building2 className="w-6 h-6 text-zinc-400" aria-hidden="true" />
             )}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{tenant.nome}</h3>
-            <p className="text-xs text-zinc-500">/{tenant.slug}</p>
+            <p className="text-xs text-zinc-500 truncate">/{tenant.slug}</p>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${plano.bg} ${plano.cor}`}>{plano.nome}</span>
+              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${plano.bg} ${plano.cor}`}>
+                {plano.nome}
+              </span>
               {diasTrial !== null && tenant.plano === 'trial' && (
-                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${diasTrial < 0 ? 'bg-red-100 text-red-600' : diasTrial <= 3 ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                <span 
+                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                    diasTrial < 0 
+                      ? 'bg-red-100 dark:bg-red-900/30 text-red-600' 
+                      : diasTrial <= 3 
+                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' 
+                        : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'
+                  }`}
+                  title={diasTrial < 0 ? 'Trial expirado' : `${diasTrial} dias restantes`}
+                >
                   {diasTrial < 0 ? 'Expirado' : `${diasTrial}d`}
                 </span>
               )}
-              {!tenant.ativo && <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-zinc-200 text-zinc-600">Inativo</span>}
+              {!tenant.ativo && (
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
+                  Inativo
+                </span>
+              )}
             </div>
           </div>
-          <div className="relative">
-            <button onClick={() => setMenuAberto(!menuAberto)} className="p-1.5 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg">
-              <ChevronDown className="w-4 h-4" />
+          <div className="relative" ref={menuRef}>
+            <button 
+              onClick={() => setMenuAberto(!menuAberto)} 
+              className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+              aria-label="Abrir menu de opções"
+              aria-expanded={menuAberto}
+              aria-haspopup="menu"
+            >
+              <MoreVertical className="w-4 h-4" />
             </button>
-            {menuAberto && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setMenuAberto(false)} />
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-200 dark:border-zinc-700 py-1 z-50">
-                  <a href={`/${tenant.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700">
-                    <Globe className="w-4 h-4" /> Ver Site
-                  </a>
-                  <button onClick={() => { onVerDetalhes(); setMenuAberto(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 w-full text-left">
-                    <FileText className="w-4 h-4" /> Detalhes
-                  </button>
-                  <hr className="my-1 border-zinc-200 dark:border-zinc-700" />
-                  <div className="px-3 py-1.5 text-xs text-zinc-500">Alterar Plano</div>
-                  {Object.entries(PLANOS_CONFIG).map(([key, cfg]) => (
-                    <button key={key} onClick={() => { onAlterarPlano(key); setMenuAberto(false) }} className={`flex items-center justify-between px-3 py-1.5 text-sm w-full ${tenant.plano === key ? 'bg-zinc-100 dark:bg-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/50'}`}>
-                      <span className={cfg.cor}>{cfg.nome}</span>
+            
+            <AnimatePresence>
+              {menuAberto && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setMenuAberto(false)} 
+                    aria-hidden="true"
+                  />
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 bottom-full mb-1 w-56 bg-white dark:bg-zinc-800 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-700 py-1.5 z-50 overflow-hidden max-h-[70vh] overflow-y-auto"
+                    role="menu"
+                    aria-orientation="vertical"
+                  >
+                    {/* Ações Rápidas */}
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                      Ações Rápidas
+                    </div>
+                    
+                    <a 
+                      href={`/${tenant.slug}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                      role="menuitem"
+                    >
+                      <Globe className="w-4 h-4 text-zinc-400" /> 
+                      <span>Ver Site Público</span>
+                      <ExternalLink className="w-3 h-3 ml-auto text-zinc-400" />
+                    </a>
+                    
+                    <button 
+                      onClick={() => { onVerDetalhes(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 w-full text-left transition-colors"
+                      role="menuitem"
+                    >
+                      <FileText className="w-4 h-4 text-zinc-400" /> 
+                      <span>Ver Detalhes Completos</span>
                     </button>
-                  ))}
-                  <hr className="my-1 border-zinc-200 dark:border-zinc-700" />
-                  <button onClick={() => { onToggleAtivo(); setMenuAberto(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 w-full text-left">
-                    <Power className="w-4 h-4" /> {tenant.ativo ? 'Desativar' : 'Ativar'}
-                  </button>
-                  <button onClick={() => { onExcluir(); setMenuAberto(false) }} className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-left">
-                    <Trash2 className="w-4 h-4" /> Excluir
-                  </button>
-                </div>
-              </>
-            )}
+                    
+                    <button 
+                      onClick={() => { copiarLink(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 w-full text-left transition-colors"
+                      role="menuitem"
+                    >
+                      {copiado ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-emerald-500" />
+                          <span className="text-emerald-600">Link Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Link2 className="w-4 h-4 text-zinc-400" />
+                          <span>Copiar Link do Site</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    <hr className="my-1.5 border-zinc-200 dark:border-zinc-700" />
+                    
+                    {/* Comunicação */}
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                      Comunicação
+                    </div>
+                    
+                    <button 
+                      onClick={() => { enviarEmail(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 w-full text-left transition-colors"
+                      role="menuitem"
+                      disabled={!tenant.email}
+                    >
+                      <Mail className="w-4 h-4 text-zinc-400" /> 
+                      <span>Enviar E-mail</span>
+                      {tenant.email && <span className="ml-auto text-xs text-zinc-400 truncate max-w-[80px]">{tenant.email.split('@')[0]}...</span>}
+                    </button>
+                    
+                    <button 
+                      onClick={() => { abrirWhatsApp(); setMenuAberto(false) }} 
+                      className={`flex items-center gap-2.5 px-3 py-2 text-sm w-full text-left transition-colors ${
+                        tenant.whatsapp 
+                          ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700' 
+                          : 'text-zinc-400 cursor-not-allowed'
+                      }`}
+                      role="menuitem"
+                      disabled={!tenant.whatsapp}
+                    >
+                      <MessageSquare className="w-4 h-4 text-zinc-400" /> 
+                      <span>Abrir WhatsApp</span>
+                      {tenant.whatsapp && <span className="ml-auto text-xs text-emerald-500">●</span>}
+                    </button>
+                    
+                    <hr className="my-1.5 border-zinc-200 dark:border-zinc-700" />
+                    
+                    {/* Gestão de Plano */}
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                      Alterar Plano
+                    </div>
+                    
+                    <div className="px-2 py-1 grid grid-cols-2 gap-1">
+                      {Object.entries(PLANOS_CONFIG).map(([key, cfg]) => (
+                        <button 
+                          key={key} 
+                          onClick={() => { onAlterarPlano(key); setMenuAberto(false) }} 
+                          className={`flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                            tenant.plano === key 
+                              ? `${cfg.bg} ${cfg.cor} ring-2 ring-offset-1 ring-current` 
+                              : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600'
+                          }`}
+                          role="menuitem"
+                          aria-pressed={tenant.plano === key}
+                        >
+                          {tenant.plano === key && <CheckCircle className="w-3 h-3" />}
+                          {cfg.nome}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <hr className="my-1.5 border-zinc-200 dark:border-zinc-700" />
+                    
+                    {/* Ações de Controle */}
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                      Controle
+                    </div>
+                    
+                    <button 
+                      onClick={() => { onToggleAtivo(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 w-full text-left transition-colors"
+                      role="menuitem"
+                    >
+                      {tenant.ativo ? (
+                        <>
+                          <Pause className="w-4 h-4 text-amber-500" /> 
+                          <span>Suspender Conta</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 text-emerald-500" /> 
+                          <span>Reativar Conta</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    <button 
+                      onClick={() => { onExcluir(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-left transition-colors"
+                      role="menuitem"
+                    >
+                      <Trash2 className="w-4 h-4" /> 
+                      <span>Excluir Permanentemente</span>
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-4 divide-x divide-zinc-100 dark:divide-zinc-800 border-t border-zinc-100 dark:border-zinc-800">
-        <MiniStat valor={tenant.total_barbeiros} label="Barb." />
-        <MiniStat valor={tenant.total_servicos} label="Serv." />
-        <MiniStat valor={tenant.total_agendamentos} label="Agend." />
-        <MiniStat valor={tenant.total_clientes} label="Client." />
+      
+      {/* Estatísticas */}
+      <div className="grid grid-cols-4 divide-x divide-zinc-100 dark:divide-zinc-800 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30">
+        <MiniStat valor={tenant.total_barbeiros} label="Barbeiros" icone={Scissors} />
+        <MiniStat valor={tenant.total_servicos} label="Serviços" icone={Settings} />
+        <MiniStat valor={tenant.total_agendamentos} label="Agendamentos" icone={Calendar} />
+        <MiniStat valor={tenant.total_clientes} label="Clientes" icone={Users} />
       </div>
     </div>
   )
 }
 
-function MiniStat({ valor, label }: { valor: number; label: string }) {
+function MiniStat({ valor, label, icone: Icone }: { valor: number; label: string; icone?: any }) {
   return (
-    <div className="py-2 text-center">
-      <p className="text-sm font-bold text-zinc-900 dark:text-white">{valor}</p>
-      <p className="text-[10px] text-zinc-500">{label}</p>
+    <div className="py-2.5 px-1 text-center group">
+      <div className="flex items-center justify-center gap-1">
+        {Icone && <Icone className="w-3 h-3 text-zinc-400 hidden sm:block" aria-hidden="true" />}
+        <p className="text-sm font-bold text-zinc-900 dark:text-white">{valor}</p>
+      </div>
+      <p className="text-[10px] text-zinc-500 truncate">{label}</p>
     </div>
   )
 }

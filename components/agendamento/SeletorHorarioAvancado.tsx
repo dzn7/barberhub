@@ -205,16 +205,31 @@ export function SeletorHorarioAvancado({
       const horarioStr = `${String(horaAtual).padStart(2, '0')}:${String(minAtual).padStart(2, '0')}`
       
       // Verificar se está no intervalo de almoço
+      // Bloqueia se:
+      // 1. O horário de início está dentro do almoço
+      // 2. O horário de término está dentro do almoço
+      // 3. O serviço atravessa todo o período de almoço
       let estaNoAlmoco = false
       if (config.intervalo_almoco_inicio && config.intervalo_almoco_fim) {
-        const [horaAlmocoInicio, minAlmocoInicio] = config.intervalo_almoco_inicio.split(':').map(Number)
-        const [horaAlmocoFim, minAlmocoFim] = config.intervalo_almoco_fim.split(':').map(Number)
+        // Normalizar horários (podem vir como HH:mm:ss do banco)
+        const almocoInicioNormalizado = config.intervalo_almoco_inicio.substring(0, 5)
+        const almocoFimNormalizado = config.intervalo_almoco_fim.substring(0, 5)
+        const [horaAlmocoInicio, minAlmocoInicio] = almocoInicioNormalizado.split(':').map(Number)
+        const [horaAlmocoFim, minAlmocoFim] = almocoFimNormalizado.split(':').map(Number)
         
         const minutosAtual = horaAtual * 60 + minAtual
+        const minutosTermino = minutosAtual + servicoDuracao
         const minutosAlmocoInicio = horaAlmocoInicio * 60 + minAlmocoInicio
         const minutosAlmocoFim = horaAlmocoFim * 60 + minAlmocoFim
         
-        estaNoAlmoco = minutosAtual >= minutosAlmocoInicio && minutosAtual < minutosAlmocoFim
+        // Início dentro do almoço
+        const inicioNoAlmoco = minutosAtual >= minutosAlmocoInicio && minutosAtual < minutosAlmocoFim
+        // Término dentro do almoço
+        const terminoNoAlmoco = minutosTermino > minutosAlmocoInicio && minutosTermino <= minutosAlmocoFim
+        // Atravessa todo o almoço
+        const atravessaAlmoco = minutosAtual < minutosAlmocoInicio && minutosTermino > minutosAlmocoFim
+        
+        estaNoAlmoco = inicioNoAlmoco || terminoNoAlmoco || atravessaAlmoco
       }
 
       // Verificar se o horário já passou (para hoje)
