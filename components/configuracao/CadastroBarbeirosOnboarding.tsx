@@ -29,8 +29,11 @@ import {
   Plus,
   MessageCircle,
   Scissors,
-  Hand
+  Hand,
+  Sparkles
 } from 'lucide-react'
+import { obterCategoriasEspecialidades, obterTerminologia } from '@/lib/configuracoes-negocio'
+import { TipoNegocio } from '@/lib/tipos-negocio'
 
 interface Barbeiro {
   id: string
@@ -50,56 +53,10 @@ interface CadastroBarbeirosOnboardingProps {
   onTotalChange?: (total: number) => void
   nomeProprietario?: string
   telefoneProprietario?: string
+  tipoNegocio?: TipoNegocio
 }
 
 type EtapaFluxo = 'proprietario' | 'pergunta_equipe' | 'cadastro_equipe' | 'token' | 'lista'
-
-// Categorias de especialidades organizadas
-const CATEGORIAS_ESPECIALIDADES = {
-  'Cortes': [
-    'Corte Masculino',
-    'Degradê',
-    'Corte Infantil',
-    'Corte Feminino',
-    'Corte Navalhado',
-    'Corte Social',
-    'Corte Americano',
-    'Undercut',
-    'Moicano',
-    'Mullet'
-  ],
-  'Barba': [
-    'Barba Completa',
-    'Barba Desenhada',
-    'Barba Degradê',
-    'Pézinho',
-    'Bigode',
-    'Cavanhaque'
-  ],
-  'Tratamentos': [
-    'Hidratação Capilar',
-    'Tratamento Antiqueda',
-    'Cauterização',
-    'Botox Capilar',
-    'Reconstrução',
-    'Nutrição'
-  ],
-  'Química': [
-    'Pigmentação',
-    'Coloração',
-    'Luzes',
-    'Platinado',
-    'Relaxamento',
-    'Progressiva',
-    'Descoloração'
-  ],
-  'Outros': [
-    'Design de Sobrancelha',
-    'Limpeza de Pele',
-    'Depilação Facial',
-    'Massagem Capilar'
-  ]
-}
 
 /**
  * Gera token de acesso único
@@ -121,9 +78,15 @@ export function CadastroBarbeirosOnboarding({
   tenantId,
   onTotalChange,
   nomeProprietario = '',
-  telefoneProprietario = ''
+  telefoneProprietario = '',
+  tipoNegocio = 'barbearia'
 }: CadastroBarbeirosOnboardingProps) {
   const { toast } = useToast()
+  
+  // Obter terminologia e categorias dinâmicas baseadas no tipo de negócio
+  const terminologia = obterTerminologia(tipoNegocio)
+  const categoriasEspecialidades = obterCategoriasEspecialidades(tipoNegocio)
+  const ehNail = tipoNegocio === 'nail_designer'
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -134,7 +97,7 @@ export function CadastroBarbeirosOnboarding({
   const [editando, setEditando] = useState<string | null>(null)
   const [uploadandoFoto, setUploadandoFoto] = useState(false)
   const inputFotoRef = useRef<HTMLInputElement>(null)
-  const [categoriaAberta, setCategoriaAberta] = useState<string | null>('Cortes')
+  const [categoriaAberta, setCategoriaAberta] = useState<string | null>(tipoNegocio === 'nail_designer' ? 'Alongamento' : 'Cortes')
   const [novaEspecialidade, setNovaEspecialidade] = useState('')
   const [especialidadesCustomizadas, setEspecialidadesCustomizadas] = useState<string[]>([])
   
@@ -180,7 +143,7 @@ export function CadastroBarbeirosOnboarding({
       if (error) throw error
       setBarbeiros(data || [])
     } catch (erro) {
-      toast({ tipo: 'erro', mensagem: 'Erro ao buscar barbeiros' })
+      toast({ tipo: 'erro', mensagem: 'Erro ao buscar profissionais' })
     } finally {
       setCarregando(false)
     }
@@ -283,22 +246,56 @@ export function CadastroBarbeirosOnboarding({
     setNovaEspecialidade('')
   }
 
+  // Validação de nome completo (nome e sobrenome)
+  const validarNomeCompleto = (nome: string): { valido: boolean; mensagem?: string } => {
+    const nomeLimpo = nome.trim()
+    if (!nomeLimpo) {
+      return { valido: false, mensagem: 'Digite seu nome completo' }
+    }
+    const partes = nomeLimpo.split(' ').filter(p => p.length > 0)
+    if (partes.length < 2) {
+      return { valido: false, mensagem: 'Digite seu nome e sobrenome' }
+    }
+    if (partes[0].length < 2) {
+      return { valido: false, mensagem: 'O nome deve ter pelo menos 2 caracteres' }
+    }
+    return { valido: true }
+  }
+
+  // Gera email temporário baseado no nome
+  const gerarEmailTemporario = (nome: string): string => {
+    const nomeFormatado = nome
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9\s]/g, '') // Remove caracteres especiais
+      .trim()
+      .replace(/\s+/g, '.')
+    const timestamp = Date.now().toString(36)
+    return `${nomeFormatado}.${timestamp}@temp.barberhub.com`
+  }
+
   // Cadastra o proprietário (barbeiro admin)
   const cadastrarProprietario = async () => {
-    if (!formulario.nome.trim()) {
-      toast({ tipo: 'erro', mensagem: 'Digite seu nome' })
+    const validacaoNome = validarNomeCompleto(formulario.nome)
+    if (!validacaoNome.valido) {
+      toast({ tipo: 'erro', mensagem: validacaoNome.mensagem || 'Nome inválido' })
       return
     }
 
     setSalvando(true)
     try {
+      // Gera email e telefone temporários se não fornecidos (campos obrigatórios no banco)
+      const emailFinal = formulario.email.trim() || gerarEmailTemporario(formulario.nome)
+      const telefoneFinal = formulario.telefone.replace(/\D/g, '') || '00000000000'
+
       const { data, error } = await supabase
         .from('barbeiros')
         .insert([{
           tenant_id: tenantId,
           nome: formulario.nome.trim(),
-          email: formulario.email.trim() || null,
-          telefone: formulario.telefone.replace(/\D/g, '') || null,
+          email: emailFinal,
+          telefone: telefoneFinal,
           foto_url: formulario.foto_url || null,
           especialidades: formulario.especialidades,
           comissao_percentual: 100,
@@ -308,40 +305,73 @@ export function CadastroBarbeirosOnboarding({
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('[CadastroBarbeiros] Erro ao cadastrar:', error)
+        // Mensagens de erro mais específicas
+        if (error.code === '23505') {
+          toast({ tipo: 'erro', mensagem: 'Já existe um profissional com este e-mail' })
+        } else if (error.code === '23503') {
+          toast({ tipo: 'erro', mensagem: 'Erro de referência. Tente novamente.' })
+        } else {
+          toast({ tipo: 'erro', mensagem: 'Erro ao salvar perfil. Tente novamente.' })
+        }
+        return
+      }
 
       setBarbeiros([...barbeiros, data])
       setEtapa('pergunta_equipe')
       resetarFormulario()
       toast({ tipo: 'sucesso', mensagem: 'Seu perfil foi criado!' })
-    } catch (erro) {
-      toast({ tipo: 'erro', mensagem: 'Erro ao salvar perfil' })
+    } catch (erro: any) {
+      console.error('[CadastroBarbeiros] Erro inesperado:', erro)
+      toast({ tipo: 'erro', mensagem: erro?.message || 'Erro ao salvar perfil. Tente novamente.' })
     } finally {
       setSalvando(false)
     }
   }
 
+  // Valida telefone (mínimo 10 dígitos)
+  const validarTelefone = (telefone: string): { valido: boolean; mensagem?: string } => {
+    const numeros = telefone.replace(/\D/g, '')
+    if (!numeros) {
+      return { valido: false, mensagem: 'Digite o número de WhatsApp' }
+    }
+    if (numeros.length < 10) {
+      return { valido: false, mensagem: 'O telefone deve ter pelo menos 10 dígitos' }
+    }
+    if (numeros.length > 11) {
+      return { valido: false, mensagem: 'O telefone deve ter no máximo 11 dígitos' }
+    }
+    return { valido: true }
+  }
+
   // Adiciona barbeiro da equipe
   const adicionarBarbeiroEquipe = async () => {
-    if (!formulario.nome.trim()) {
-      toast({ tipo: 'erro', mensagem: 'Digite o nome do barbeiro' })
+    // Validação do nome
+    const validacaoNome = validarNomeCompleto(formulario.nome)
+    if (!validacaoNome.valido) {
+      toast({ tipo: 'erro', mensagem: validacaoNome.mensagem || 'Nome inválido' })
       return
     }
-    if (!formulario.telefone.trim()) {
-      toast({ tipo: 'erro', mensagem: 'Digite o WhatsApp do barbeiro' })
+
+    // Validação do telefone
+    const validacaoTelefone = validarTelefone(formulario.telefone)
+    if (!validacaoTelefone.valido) {
+      toast({ tipo: 'erro', mensagem: validacaoTelefone.mensagem || 'Telefone inválido' })
       return
     }
 
     setSalvando(true)
     try {
       const novoToken = gerarTokenAcesso()
+      const emailFinal = formulario.email.trim() || gerarEmailTemporario(formulario.nome)
       
       const { data, error } = await supabase
         .from('barbeiros')
         .insert([{
           tenant_id: tenantId,
           nome: formulario.nome.trim(),
-          email: formulario.email.trim() || `${formulario.nome.toLowerCase().replace(/\s/g, '.')}@temp.com`,
+          email: emailFinal,
           telefone: formulario.telefone.replace(/\D/g, ''),
           foto_url: formulario.foto_url || null,
           especialidades: formulario.especialidades,
@@ -354,7 +384,21 @@ export function CadastroBarbeirosOnboarding({
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('[CadastroBarbeiros] Erro ao cadastrar equipe:', error)
+        if (error.code === '23505') {
+          if (error.message?.includes('email')) {
+            toast({ tipo: 'erro', mensagem: 'Já existe um profissional com este e-mail' })
+          } else if (error.message?.includes('token')) {
+            toast({ tipo: 'erro', mensagem: 'Erro ao gerar token. Tente novamente.' })
+          } else {
+            toast({ tipo: 'erro', mensagem: 'Este profissional já está cadastrado' })
+          }
+        } else {
+          toast({ tipo: 'erro', mensagem: `Erro ao adicionar ${terminologia.profissional.singular.toLowerCase()}. Tente novamente.` })
+        }
+        return
+      }
 
       // Enviar mensagem de boas-vindas via WhatsApp (bot)
       const telefoneNumeros = formulario.telefone.replace(/\D/g, '')
@@ -377,8 +421,10 @@ export function CadastroBarbeirosOnboarding({
       setTokenGerado(novoToken)
       setEtapa('token')
       resetarFormulario()
-    } catch (erro) {
-      toast({ tipo: 'erro', mensagem: 'Erro ao adicionar barbeiro' })
+      toast({ tipo: 'sucesso', mensagem: `${terminologia.profissional.singular} adicionado${ehNail ? 'a' : ''} com sucesso!` })
+    } catch (erro: any) {
+      console.error('[CadastroBarbeiros] Erro inesperado:', erro)
+      toast({ tipo: 'erro', mensagem: erro?.message || `Erro ao adicionar ${terminologia.profissional.singular.toLowerCase()}` })
     } finally {
       setSalvando(false)
     }
@@ -409,9 +455,9 @@ export function CadastroBarbeirosOnboarding({
       setEditando(null)
       setEtapa('lista')
       resetarFormulario()
-      toast({ tipo: 'sucesso', mensagem: 'Barbeiro atualizado' })
+      toast({ tipo: 'sucesso', mensagem: `${terminologia.profissional.singular} atualizado${ehNail ? 'a' : ''}` })
     } catch (erro) {
-      toast({ tipo: 'erro', mensagem: 'Erro ao atualizar barbeiro' })
+      toast({ tipo: 'erro', mensagem: `Erro ao atualizar ${terminologia.profissional.singular.toLowerCase()}` })
     } finally {
       setSalvando(false)
     }
@@ -423,7 +469,7 @@ export function CadastroBarbeirosOnboarding({
       toast({ tipo: 'erro', mensagem: 'Não é possível remover o proprietário' })
       return
     }
-    if (!confirm('Remover este barbeiro?')) return
+    if (!confirm(`Remover ${ehNail ? 'esta' : 'este'} ${terminologia.profissional.singular.toLowerCase()}?`)) return
 
     try {
       const { error } = await supabase
@@ -438,7 +484,7 @@ export function CadastroBarbeirosOnboarding({
         setEtapa('pergunta_equipe')
       }
     } catch (erro) {
-      toast({ tipo: 'erro', mensagem: 'Erro ao remover barbeiro' })
+      toast({ tipo: 'erro', mensagem: `Erro ao remover ${terminologia.profissional.singular.toLowerCase()}` })
     }
   }
 
@@ -504,7 +550,7 @@ export function CadastroBarbeirosOnboarding({
             onToggleEspecialidade={toggleEspecialidade}
             onSalvar={editando ? () => atualizarBarbeiro(editando) : cadastrarProprietario}
             formatarTelefone={formatarTelefone}
-            categoriasEspecialidades={CATEGORIAS_ESPECIALIDADES}
+            categoriasEspecialidades={categoriasEspecialidades}
             especialidadesCustomizadas={especialidadesCustomizadas}
             novaEspecialidade={novaEspecialidade}
             setNovaEspecialidade={setNovaEspecialidade}
@@ -541,7 +587,7 @@ export function CadastroBarbeirosOnboarding({
               setEtapa(barbeiros.filter(b => !b.is_proprietario).length > 0 ? 'lista' : 'pergunta_equipe')
             }}
             formatarTelefone={formatarTelefone}
-            categoriasEspecialidades={CATEGORIAS_ESPECIALIDADES}
+            categoriasEspecialidades={categoriasEspecialidades}
             especialidadesCustomizadas={especialidadesCustomizadas}
             novaEspecialidade={novaEspecialidade}
             setNovaEspecialidade={setNovaEspecialidade}
@@ -846,15 +892,32 @@ function EtapaCadastroProprietario({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Seu Nome *
+              Seu Nome Completo *
             </label>
             <input
               type="text"
               value={formulario.nome}
               onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
               placeholder="Ex: João Silva"
-              className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+              className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-colors ${
+                formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2
+                  ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-500/20'
+                  : 'border-zinc-200 dark:border-zinc-700 focus:ring-zinc-900/20 dark:focus:ring-white/20'
+              }`}
             />
+            {formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2 && (
+              <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Digite seu nome e sobrenome
+              </p>
+            )}
+            {!formulario.nome.trim() && (
+              <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
+                Informe nome e sobrenome para identificação
+              </p>
+            )}
           </div>
 
           <div>
@@ -871,6 +934,9 @@ function EtapaCadastroProprietario({
                 className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
               />
             </div>
+            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
+              Opcional para o proprietário
+            </p>
           </div>
 
           <div>
@@ -887,6 +953,9 @@ function EtapaCadastroProprietario({
                 className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
               />
             </div>
+            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
+              Opcional • Usado para recuperação de acesso
+            </p>
           </div>
         </div>
 
@@ -1107,8 +1176,20 @@ function EtapaFormularioEquipe({
               value={formulario.nome}
               onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
               placeholder="Ex: João Silva"
-              className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+              className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-colors ${
+                formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2
+                  ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-500/20'
+                  : 'border-zinc-200 dark:border-zinc-700 focus:ring-zinc-900/20 dark:focus:ring-white/20'
+              }`}
             />
+            {formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2 && (
+              <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Digite nome e sobrenome
+              </p>
+            )}
           </div>
 
           <div>
@@ -1122,9 +1203,26 @@ function EtapaFormularioEquipe({
                 value={formulario.telefone}
                 onChange={(e) => setFormulario({ ...formulario, telefone: formatarTelefone(e.target.value) })}
                 placeholder="(00) 00000-0000"
-                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+                className={`w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-colors ${
+                  formulario.telefone && formulario.telefone.replace(/\D/g, '').length > 0 && formulario.telefone.replace(/\D/g, '').length < 10
+                    ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-500/20'
+                    : 'border-zinc-200 dark:border-zinc-700 focus:ring-zinc-900/20 dark:focus:ring-white/20'
+                }`}
               />
             </div>
+            {formulario.telefone && formulario.telefone.replace(/\D/g, '').length > 0 && formulario.telefone.replace(/\D/g, '').length < 10 && (
+              <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Telefone incompleto (mínimo 10 dígitos)
+              </p>
+            )}
+            {!formulario.telefone && (
+              <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
+                Obrigatório para envio do código de acesso
+              </p>
+            )}
           </div>
 
           <div>
@@ -1141,6 +1239,9 @@ function EtapaFormularioEquipe({
                 className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
               />
             </div>
+            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
+              Opcional • Usado para recuperação de acesso
+            </p>
           </div>
         </div>
 

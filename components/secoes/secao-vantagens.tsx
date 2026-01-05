@@ -12,7 +12,7 @@ const vantagens = [
   },
   {
     icone: Smartphone,
-    titulo: 'Site da Sua Barbearia',
+    titulo: 'Site do Seu Negócio',
     descricao: 'Página profissional pronta para compartilhar nas redes sociais.',
   },
   {
@@ -23,7 +23,7 @@ const vantagens = [
   {
     icone: Users,
     titulo: 'Gestão de Equipe',
-    descricao: 'Cada barbeiro com sua agenda. Comissões calculadas sozinhas.',
+    descricao: 'Cada profissional com sua agenda. Comissões calculadas sozinhas.',
   },
   {
     icone: TrendingUp,

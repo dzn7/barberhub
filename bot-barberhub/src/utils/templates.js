@@ -146,7 +146,7 @@ ${saudacao}
 }
 
 /**
- * Template de notificação para barbeiro
+ * Template de notificação para profissional (barbeiro/nail designer)
  */
 export function templateNotificacaoBarbeiro({
   nomeBarbeiro,
@@ -155,9 +155,12 @@ export function templateNotificacaoBarbeiro({
   nomeServico,
   preco,
   dataHora,
-  observacoes
+  observacoes,
+  tipoNegocio = 'barbearia'
 }) {
   const dataFormatada = formatarDataHora(dataHora);
+  const emojiServico = obterEmojiServico(tipoNegocio);
+  const emoji = obterEmoji(tipoNegocio);
   
   let mensagem = `📅 *Novo Agendamento!*
 
@@ -167,7 +170,7 @@ Você tem um novo cliente agendado:
 
 👤 *Cliente:* ${nomeCliente}
 📱 *Telefone:* ${telefoneCliente || 'Não informado'}
-✂️ *Serviço:* ${nomeServico}
+${emojiServico} *Serviço:* ${nomeServico}
 💰 *Valor:* R$ ${preco?.toFixed(2) || '0.00'}
 📅 *Data:* ${dataFormatada}`;
 
@@ -179,7 +182,7 @@ Você tem um novo cliente agendado:
 
   mensagem += `
 
-Prepare-se para atender! 💈`;
+Prepare-se para atender! ${emoji}`;
 
   return mensagem;
 }
@@ -193,20 +196,27 @@ export function templateLembreteCliente({
   nomeBarbeiro, 
   nomeServico, 
   dataHora,
-  endereco
+  endereco,
+  tipoNegocio = 'barbearia'
 }) {
   const horaFormatada = formatarDataHora(dataHora, "HH:mm");
   const diaFormatado = formatarDataHora(dataHora, "dd/MM");
+  const termo = obterTerminologia(tipoNegocio);
+  const ehNail = ehNailDesigner(tipoNegocio);
+  const emojiServico = obterEmojiServico(tipoNegocio);
+  const despedida = obterDespedida(tipoNegocio);
+  
+  const preposicao = ehNail ? 'no' : 'na';
   
   let mensagem = `⏰ *Lembrete: Seu horário está chegando!*
 
 Olá, *${nomeCliente}*! 👋
 
-Seu agendamento na *${nomeBarbearia}* é *HOJE* às *${horaFormatada}h*!
+Seu agendamento ${preposicao} *${nomeBarbearia}* é *HOJE* às *${horaFormatada}h*!
 
 📋 *Detalhes:*
-👨‍💼 Barbeiro: ${nomeBarbeiro}
-✂️ Serviço: ${nomeServico}
+👤 ${termo.profissional.singular}: ${nomeBarbeiro}
+${emojiServico} Serviço: ${nomeServico}
 📅 Data: ${diaFormatado}
 🕐 Horário: ${horaFormatada}h`;
 
@@ -221,7 +231,7 @@ ${endereco}`;
 
 💡 *Dica:* Chegue com 5 minutos de antecedência!
 
-Estamos te esperando! 💈✨
+Estamos te esperando! ${despedida}
 *${nomeBarbearia}*`;
 
   return mensagem;
@@ -237,18 +247,24 @@ export function templateCancelamentoCliente({
   nomeServico, 
   dataHora,
   telefone,
-  slug
+  slug,
+  tipoNegocio = 'barbearia'
 }) {
   const dataFormatada = formatarDataHora(dataHora);
+  const termo = obterTerminologia(tipoNegocio);
+  const ehNail = ehNailDesigner(tipoNegocio);
+  const emojiServico = obterEmojiServico(tipoNegocio);
+  
+  const preposicao = ehNail ? 'no' : 'na';
   
   let mensagem = `❌ *Agendamento Cancelado*
 
 Olá, *${nomeCliente}*,
 
-Seu agendamento na *${nomeBarbearia}* foi cancelado:
+Seu agendamento ${preposicao} *${nomeBarbearia}* foi cancelado:
 
-👨‍💼 *Barbeiro:* ${nomeBarbeiro}
-✂️ *Serviço:* ${nomeServico}
+👤 *${termo.profissional.singular}:* ${nomeBarbeiro}
+${emojiServico} *Serviço:* ${nomeServico}
 📅 *Data:* ${dataFormatada}`;
 
   if (telefone) {
@@ -262,7 +278,7 @@ Se deseja reagendar, entre em contato:
     mensagem += `
 
 Ou agende online:
-🌐 barberhub.com.br/${slug}`;
+🌐 barberhub.online/${slug}`;
   }
 
   mensagem += `
@@ -285,16 +301,26 @@ export function templateRemarcacaoCliente({
   dataHoraNova,
   endereco,
   telefone,
-  slug
+  slug,
+  tipoNegocio = 'barbearia'
 }) {
   const dataAntigaFormatada = formatarDataHora(dataHoraAntiga);
   const dataNovaFormatada = formatarDataHora(dataHoraNova);
+  const termo = obterTerminologia(tipoNegocio);
+  const ehNail = ehNailDesigner(tipoNegocio);
+  const emojiServico = obterEmojiServico(tipoNegocio);
+  const saudacao = obterSaudacaoFinal(tipoNegocio);
+  
+  const preposicao = ehNail ? 'no' : 'na';
+  const contatoEstabelecimento = ehNail 
+    ? `📞 *Contato do ${termo.estabelecimento.singular.toLowerCase()}:*`
+    : `📞 *Contato da ${termo.estabelecimento.singular.toLowerCase()}:*`;
   
   let mensagem = `🔄 *Agendamento Remarcado!*
 
 Olá, *${nomeCliente}*!
 
-Seu agendamento na *${nomeBarbearia}* foi remarcado:
+Seu agendamento ${preposicao} *${nomeBarbearia}* foi remarcado:
 
 ❌ *Data Anterior:*
 ~${dataAntigaFormatada}~
@@ -303,8 +329,8 @@ Seu agendamento na *${nomeBarbearia}* foi remarcado:
 *${dataNovaFormatada}*
 
 ━━━━━━━━━━━━━━━━━━━
-👨‍💼 *Barbeiro:* ${nomeBarbeiro}
-✂️ *Serviço:* ${nomeServico}
+👤 *${termo.profissional.singular}:* ${nomeBarbeiro}
+${emojiServico} *Serviço:* ${nomeServico}
 💰 *Valor:* R$ ${preco?.toFixed(2) || '0.00'}
 ━━━━━━━━━━━━━━━━━━━`;
 
@@ -322,7 +348,7 @@ ${endereco}`;
   if (telefone) {
     mensagem += `
 
-📞 *Contato da barbearia:*
+${contatoEstabelecimento}
 ${telefone}`;
   }
 
@@ -335,7 +361,7 @@ barberhub.online/${slug}`;
 
   mensagem += `
 
-Nos vemos em breve! 💈
+${saudacao}
 *${nomeBarbearia}*`;
 
   return mensagem;

@@ -35,7 +35,7 @@ export function SecaoContato() {
                   Comece agora mesmo
                 </h2>
                 <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-                  Crie sua conta em 2 minutos e veja como é fácil organizar sua barbearia. 
+                  Crie sua conta em 2 minutos e veja como é fácil organizar seu negócio. 
                   Se não gostar, é só cancelar. Sem burocracia.
                 </p>
               </div>

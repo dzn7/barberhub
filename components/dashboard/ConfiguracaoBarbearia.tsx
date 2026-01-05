@@ -6,8 +6,9 @@ import Image from "next/image";
 import {
   Store, Palette, Upload, Trash2, Check, X, Save, Loader2,
   Eye, RefreshCw, ImageIcon, Link as LinkIcon, Phone, Mail,
-  MapPin, Instagram, Globe, Clock
+  MapPin, Instagram, Globe, Clock, Smartphone
 } from "lucide-react";
+import { PreviewSite } from "@/components/configuracao/PreviewSite";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTerminologia } from "@/hooks/useTerminologia";
@@ -18,7 +19,7 @@ interface ConfiguracaoBarbeariaProps {
 }
 
 // Paletas sofisticadas e elegantes - design monocromático profissional
-const CORES_PREDEFINIDAS = [
+const CORES_BARBEARIA = [
   // Tons escuros clássicos
   { nome: "Obsidian", descricao: "Elegância clássica", primaria: "#09090b", secundaria: "#fafafa", destaque: "#fafafa" },
   { nome: "Grafite", descricao: "Minimalismo moderno", primaria: "#18181b", secundaria: "#f4f4f5", destaque: "#a1a1aa" },
@@ -40,6 +41,34 @@ const CORES_PREDEFINIDAS = [
   { nome: "Mint", descricao: "Menta fresca", primaria: "#f0fdf4", secundaria: "#14532d", destaque: "#22c55e" },
 ];
 
+// Paletas especiais para Nail Designers - tons femininos e sofisticados
+const CORES_NAIL_DESIGNER = [
+  // Tons rosados e nude
+  { nome: "Rose Gold", descricao: "Elegância rosé", primaria: "#2d1f1f", secundaria: "#fff5f5", destaque: "#e8a4a4" },
+  { nome: "Blush", descricao: "Rosa delicado", primaria: "#1f1a1a", secundaria: "#fdf2f8", destaque: "#f9a8d4" },
+  { nome: "Nude", descricao: "Nude sofisticado", primaria: "#292524", secundaria: "#fef7f0", destaque: "#d4a574" },
+  { nome: "Mauve", descricao: "Malva elegante", primaria: "#1c1a1e", secundaria: "#faf5ff", destaque: "#c4b5fd" },
+  { nome: "Dusty Rose", descricao: "Rosa antigo", primaria: "#1a1516", secundaria: "#fff1f2", destaque: "#fb7185" },
+  { nome: "Champagne", descricao: "Champanhe luxuoso", primaria: "#1c1a15", secundaria: "#fefce8", destaque: "#fbbf24" },
+  // Tons elegantes
+  { nome: "Burgundy", descricao: "Bordô clássico", primaria: "#1a0a0a", secundaria: "#fef2f2", destaque: "#be123c" },
+  { nome: "Plum", descricao: "Ameixa refinada", primaria: "#1a0f1a", secundaria: "#fdf4ff", destaque: "#a855f7" },
+  { nome: "Berry", descricao: "Frutas vermelhas", primaria: "#1c0e12", secundaria: "#fdf2f8", destaque: "#db2777" },
+  { nome: "Terracotta", descricao: "Terracota chic", primaria: "#1c1210", secundaria: "#fff7ed", destaque: "#ea580c" },
+  { nome: "Sage", descricao: "Sálvia suave", primaria: "#0f1a14", secundaria: "#f0fdf4", destaque: "#86efac" },
+  { nome: "Lavender", descricao: "Lavanda sonhadora", primaria: "#16141f", secundaria: "#f5f3ff", destaque: "#a78bfa" },
+  // Tons neutros premium
+  { nome: "Marble", descricao: "Mármore luxuoso", primaria: "#fafafa", secundaria: "#18181b", destaque: "#a1a1aa" },
+  { nome: "Ivory", descricao: "Marfim clássico", primaria: "#fffbf5", secundaria: "#292524", destaque: "#c2a98a" },
+  { nome: "Graphite", descricao: "Grafite moderno", primaria: "#1f1f1f", secundaria: "#f5f5f5", destaque: "#9ca3af" },
+  { nome: "Obsidian", descricao: "Preto luxuoso", primaria: "#09090b", secundaria: "#fafafa", destaque: "#e8a4a4" },
+  // Tons tendência
+  { nome: "Millennial Pink", descricao: "Rosa millennial", primaria: "#1a1518", secundaria: "#fce7f3", destaque: "#f472b6" },
+  { nome: "Coral", descricao: "Coral vibrante", primaria: "#1c1412", secundaria: "#fff7ed", destaque: "#f97316" },
+  { nome: "Mint Cream", descricao: "Menta cremosa", primaria: "#0f1a17", secundaria: "#ecfdf5", destaque: "#34d399" },
+  { nome: "Peach", descricao: "Pêssego delicado", primaria: "#1a1614", secundaria: "#fff8f5", destaque: "#fdba74" },
+];
+
 export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) {
   const { tenant, atualizarTenant } = useAuth();
   const { terminologia } = useTerminologia();
@@ -52,6 +81,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
   const [uploadando, setUploadando] = useState(false);
   const [mensagem, setMensagem] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
   const [mostrarPreview, setMostrarPreview] = useState(false);
+  const [mostrarPreviewMobile, setMostrarPreviewMobile] = useState(false);
   
   const [dados, setDados] = useState({
     nome: "",
@@ -158,7 +188,10 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
   };
 
   // Aplicar paleta predefinida
-  const aplicarPaleta = (paleta: typeof CORES_PREDEFINIDAS[0]) => {
+  // Obter cores baseadas no tipo de negócio
+  const coresPredefinidas = ehNail ? CORES_NAIL_DESIGNER : CORES_BARBEARIA;
+  
+  const aplicarPaleta = (paleta: typeof CORES_BARBEARIA[0]) => {
     setDados((prev) => ({
       ...prev,
       cor_primaria: paleta.primaria,
@@ -329,7 +362,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {CORES_PREDEFINIDAS.map((paleta, index) => {
+              {coresPredefinidas.map((paleta, index) => {
                 const selecionada = dados.cor_primaria === paleta.primaria &&
                   dados.cor_secundaria === paleta.secundaria &&
                   dados.cor_destaque === paleta.destaque;
@@ -647,6 +680,67 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
           )}
         </button>
       </div>
+
+      {/* Botão Flutuante de Preview Mobile */}
+      <motion.button
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.5, type: "spring" }}
+        onClick={() => setMostrarPreviewMobile(true)}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all lg:hidden"
+        aria-label="Ver preview do site"
+      >
+        <Smartphone className="w-5 h-5" />
+        <span className="text-sm font-medium">Preview</span>
+      </motion.button>
+
+      {/* Modal de Preview Mobile */}
+      <AnimatePresence>
+        {mostrarPreviewMobile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm lg:hidden"
+            onClick={() => setMostrarPreviewMobile(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+            >
+              {/* Botão fechar */}
+              <button
+                onClick={() => setMostrarPreviewMobile(false)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                aria-label="Fechar preview"
+              >
+                <X className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+              </button>
+
+              {/* Título */}
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                  Preview do Site
+                </h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Visualização aproximada
+                </p>
+              </div>
+
+              {/* Preview */}
+              <PreviewSite 
+                dados={dados}
+                totalServicos={0}
+                totalBarbeiros={0}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

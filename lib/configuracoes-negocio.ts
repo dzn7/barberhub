@@ -44,6 +44,120 @@ const ESPECIALIDADES_NAIL: string[] = [
 ]
 
 /**
+ * Categorias de especialidades para Barbearias (usado no cadastro de profissionais)
+ */
+export const CATEGORIAS_ESPECIALIDADES_BARBEARIA: Record<string, string[]> = {
+  'Cortes': [
+    'Corte Masculino',
+    'Degradê',
+    'Corte Infantil',
+    'Corte Feminino',
+    'Corte Navalhado',
+    'Corte Social',
+    'Corte Americano',
+    'Undercut',
+    'Moicano',
+    'Mullet'
+  ],
+  'Barba': [
+    'Barba Completa',
+    'Barba Desenhada',
+    'Barba Degradê',
+    'Pézinho',
+    'Bigode',
+    'Cavanhaque'
+  ],
+  'Tratamentos': [
+    'Hidratação Capilar',
+    'Tratamento Antiqueda',
+    'Cauterização',
+    'Botox Capilar',
+    'Reconstrução',
+    'Nutrição'
+  ],
+  'Química': [
+    'Pigmentação',
+    'Coloração',
+    'Luzes',
+    'Platinado',
+    'Relaxamento',
+    'Progressiva',
+    'Descoloração'
+  ],
+  'Outros': [
+    'Design de Sobrancelha',
+    'Limpeza de Pele',
+    'Depilação Facial',
+    'Massagem Capilar'
+  ]
+}
+
+/**
+ * Categorias de especialidades para Nail Designers (usado no cadastro de profissionais)
+ */
+export const CATEGORIAS_ESPECIALIDADES_NAIL: Record<string, string[]> = {
+  'Alongamento': [
+    'Alongamento em Gel',
+    'Fibra de Vidro',
+    'Unhas de Porcelana',
+    'Unhas Acrílicas',
+    'Molde F1',
+    'Molde Bailarina',
+    'Molde Stiletto',
+    'Molde Coffin'
+  ],
+  'Esmaltação': [
+    'Esmaltação em Gel',
+    'Esmaltação Tradicional',
+    'Banho de Gel',
+    'Rubber Base',
+    'Builder Gel',
+    'Polygel'
+  ],
+  'Nail Art': [
+    'Decoração 3D',
+    'Francesinha',
+    'Baby Boomer',
+    'Encapsulamento',
+    'Pedrarias',
+    'Adesivos',
+    'Carimbos',
+    'Degradê'
+  ],
+  'Manutenção': [
+    'Manutenção Quinzenal',
+    'Manutenção Mensal',
+    'Remoção Segura',
+    'Blindagem',
+    'Fortalecimento'
+  ],
+  'Pedicure': [
+    'Spa dos Pés',
+    'Pedicure Russa',
+    'Esmaltação Pés',
+    'Alongamento Pés',
+    'Tratamento Podal'
+  ],
+  'Outros': [
+    'Manicure Russa',
+    'Cuticulagem',
+    'Hidratação',
+    'Design de Unhas'
+  ]
+}
+
+/**
+ * Obtém as categorias de especialidades para um tipo de negócio
+ * @param tipo - O tipo de negócio
+ * @returns Objeto com categorias e suas especialidades
+ */
+export function obterCategoriasEspecialidades(tipo: TipoNegocio): Record<string, string[]> {
+  return tipo === 'nail_designer' 
+    ? CATEGORIAS_ESPECIALIDADES_NAIL 
+    : CATEGORIAS_ESPECIALIDADES_BARBEARIA
+}
+
+/**
  * Categorias de serviços para Barbearias
  */
 const CATEGORIAS_BARBEARIA: CategoriaServico[] = [

@@ -27,7 +27,7 @@ async function buscarAgendamentoCompleto(agendamentoId) {
       clientes (id, nome, telefone, email),
       barbeiros (id, nome, telefone),
       servicos (id, nome, preco, duracao),
-      tenants (id, nome, slug, whatsapp, telefone, endereco, cidade, estado)
+      tenants (id, nome, slug, whatsapp, telefone, endereco, cidade, estado, tipo_negocio)
     `)
     .eq('id', agendamentoId)
     .single();
@@ -104,18 +104,22 @@ export async function enviarConfirmacaoAgendamento(agendamentoId) {
       if (tenants.estado) endereco += ` - ${tenants.estado}`;
     }
 
+    // Obter tipo de negócio do tenant
+    const tipoNegocio = tenants?.tipo_negocio || 'barbearia';
+
     // 1. Enviar para cliente
     if (clientes?.telefone) {
       const mensagemCliente = templateConfirmacaoCliente({
         nomeCliente: clientes.nome,
-        nomeBarbearia: tenants?.nome || 'Barbearia',
+        nomeBarbearia: tenants?.nome || 'Estabelecimento',
         nomeBarbeiro: barbeiros?.nome || 'Profissional',
         nomeServico: servicos?.nome || 'Serviço',
         preco: servicos?.preco,
         dataHora: agendamento.data_hora,
         endereco,
         telefone: tenants?.whatsapp || tenants?.telefone,
-        slug: tenants?.slug
+        slug: tenants?.slug,
+        tipoNegocio
       });
 
       const resultadoCliente = await enviarMensagem(clientes.telefone, mensagemCliente);
@@ -134,7 +138,7 @@ export async function enviarConfirmacaoAgendamento(agendamentoId) {
       }
     }
 
-    // 2. Enviar para barbeiro
+    // 2. Enviar para profissional
     if (barbeiros?.telefone) {
       const mensagemBarbeiro = templateNotificacaoBarbeiro({
         nomeBarbeiro: barbeiros.nome,
@@ -143,7 +147,8 @@ export async function enviarConfirmacaoAgendamento(agendamentoId) {
         nomeServico: servicos?.nome || 'Serviço',
         preco: servicos?.preco,
         dataHora: agendamento.data_hora,
-        observacoes: agendamento.observacoes
+        observacoes: agendamento.observacoes,
+        tipoNegocio
       });
 
       const resultadoBarbeiro = await enviarMensagem(barbeiros.telefone, mensagemBarbeiro);
@@ -199,13 +204,16 @@ export async function enviarLembreteAgendamento(agendamentoId) {
       if (tenants.estado) endereco += ` - ${tenants.estado}`;
     }
 
+    const tipoNegocio = tenants?.tipo_negocio || 'barbearia';
+    
     const mensagem = templateLembreteCliente({
       nomeCliente: clientes.nome,
-      nomeBarbearia: tenants?.nome || 'Barbearia',
+      nomeBarbearia: tenants?.nome || 'Estabelecimento',
       nomeBarbeiro: barbeiros?.nome || 'Profissional',
       nomeServico: servicos?.nome || 'Serviço',
       dataHora: agendamento.data_hora,
-      endereco
+      endereco,
+      tipoNegocio
     });
 
     const resultado = await enviarMensagem(clientes.telefone, mensagem);
@@ -253,14 +261,17 @@ export async function enviarNotificacaoCancelamento(agendamentoId) {
       return { sucesso: false, erro: 'Cliente sem telefone' };
     }
 
+    const tipoNegocio = tenants?.tipo_negocio || 'barbearia';
+    
     const mensagem = templateCancelamentoCliente({
       nomeCliente: clientes.nome,
-      nomeBarbearia: tenants?.nome || 'Barbearia',
+      nomeBarbearia: tenants?.nome || 'Estabelecimento',
       nomeBarbeiro: barbeiros?.nome || 'Profissional',
       nomeServico: servicos?.nome || 'Serviço',
       dataHora: agendamento.data_hora,
       telefone: tenants?.whatsapp || tenants?.telefone,
-      slug: tenants?.slug
+      slug: tenants?.slug,
+      tipoNegocio
     });
 
     const resultado = await enviarMensagem(clientes.telefone, mensagem);
@@ -310,9 +321,11 @@ export async function enviarNotificacaoRemarcacao(agendamentoId, dataHoraAntiga)
       if (tenants.estado) endereco += ` - ${tenants.estado}`;
     }
 
+    const tipoNegocio = tenants?.tipo_negocio || 'barbearia';
+    
     const mensagem = templateRemarcacaoCliente({
       nomeCliente: clientes.nome,
-      nomeBarbearia: tenants?.nome || 'Barbearia',
+      nomeBarbearia: tenants?.nome || 'Estabelecimento',
       nomeBarbeiro: barbeiros?.nome || 'Profissional',
       nomeServico: servicos?.nome || 'Serviço',
       preco: servicos?.preco,
@@ -320,7 +333,8 @@ export async function enviarNotificacaoRemarcacao(agendamentoId, dataHoraAntiga)
       dataHoraNova: agendamento.data_hora,
       endereco,
       telefone: tenants?.whatsapp || tenants?.telefone,
-      slug: tenants?.slug
+      slug: tenants?.slug,
+      tipoNegocio
     });
 
     const resultado = await enviarMensagem(clientes.telefone, mensagem);
@@ -372,7 +386,8 @@ export async function enviarBoasVindasTenant(tenantId) {
     const mensagem = templateBoasVindasTenant({
       nomeBarbearia: tenant.nome,
       nomeProprietario: proprietario?.nome || 'Proprietário',
-      slug: tenant.slug
+      slug: tenant.slug,
+      tipoNegocio: tenant.tipo_negocio || 'barbearia'
     });
 
     const resultado = await enviarMensagem(tenant.whatsapp, mensagem);

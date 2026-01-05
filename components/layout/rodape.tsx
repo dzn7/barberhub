@@ -12,7 +12,7 @@ export function Rodape() {
           <div className="space-y-4">
             <LogoMarca />
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Sistema completo de gestão para barbearias modernas. Transforme seu negócio com tecnologia de ponta.
+              Sistema completo de gestão para negócios de beleza. Transforme seu estabelecimento com tecnologia de ponta.
             </p>
             <div className="flex space-x-4">
               <a
@@ -115,7 +115,7 @@ export function Rodape() {
               © {anoAtual} Barber Hub. Todos os direitos reservados.
             </p>
             <p className="text-sm text-muted-foreground text-center md:text-right">
-              Desenvolvido para barbearias modernas
+              Desenvolvido para negócios de beleza
             </p>
           </div>
         </div>

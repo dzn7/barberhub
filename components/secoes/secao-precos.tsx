@@ -7,7 +7,7 @@ import { Botao } from '@/components/ui/botao'
 
 const recursos = [
   'Agendamento online ilimitado',
-  'Site próprio da sua barbearia',
+  'Site próprio do seu negócio',
   'Lembretes automáticos WhatsApp',
   'Gestão completa de equipe',
   'Controle financeiro',
@@ -68,7 +68,7 @@ export function SecaoPrecos() {
                     </div>
                     
                     <p className="text-zinc-600 dark:text-zinc-400 max-w-sm">
-                      Menos que um corte de cabelo. Valor fixo, sem surpresas no final do mês.
+                      Menos que um atendimento. Valor fixo, sem surpresas no final do mês.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -113,7 +113,7 @@ export function SecaoPrecos() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="text-center text-sm text-zinc-500 mt-8"
           >
-            Mais de 100 barbearias já usam o BarberHub para organizar o dia a dia.
+            Mais de 100 estabelecimentos de beleza já usam o BarberHub para organizar o dia a dia.
           </motion.p>
         </div>
       </div>

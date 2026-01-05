@@ -43,8 +43,8 @@ export function SecaoHero() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-6 text-center text-lg md:text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed"
         >
-          Sistema completo para sua barbearia: agendamento online 24h, controle financeiro 
-          e gestão de equipe. Seus clientes agendam sozinhos, você foca no corte.
+          Sistema completo para seu negócio de beleza: agendamento online 24h, controle financeiro 
+          e gestão de equipe. Seus clientes agendam sozinhos, você foca no atendimento.
         </motion.p>
 
         {/* CTAs */}

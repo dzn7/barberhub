@@ -18,7 +18,7 @@ const funcionalidades = [
   {
     id: 'grade',
     titulo: 'Grade Semanal',
-    descricao: 'Visão completa da semana. Filtre por barbeiro, navegue entre semanas e adicione agendamentos direto na grade.',
+    descricao: 'Visão completa da semana. Filtre por profissional, navegue entre semanas e adicione agendamentos direto na grade.',
     imagem: '/assets/dashboard-gradesemanal.png',
   },
   {
@@ -67,7 +67,7 @@ export function SecaoShowcase() {
               Conheça o Sistema
             </h2>
             <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-              Interface moderna e intuitiva. Gerencie sua barbearia de qualquer lugar.
+              Interface moderna e intuitiva. Gerencie seu negócio de qualquer lugar.
             </p>
           </motion.div>
 
