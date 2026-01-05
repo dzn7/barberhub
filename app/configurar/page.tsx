@@ -43,117 +43,177 @@ import {
 import { useTheme } from 'next-themes'
 import { useTerminologia } from '@/hooks/useTerminologia'
 
-const PALETAS_SOFISTICADAS = [
-  // Tons escuros clássicos
+import { TipoNegocio } from '@/lib/tipos-negocio'
+
+/**
+ * Paletas de cores para Barbearias (tons masculinos e neutros)
+ */
+const PALETAS_BARBEARIA = [
   { nome: 'Obsidian', descricao: 'Elegância clássica', primaria: '#09090b', secundaria: '#fafafa', destaque: '#fafafa' },
   { nome: 'Grafite', descricao: 'Minimalismo moderno', primaria: '#18181b', secundaria: '#f4f4f5', destaque: '#a1a1aa' },
   { nome: 'Midnight', descricao: 'Sofisticação noturna', primaria: '#0c0a09', secundaria: '#fafaf9', destaque: '#a8a29e' },
   { nome: 'Slate', descricao: 'Profissional discreto', primaria: '#0f172a', secundaria: '#f8fafc', destaque: '#94a3b8' },
   { nome: 'Charcoal', descricao: 'Neutro atemporal', primaria: '#171717', secundaria: '#fafafa', destaque: '#d4d4d4' },
   { nome: 'Onyx', descricao: 'Contraste marcante', primaria: '#0a0a0a', secundaria: '#ffffff', destaque: '#737373' },
-  // Tons com cor
   { nome: 'Navy', descricao: 'Azul profundo', primaria: '#0c1929', secundaria: '#f0f9ff', destaque: '#38bdf8' },
   { nome: 'Forest', descricao: 'Verde floresta', primaria: '#052e16', secundaria: '#f0fdf4', destaque: '#4ade80' },
   { nome: 'Wine', descricao: 'Vinho elegante', primaria: '#1c0a0a', secundaria: '#fef2f2', destaque: '#f87171' },
-  { nome: 'Royal', descricao: 'Roxo real', primaria: '#1e1033', secundaria: '#faf5ff', destaque: '#a78bfa' },
   { nome: 'Copper', descricao: 'Cobre vintage', primaria: '#1c1210', secundaria: '#fffbeb', destaque: '#f59e0b' },
-  { nome: 'Ocean', descricao: 'Oceano profundo', primaria: '#0c1a1f', secundaria: '#ecfeff', destaque: '#22d3d8' },
-  // Tons claros
   { nome: 'Snow', descricao: 'Branco neve', primaria: '#ffffff', secundaria: '#18181b', destaque: '#71717a' },
   { nome: 'Pearl', descricao: 'Pérola suave', primaria: '#fafafa', secundaria: '#27272a', destaque: '#a1a1aa' },
-  { nome: 'Cream', descricao: 'Creme clássico', primaria: '#fffbeb', secundaria: '#292524', destaque: '#a8a29e' },
-  { nome: 'Mint', descricao: 'Menta fresca', primaria: '#f0fdf4', secundaria: '#14532d', destaque: '#22c55e' },
 ]
 
-const ETAPAS = [
-  { 
-    id: 1, 
-    titulo: 'Identidade', 
-    icone: Store, 
-    descricao: 'Nome e logo',
-    tituloCompleto: 'Identidade da sua barbearia',
-    subtitulo: 'Vamos começar pelo básico: como seus clientes vão conhecer você',
-    tempoEstimado: '1 min',
-    dicas: [
-      'Use o nome oficial da sua barbearia',
-      'A logo aparecerá no site e nos agendamentos',
-      'Você pode alterar depois a qualquer momento'
-    ]
-  },
-  { 
-    id: 2, 
-    titulo: 'Contato', 
-    icone: Phone, 
-    descricao: 'Telefone e redes',
-    tituloCompleto: 'Informações de contato',
-    subtitulo: 'Como seus clientes podem entrar em contato com você',
-    tempoEstimado: '1 min',
-    dicas: [
-      'O WhatsApp é essencial para receber notificações de agendamentos',
-      'Instagram ajuda clientes a conhecerem seu trabalho',
-      'E-mail é usado para comunicações importantes'
-    ]
-  },
-  { 
-    id: 3, 
-    titulo: 'Localização', 
-    icone: MapPin, 
-    descricao: 'Endereço',
-    tituloCompleto: 'Onde fica sua barbearia',
-    subtitulo: 'Ajude seus clientes a te encontrarem facilmente',
-    tempoEstimado: '30 seg',
-    dicas: [
-      'Endereço completo facilita a navegação GPS',
-      'Inclua referências se necessário',
-      'Cidade e estado ajudam em buscas locais'
-    ]
-  },
-  { 
-    id: 4, 
-    titulo: 'Aparência', 
-    icone: Palette, 
-    descricao: 'Cores do site',
-    tituloCompleto: 'Aparência do seu site',
-    subtitulo: 'Escolha as cores que representam a identidade da sua marca',
-    tempoEstimado: '30 seg',
-    dicas: [
-      'Cores escuras passam sofisticação',
-      'Cores claras são mais leves e modernas',
-      'Veja o preview ao lado para conferir como ficará'
-    ]
-  },
-  { 
-    id: 5, 
-    titulo: 'Serviços', 
-    icone: Scissors, 
-    descricao: 'Seus serviços',
-    tituloCompleto: 'Cadastre seus serviços',
-    subtitulo: 'Defina o que sua barbearia oferece, preços e duração de cada serviço',
-    tempoEstimado: '2-3 min',
-    dicas: [
-      'Adicione nome, preço e duração de cada serviço',
-      'A duração ajuda a organizar a agenda automaticamente',
-      'Você pode adicionar ou editar serviços depois no painel'
-    ]
-  },
-  { 
-    id: 6, 
-    titulo: 'Equipe', 
-    icone: Users, 
-    descricao: 'Profissionais',
-    tituloCompleto: 'Sua equipe de profissionais',
-    subtitulo: 'Cadastre os barbeiros e gere códigos de acesso para cada um',
-    tempoEstimado: '2-3 min',
-    dicas: [
-      'Cada barbeiro recebe um código único de acesso',
-      'Eles poderão ver apenas seus próprios agendamentos',
-      'Você pode gerenciar comissões pelo painel admin'
-    ]
-  },
+/**
+ * Paletas de cores para Nail Designers (tons femininos, elegantes e sofisticados)
+ */
+const PALETAS_NAIL = [
+  { nome: 'Nude', descricao: 'Elegância natural', primaria: '#faf5f0', secundaria: '#1c1917', destaque: '#d4a574' },
+  { nome: 'Blush', descricao: 'Rosa suave', primaria: '#fdf2f8', secundaria: '#1f1f1f', destaque: '#f9a8d4' },
+  { nome: 'Rose Gold', descricao: 'Luxo atemporal', primaria: '#1a1a1a', secundaria: '#fefefe', destaque: '#d4a574' },
+  { nome: 'Champagne', descricao: 'Sofisticação leve', primaria: '#fffbeb', secundaria: '#292524', destaque: '#d4a574' },
+  { nome: 'Burgundy', descricao: 'Vinho sofisticado', primaria: '#1c0a0a', secundaria: '#fef2f2', destaque: '#be123c' },
+  { nome: 'Mauve', descricao: 'Roxo delicado', primaria: '#faf5ff', secundaria: '#1e1033', destaque: '#c084fc' },
+  { nome: 'Terracota', descricao: 'Terra elegante', primaria: '#fef3c7', secundaria: '#292524', destaque: '#c2410c' },
+  { nome: 'Sage', descricao: 'Verde sálvia', primaria: '#f0fdf4', secundaria: '#14532d', destaque: '#86efac' },
+  { nome: 'Lavanda', descricao: 'Lilás relaxante', primaria: '#faf5ff', secundaria: '#3b0764', destaque: '#e879f9' },
+  { nome: 'Pearl White', descricao: 'Branco perolado', primaria: '#fefefe', secundaria: '#18181b', destaque: '#a8a29e' },
+  { nome: 'Coral', descricao: 'Coral vibrante', primaria: '#fff7ed', secundaria: '#1c1917', destaque: '#fb923c' },
+  { nome: 'Midnight Rose', descricao: 'Noite rosada', primaria: '#0f0f0f', secundaria: '#fefefe', destaque: '#fb7185' },
 ]
+
+/**
+ * Retorna as paletas de cores baseadas no tipo de negócio
+ */
+function obterPaletas(tipoNegocio: TipoNegocio | undefined) {
+  return tipoNegocio === 'nail_designer' ? PALETAS_NAIL : PALETAS_BARBEARIA
+}
+
+/**
+ * Retorna as etapas do onboarding baseadas no tipo de negócio
+ */
+function obterEtapas(tipoNegocio: TipoNegocio | undefined) {
+  const ehNail = tipoNegocio === 'nail_designer'
+  
+  return [
+    { 
+      id: 1, 
+      titulo: 'Identidade', 
+      icone: Store, 
+      descricao: 'Nome e logo',
+      tituloCompleto: ehNail ? 'Identidade do seu estúdio' : 'Identidade da sua barbearia',
+      subtitulo: 'Vamos começar pelo básico: como seus clientes vão conhecer você',
+      tempoEstimado: '1 min',
+      dicas: ehNail ? [
+        'Use o nome oficial do seu estúdio',
+        'A logo aparecerá no site e nos agendamentos',
+        'Você pode alterar depois a qualquer momento'
+      ] : [
+        'Use o nome oficial da sua barbearia',
+        'A logo aparecerá no site e nos agendamentos',
+        'Você pode alterar depois a qualquer momento'
+      ]
+    },
+    { 
+      id: 2, 
+      titulo: 'Contato', 
+      icone: Phone, 
+      descricao: 'Telefone e redes',
+      tituloCompleto: 'Informações de contato',
+      subtitulo: ehNail 
+        ? 'Como suas clientes podem entrar em contato com você'
+        : 'Como seus clientes podem entrar em contato com você',
+      tempoEstimado: '1 min',
+      dicas: ehNail ? [
+        'O WhatsApp é essencial para receber notificações de agendamentos',
+        'Instagram é fundamental para mostrar seu portfólio de nail art',
+        'E-mail é usado para comunicações importantes'
+      ] : [
+        'O WhatsApp é essencial para receber notificações de agendamentos',
+        'Instagram ajuda clientes a conhecerem seu trabalho',
+        'E-mail é usado para comunicações importantes'
+      ]
+    },
+    { 
+      id: 3, 
+      titulo: 'Localização', 
+      icone: MapPin, 
+      descricao: 'Endereço',
+      tituloCompleto: ehNail ? 'Onde fica seu estúdio' : 'Onde fica sua barbearia',
+      subtitulo: ehNail 
+        ? 'Ajude suas clientes a te encontrarem facilmente'
+        : 'Ajude seus clientes a te encontrarem facilmente',
+      tempoEstimado: '30 seg',
+      dicas: [
+        'Endereço completo facilita a navegação GPS',
+        'Inclua referências se necessário',
+        'Cidade e estado ajudam em buscas locais'
+      ]
+    },
+    { 
+      id: 4, 
+      titulo: 'Aparência', 
+      icone: Palette, 
+      descricao: 'Cores do site',
+      tituloCompleto: 'Aparência do seu site',
+      subtitulo: 'Escolha as cores que representam a identidade da sua marca',
+      tempoEstimado: '30 seg',
+      dicas: ehNail ? [
+        'Cores suaves transmitem delicadeza e sofisticação',
+        'Tons rosados e nude são populares no segmento',
+        'Veja o preview ao lado para conferir como ficará'
+      ] : [
+        'Cores escuras passam sofisticação',
+        'Cores claras são mais leves e modernas',
+        'Veja o preview ao lado para conferir como ficará'
+      ]
+    },
+    { 
+      id: 5, 
+      titulo: 'Serviços', 
+      icone: ehNail ? Hand : Scissors, 
+      descricao: 'Seus serviços',
+      tituloCompleto: 'Cadastre seus serviços',
+      subtitulo: ehNail 
+        ? 'Defina o que seu estúdio oferece, preços e duração de cada serviço'
+        : 'Defina o que sua barbearia oferece, preços e duração de cada serviço',
+      tempoEstimado: '2-3 min',
+      dicas: ehNail ? [
+        'Adicione alongamentos, esmaltações, nail art, etc.',
+        'A duração ajuda a organizar a agenda automaticamente',
+        'Você pode adicionar ou editar serviços depois no painel'
+      ] : [
+        'Adicione nome, preço e duração de cada serviço',
+        'A duração ajuda a organizar a agenda automaticamente',
+        'Você pode adicionar ou editar serviços depois no painel'
+      ]
+    },
+    { 
+      id: 6, 
+      titulo: 'Equipe', 
+      icone: Users, 
+      descricao: 'Profissionais',
+      tituloCompleto: ehNail ? 'Sua equipe de nail designers' : 'Sua equipe de profissionais',
+      subtitulo: ehNail 
+        ? 'Cadastre as profissionais e gere códigos de acesso para cada uma'
+        : 'Cadastre os barbeiros e gere códigos de acesso para cada um',
+      tempoEstimado: '2-3 min',
+      dicas: ehNail ? [
+        'Cada nail designer recebe um código único de acesso',
+        'Elas poderão ver apenas seus próprios agendamentos',
+        'Você pode gerenciar comissões pelo painel admin'
+      ] : [
+        'Cada barbeiro recebe um código único de acesso',
+        'Eles poderão ver apenas seus próprios agendamentos',
+        'Você pode gerenciar comissões pelo painel admin'
+      ]
+    },
+  ]
+}
+
+type EtapaOnboarding = ReturnType<typeof obterEtapas>[0]
 
 interface CabecalhoEtapaProps {
-  etapa: typeof ETAPAS[0]
+  etapa: EtapaOnboarding
   etapaAtual: number
   totalEtapas: number
 }
@@ -232,8 +292,6 @@ function CabecalhoEtapa({ etapa, etapaAtual, totalEtapas }: CabecalhoEtapaProps)
   )
 }
 
-const TOTAL_ETAPAS = ETAPAS.length
-
 /**
  * Componente de tela de sucesso após configuração
  * Design premium step-by-step sem parecer feito por IA
@@ -249,11 +307,13 @@ interface TelaSucessoProps {
   }
   totalServicos: number
   totalBarbeiros: number
+  tipoNegocio?: TipoNegocio
 }
 
-function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros }: TelaSucessoProps) {
+function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros, tipoNegocio }: TelaSucessoProps) {
   const [linkCopiado, setLinkCopiado] = useState(false)
   const linkPublico = `barberhub.online/${tenant.slug}`
+  const ehNail = tipoNegocio === 'nail_designer'
   
   const copiarLink = async () => {
     try {
@@ -277,7 +337,9 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
     {
       numero: 1,
       titulo: 'Acesse o Painel Administrativo',
-      descricao: 'Gerencie agendamentos, veja relatórios e configure sua barbearia',
+      descricao: ehNail 
+        ? 'Gerencie agendamentos, veja relatórios e configure seu estúdio'
+        : 'Gerencie agendamentos, veja relatórios e configure sua barbearia',
       link: '/admin',
       textoBotao: 'Abrir Painel',
       icone: LayoutDashboard,
@@ -286,7 +348,9 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
     {
       numero: 2,
       titulo: 'Veja seu Site Público',
-      descricao: 'Confira como seus clientes vão ver sua página de agendamentos',
+      descricao: ehNail
+        ? 'Confira como suas clientes vão ver sua página de agendamentos'
+        : 'Confira como seus clientes vão ver sua página de agendamentos',
       link: `/${tenant.slug}`,
       textoBotao: 'Ver Site',
       icone: Globe,
@@ -294,8 +358,10 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
     },
     {
       numero: 3,
-      titulo: 'Compartilhe com Clientes',
-      descricao: 'Envie o link da sua página para seus clientes agendarem',
+      titulo: ehNail ? 'Compartilhe com Clientes' : 'Compartilhe com Clientes',
+      descricao: ehNail
+        ? 'Envie o link da sua página para suas clientes agendarem'
+        : 'Envie o link da sua página para seus clientes agendarem',
       acao: copiarLink,
       textoBotao: linkCopiado ? 'Copiado!' : 'Copiar Link',
       icone: linkCopiado ? CheckCircle2 : Copy
@@ -315,7 +381,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
 
       <main className="max-w-3xl mx-auto px-4 py-12 md:py-20">
 
-        {/* ttulo principal */}
+        {/* Título principal */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -326,8 +392,11 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
             {dados.nome || tenant.nome} está no ar
           </h1>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl">
-            Sua barbearia está configurada e pronta para receber agendamentos. 
-            Veja abaixo os próximos passos para começar.
+            {ehNail 
+              ? 'Seu estúdio está configurado e pronto para receber agendamentos.'
+              : 'Sua barbearia está configurada e pronta para receber agendamentos.'
+            }
+            {' '}Veja abaixo os próximos passos para começar.
           </p>
         </motion.div>
 
@@ -475,7 +544,10 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
               <div>
                 <p className="text-sm text-white font-medium mb-1">Configure seus horários</p>
                 <p className="text-xs text-zinc-500">
-                  No painel, defina os dias e horários que sua barbearia funciona
+                  {ehNail 
+                    ? 'No painel, defina os dias e horários que seu estúdio funciona'
+                    : 'No painel, defina os dias e horários que sua barbearia funciona'
+                  }
                 </p>
               </div>
             </div>
@@ -485,7 +557,10 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros 
               <div>
                 <p className="text-sm text-white font-medium mb-1">Personalize ainda mais</p>
                 <p className="text-xs text-zinc-500">
-                  Adicione fotos, ajuste preços e configure notificações
+                  {ehNail
+                    ? 'Adicione fotos do seu portfólio, ajuste preços e configure notificações'
+                    : 'Adicione fotos, ajuste preços e configure notificações'
+                  }
                 </p>
               </div>
             </div>
@@ -522,6 +597,13 @@ export default function ConfigurarPage() {
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
   const [montado, setMontado] = useState(false)
+  
+  // Obtém etapas e paletas dinâmicas baseadas no tipo de negócio
+  const tipoNegocio = tenant?.tipo_negocio as TipoNegocio | undefined
+  const ETAPAS = obterEtapas(tipoNegocio)
+  const PALETAS = obterPaletas(tipoNegocio)
+  const TOTAL_ETAPAS = ETAPAS.length
+  const ehNail = tipoNegocio === 'nail_designer'
   
   useEffect(() => {
     setMontado(true)
@@ -609,7 +691,7 @@ export default function ConfigurarPage() {
     }
   }
 
-  const aplicarPaleta = (paleta: typeof PALETAS_SOFISTICADAS[0]) => {
+  const aplicarPaleta = (paleta: typeof PALETAS_BARBEARIA[0]) => {
     setDados(prev => ({
       ...prev,
       cor_primaria: paleta.primaria,
@@ -672,6 +754,7 @@ export default function ConfigurarPage() {
         dados={dados}
         totalServicos={totalServicos}
         totalBarbeiros={totalBarbeiros}
+        tipoNegocio={tipoNegocio}
       />
     )
   }
@@ -741,7 +824,7 @@ export default function ConfigurarPage() {
                 <motion.div key="etapa1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[0]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <div className="space-y-6">
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Nome da Barbearia *</label><input type="text" value={dados.nome} onChange={e => setDados({ ...dados, nome: e.target.value })} placeholder="Ex: Barbearia Premium" className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">{ehNail ? 'Nome do Estúdio *' : 'Nome da Barbearia *'}</label><input type="text" value={dados.nome} onChange={e => setDados({ ...dados, nome: e.target.value })} placeholder={ehNail ? 'Ex: Studio Nails Premium' : 'Ex: Barbearia Premium'} className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div>
                     <EditorLogo logoUrl={dados.logo_url} tenantId={tenant.id} onLogoChange={(url, iconesPwa) => setDados({ ...dados, logo_url: url, icone_pwa_192: iconesPwa?.icone_192 || '', icone_pwa_512: iconesPwa?.icone_512 || '' })} corPrimaria={dados.cor_primaria} corSecundaria={dados.cor_secundaria} />
                   </div>
                 </motion.div>
@@ -754,8 +837,8 @@ export default function ConfigurarPage() {
                       <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Telefone</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.telefone} onChange={e => setDados({ ...dados, telefone: formatarTelefone(e.target.value) })} placeholder="(00) 0000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
                       <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">WhatsApp *</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.whatsapp} onChange={e => setDados({ ...dados, whatsapp: formatarTelefone(e.target.value) })} placeholder="(00) 00000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div><p className="text-xs text-zinc-500 dark:text-zinc-600 mt-1">Usado para agendamentos</p></div>
                     </div>
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">E-mail</label><div className="relative"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="email" value={dados.email} onChange={e => setDados({ ...dados, email: e.target.value })} placeholder="contato@barbearia.com" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Instagram</label><div className="relative"><Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.instagram} onChange={e => setDados({ ...dados, instagram: e.target.value })} placeholder="@suabarbearia" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">E-mail</label><div className="relative"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="email" value={dados.email} onChange={e => setDados({ ...dados, email: e.target.value })} placeholder={ehNail ? 'contato@seuestudio.com' : 'contato@barbearia.com'} className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Instagram</label><div className="relative"><Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.instagram} onChange={e => setDados({ ...dados, instagram: e.target.value })} placeholder={ehNail ? '@seuestudionails' : '@suabarbearia'} className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
                   </div>
                 </motion.div>
               )}
@@ -775,7 +858,7 @@ export default function ConfigurarPage() {
                 <motion.div key="etapa4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[3]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {PALETAS_SOFISTICADAS.map((paleta) => {
+                    {PALETAS.map((paleta) => {
                       const selecionada = dados.cor_primaria === paleta.primaria
                       return (
                         <button key={paleta.nome} onClick={() => aplicarPaleta(paleta)} className={`relative p-4 rounded-xl border-2 transition-all ${selecionada ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'}`}>
