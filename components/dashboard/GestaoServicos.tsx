@@ -544,8 +544,9 @@ export function GestaoServicos() {
                         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                           Nome do Serviço
                         </label>
-                        <TextField.Root
-                          value={valoresEdicao.nome}
+                        <input
+                          type="text"
+                          value={valoresEdicao.nome || ''}
                           onChange={(e) =>
                             setValores({
                               ...valores,
@@ -553,6 +554,7 @@ export function GestaoServicos() {
                             })
                           }
                           placeholder="Nome do serviço"
+                          className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
                         />
                       </div>
 
@@ -560,49 +562,43 @@ export function GestaoServicos() {
                         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                           Preço (R$)
                         </label>
-                        <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                          <TextField.Root
-                            type="number"
-                            step="0.01"
-                            value={valoresEdicao.preco || ''}
-                            onChange={(e) => {
-                              const valor = e.target.value;
-                              setValores({
-                                ...valores,
-                                [servico.id]: {
-                                  ...valoresEdicao,
-                                  preco: valor === '' ? 0 : parseFloat(valor),
-                                },
-                              });
-                            }}
-                            className="pl-10"
-                          />
-                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={valoresEdicao.preco || ''}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            setValores({
+                              ...valores,
+                              [servico.id]: {
+                                ...valoresEdicao,
+                                preco: valor === '' ? 0 : parseFloat(valor),
+                              },
+                            });
+                          }}
+                          className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
+                        />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                           Duração (minutos)
                         </label>
-                        <div className="relative">
-                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                          <TextField.Root
-                            type="number"
-                            value={valoresEdicao.duracao || ''}
-                            onChange={(e) => {
-                              const valor = e.target.value;
-                              setValores({
-                                ...valores,
-                                [servico.id]: {
-                                  ...valoresEdicao,
-                                  duracao: valor === '' ? 0 : parseInt(valor),
-                                },
-                              });
-                            }}
-                            className="pl-10"
-                          />
-                        </div>
+                        <input
+                          type="number"
+                          value={valoresEdicao.duracao || ''}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            setValores({
+                              ...valores,
+                              [servico.id]: {
+                                ...valoresEdicao,
+                                duracao: valor === '' ? 0 : parseInt(valor),
+                              },
+                            });
+                          }}
+                          className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
+                        />
                       </div>
                     </div>
 
