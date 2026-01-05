@@ -16,7 +16,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Phone,
-  Loader2
+  Loader2,
+  AlertCircle,
+  X,
+  Sun,
+  Sunset,
+  Moon,
+  Sparkles
 } from 'lucide-react'
 import { format, parse } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -101,6 +107,14 @@ export default function PaginaAgendar() {
   })
   const [usarHorariosPersonalizados, setUsarHorariosPersonalizados] = useState(false)
   const [horariosPersonalizados, setHorariosPersonalizados] = useState<any>(null)
+  
+  // Toast local para feedback
+  const [toastInfo, setToastInfo] = useState<{ tipo: 'erro' | 'aviso' | 'sucesso'; mensagem: string } | null>(null)
+  
+  const mostrarToast = (tipo: 'erro' | 'aviso' | 'sucesso', mensagem: string) => {
+    setToastInfo({ tipo, mensagem })
+    setTimeout(() => setToastInfo(null), 4000)
+  }
 
   // Cores do tenant
   const cores = tenant ? {
@@ -445,7 +459,7 @@ export default function PaginaAgendar() {
     }
   }
 
-  const todosHorarios = gerarTodosHorarios(duracaoServico, horariosOcupados, configHorarioFinal)
+  const todosHorarios = gerarTodosHorarios(duracaoServico, horariosOcupados, configHorarioFinal, dataSelecionada)
 
   const formatarTelefone = (valor: string) => {
     const numeros = valor.replace(/\D/g, '')
@@ -499,7 +513,7 @@ export default function PaginaAgendar() {
         .maybeSingle()
 
       if (verificacao) {
-        alert('Este horário acabou de ser reservado. Escolha outro horário.')
+        mostrarToast('aviso', 'Este horário acabou de ser reservado. Escolha outro horário.')
         setEnviando(false)
         setEtapa(2)
         return
@@ -527,7 +541,7 @@ export default function PaginaAgendar() {
       setAgendamentoConcluido(true)
     } catch (error: any) {
       console.error('Erro ao criar agendamento:', error)
-      alert(`Erro ao criar agendamento: ${error.message || 'Erro desconhecido'}`)
+      mostrarToast('erro', `Erro ao criar agendamento: ${error.message || 'Erro desconhecido'}`)
     } finally {
       setEnviando(false)
     }
@@ -813,40 +827,49 @@ export default function PaginaAgendar() {
         </div>
       </header>
 
-      {/* Progress Steps */}
+      {/* Progress Steps - Clicável */}
       <div 
         className="border-b"
         style={{ borderColor: cores.destaque + '20' }}
       >
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-center gap-1 sm:gap-2">
-            {ETAPAS_INFO.map((item, index) => (
-              <div key={item.numero} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all"
-                    style={{
-                      backgroundColor: item.numero <= etapa ? cores.secundaria : cores.destaque + '20',
-                      color: item.numero <= etapa ? cores.primaria : cores.destaque
-                    }}
+            {ETAPAS_INFO.map((item, index) => {
+              // Pode clicar apenas em etapas já completadas (anteriores à atual)
+              const podeClicar = item.numero < etapa
+              
+              return (
+                <div key={item.numero} className="flex items-center">
+                  <button
+                    onClick={() => podeClicar && setEtapa(item.numero)}
+                    disabled={!podeClicar}
+                    className={`flex flex-col items-center transition-all ${podeClicar ? 'cursor-pointer hover:scale-105' : 'cursor-default'}`}
                   >
-                    {item.numero < etapa ? <Check className="w-4 h-4" /> : item.numero}
-                  </div>
-                  <span 
-                    className="text-xs mt-1 hidden sm:block"
-                    style={{ color: item.numero === etapa ? cores.secundaria : cores.destaque }}
-                  >
-                    {item.titulo}
-                  </span>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${podeClicar ? 'ring-2 ring-offset-2 ring-white/30' : ''}`}
+                      style={{
+                        backgroundColor: item.numero <= etapa ? cores.secundaria : cores.destaque + '20',
+                        color: item.numero <= etapa ? cores.primaria : cores.destaque
+                      }}
+                    >
+                      {item.numero < etapa ? <Check className="w-4 h-4" /> : item.numero}
+                    </div>
+                    <span 
+                      className="text-xs mt-1 hidden sm:block"
+                      style={{ color: item.numero === etapa ? cores.secundaria : cores.destaque }}
+                    >
+                      {item.titulo}
+                    </span>
+                  </button>
+                  {index < ETAPAS_INFO.length - 1 && (
+                    <div
+                      className="w-8 sm:w-12 h-0.5 mx-1 rounded"
+                      style={{ backgroundColor: item.numero < etapa ? cores.secundaria : cores.destaque + '20' }}
+                    />
+                  )}
                 </div>
-                {index < ETAPAS_INFO.length - 1 && (
-                  <div
-                    className="w-8 sm:w-12 h-0.5 mx-1 rounded"
-                    style={{ backgroundColor: item.numero < etapa ? cores.secundaria : cores.destaque + '20' }}
-                  />
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
@@ -1006,7 +1029,7 @@ export default function PaginaAgendar() {
                 </div>
               </div>
 
-              {/* Horários */}
+              {/* Horários agrupados por período */}
               {dataSelecionada && (
                 <div>
                   <h2 
@@ -1029,69 +1052,121 @@ export default function PaginaAgendar() {
                         Tente selecionar outra data.
                       </p>
                     </div>
-                  ) : (
-                    <>
-                      {/* Legenda */}
-                      <div className="flex items-center gap-4 mb-4 text-xs" style={{ color: cores.destaque }}>
-                        <div className="flex items-center gap-1.5">
-                          <div 
-                            className="w-3 h-3 rounded"
-                            style={{ backgroundColor: cores.destaque + '15' }}
-                          />
-                          <span>Disponível</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded bg-red-500/20" />
-                          <span>Ocupado</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div 
-                            className="w-3 h-3 rounded"
-                            style={{ backgroundColor: cores.secundaria }}
-                          />
-                          <span>Selecionado</span>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                        {todosHorarios.map((h) => {
-                          const estaOcupado = !h.disponivel
-                          const estaSelecionado = horarioSelecionado === h.horario
+                  ) : (() => {
+                    // Agrupar horários por período
+                    const horariosDisponiveis = todosHorarios.filter(h => h.disponivel)
+                    const proximoDisponivel = horariosDisponiveis[0]?.horario || null
+                    
+                    const manha = todosHorarios.filter(h => {
+                      const hora = parseInt(h.horario.split(':')[0])
+                      return hora >= 6 && hora < 12
+                    })
+                    const tarde = todosHorarios.filter(h => {
+                      const hora = parseInt(h.horario.split(':')[0])
+                      return hora >= 12 && hora < 18
+                    })
+                    const noite = todosHorarios.filter(h => {
+                      const hora = parseInt(h.horario.split(':')[0])
+                      return hora >= 18 || hora < 6
+                    })
+                    
+                    const periodos = [
+                      { nome: 'Manhã', icone: Sun, horarios: manha, cor: '#f59e0b' },
+                      { nome: 'Tarde', icone: Sunset, horarios: tarde, cor: '#f97316' },
+                      { nome: 'Noite', icone: Moon, horarios: noite, cor: '#6366f1' }
+                    ].filter(p => p.horarios.length > 0)
+                    
+                    return (
+                      <div className="space-y-6">
+                        {/* Indicador do próximo horário disponível */}
+                        {proximoDisponivel && !horarioSelecionado && (
+                          <button
+                            onClick={() => setHorarioSelecionado(proximoDisponivel)}
+                            className="w-full p-4 rounded-xl border-2 border-dashed transition-all hover:scale-[1.01] active:scale-[0.99]"
+                            style={{ 
+                              borderColor: cores.secundaria + '50',
+                              backgroundColor: cores.secundaria + '08'
+                            }}
+                          >
+                            <div className="flex items-center justify-center gap-3">
+                              <Sparkles className="w-5 h-5" style={{ color: cores.secundaria }} />
+                              <span className="font-medium" style={{ color: cores.secundaria }}>
+                                Próximo disponível: <strong>{proximoDisponivel}</strong>
+                              </span>
+                              <ArrowRight className="w-4 h-4" style={{ color: cores.destaque }} />
+                            </div>
+                          </button>
+                        )}
+                        
+                        {/* Períodos */}
+                        {periodos.map((periodo) => {
+                          const Icone = periodo.icone
+                          const temDisponivel = periodo.horarios.some(h => h.disponivel)
                           
                           return (
-                            <button
-                              key={h.horario}
-                              onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
-                              disabled={estaOcupado}
-                              className={`
-                                py-3 px-2 rounded-xl text-sm font-medium 
-                                transition-all duration-200 ease-out
-                                ${estaOcupado 
-                                  ? 'bg-red-500/10 text-red-400 cursor-not-allowed line-through opacity-60' 
-                                  : estaSelecionado
-                                    ? 'scale-[1.02] shadow-lg'
-                                    : 'hover:scale-[1.02] active:scale-[0.98]'
-                                }
-                              `}
-                              style={!estaOcupado ? {
-                                backgroundColor: estaSelecionado 
-                                  ? cores.secundaria 
-                                  : cores.destaque + '12',
-                                color: estaSelecionado 
-                                  ? cores.primaria 
-                                  : cores.secundaria,
-                                boxShadow: estaSelecionado 
-                                  ? `0 4px 14px ${cores.secundaria}40` 
-                                  : 'none'
-                              } : undefined}
-                            >
-                              {h.horario}
-                            </button>
+                            <div key={periodo.nome}>
+                              <div 
+                                className="flex items-center gap-2 mb-3 pb-2 border-b"
+                                style={{ borderColor: cores.destaque + '20' }}
+                              >
+                                <Icone className="w-4 h-4" style={{ color: periodo.cor }} />
+                                <span className="text-sm font-semibold" style={{ color: cores.secundaria }}>
+                                  {periodo.nome}
+                                </span>
+                                {!temDisponivel && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">
+                                    Lotado
+                                  </span>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                {periodo.horarios.map((h) => {
+                                  const estaOcupado = !h.disponivel
+                                  const estaSelecionado = horarioSelecionado === h.horario
+                                  const ehProximo = h.horario === proximoDisponivel && !horarioSelecionado
+                                  
+                                  return (
+                                    <button
+                                      key={h.horario}
+                                      onClick={() => h.disponivel && setHorarioSelecionado(h.horario)}
+                                      disabled={estaOcupado}
+                                      className={`
+                                        py-2.5 px-2 rounded-lg text-sm font-medium 
+                                        transition-all duration-200 ease-out relative
+                                        ${estaOcupado 
+                                          ? 'bg-red-500/10 text-red-400/60 cursor-not-allowed line-through' 
+                                          : estaSelecionado
+                                            ? 'scale-[1.02] shadow-lg'
+                                            : 'hover:scale-[1.02] active:scale-[0.98]'
+                                        }
+                                      `}
+                                      style={!estaOcupado ? {
+                                        backgroundColor: estaSelecionado 
+                                          ? cores.secundaria 
+                                          : cores.destaque + '12',
+                                        color: estaSelecionado 
+                                          ? cores.primaria 
+                                          : cores.secundaria,
+                                        boxShadow: estaSelecionado 
+                                          ? `0 4px 14px ${cores.secundaria}40` 
+                                          : 'none',
+                                        border: ehProximo ? `2px solid ${cores.secundaria}50` : 'none'
+                                      } : undefined}
+                                    >
+                                      {h.horario}
+                                      {ehProximo && (
+                                        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: cores.secundaria }} />
+                                      )}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
                           )
                         })}
                       </div>
-                    </>
-                  )}
+                    )
+                  })()}
                 </div>
               )}
             </div>
@@ -1270,62 +1345,117 @@ export default function PaginaAgendar() {
           )}
         </AnimatePresence>
 
-        {/* Navegação */}
-        <div className="flex flex-col sm:flex-row gap-3 mt-8">
-          {etapa > 1 && (
-            <button
-              onClick={voltarEtapa}
-              className="w-full sm:w-auto sm:flex-1 py-4 px-6 font-semibold rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
-              style={{ 
-                backgroundColor: cores.destaque + '20',
-                color: cores.secundaria
-              }}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Voltar
-            </button>
-          )}
-          
-          {etapa < 4 ? (
-            <button
-              onClick={avancarEtapa}
-              disabled={!etapaCompleta()}
-              className="w-full sm:w-auto sm:flex-1 py-4 px-6 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
-              style={{ 
-                backgroundColor: etapaCompleta() ? cores.secundaria : cores.destaque + '20',
-                color: etapaCompleta() ? cores.primaria : cores.destaque,
-                cursor: etapaCompleta() ? 'pointer' : 'not-allowed'
-              }}
-            >
-              Continuar
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={finalizarAgendamento}
-              disabled={enviando}
-              className="w-full sm:w-auto sm:flex-1 py-4 px-6 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
-              style={{ 
-                backgroundColor: cores.secundaria,
-                color: cores.primaria,
-                opacity: enviando ? 0.7 : 1
-              }}
-            >
-              {enviando ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Agendando...
-                </>
-              ) : (
-                <>
-                  <Check className="w-5 h-5" />
-                  Confirmar
-                </>
-              )}
-            </button>
-          )}
-        </div>
+        {/* Espaçador para os botões fixos */}
+        <div className="h-28 sm:h-24" />
       </main>
+
+      {/* Navegação Fixa em Baixo */}
+      <div 
+        className="fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur-xl"
+        style={{ 
+          backgroundColor: cores.primaria + 'f5',
+          borderColor: cores.destaque + '20'
+        }}
+      >
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <div className="flex gap-3">
+            {etapa > 1 && (
+              <button
+                onClick={voltarEtapa}
+                className="flex-1 sm:flex-none sm:w-32 py-3.5 px-4 font-semibold rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+                style={{ 
+                  backgroundColor: cores.destaque + '20',
+                  color: cores.secundaria
+                }}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Voltar</span>
+              </button>
+            )}
+            
+            {etapa < 4 ? (
+              <button
+                onClick={avancarEtapa}
+                disabled={!etapaCompleta()}
+                className="flex-1 py-3.5 px-6 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+                style={{ 
+                  backgroundColor: etapaCompleta() ? cores.secundaria : cores.destaque + '30',
+                  color: etapaCompleta() ? cores.primaria : cores.destaque,
+                  cursor: etapaCompleta() ? 'pointer' : 'not-allowed'
+                }}
+              >
+                Continuar
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={finalizarAgendamento}
+                disabled={enviando}
+                className="flex-1 py-3.5 px-6 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 active:scale-[0.99]"
+                style={{ 
+                  backgroundColor: cores.secundaria,
+                  color: cores.primaria,
+                  opacity: enviando ? 0.7 : 1
+                }}
+              >
+                {enviando ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Agendando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5" />
+                    Confirmar Agendamento
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Toast de feedback */}
+      <AnimatePresence>
+        {toastInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            className="fixed bottom-24 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-50"
+          >
+            <div 
+              className={`
+                flex items-start gap-3 p-4 rounded-xl border shadow-2xl
+                ${toastInfo.tipo === 'erro' ? 'bg-red-50 dark:bg-red-950/80 border-red-200 dark:border-red-800' : ''}
+                ${toastInfo.tipo === 'aviso' ? 'bg-amber-50 dark:bg-amber-950/80 border-amber-200 dark:border-amber-800' : ''}
+                ${toastInfo.tipo === 'sucesso' ? 'bg-green-50 dark:bg-green-950/80 border-green-200 dark:border-green-800' : ''}
+              `}
+            >
+              <AlertCircle 
+                className={`w-5 h-5 flex-shrink-0 mt-0.5 
+                  ${toastInfo.tipo === 'erro' ? 'text-red-600' : ''}
+                  ${toastInfo.tipo === 'aviso' ? 'text-amber-600' : ''}
+                  ${toastInfo.tipo === 'sucesso' ? 'text-green-600' : ''}
+                `} 
+              />
+              <p className={`flex-1 text-sm font-medium
+                ${toastInfo.tipo === 'erro' ? 'text-red-800 dark:text-red-200' : ''}
+                ${toastInfo.tipo === 'aviso' ? 'text-amber-800 dark:text-amber-200' : ''}
+                ${toastInfo.tipo === 'sucesso' ? 'text-green-800 dark:text-green-200' : ''}
+              `}>
+                {toastInfo.mensagem}
+              </p>
+              <button
+                onClick={() => setToastInfo(null)}
+                className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              >
+                <X className="w-4 h-4" style={{ color: cores.destaque }} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

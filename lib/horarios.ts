@@ -60,10 +60,17 @@ function normalizarHorario(horario: string | null | undefined): string | null {
 export function gerarTodosHorarios(
   duracaoServico: number,
   agendamentosOcupados: Array<{horario: string, duracao: number}> = [],
-  config: ConfiguracaoHorario = HORARIO_FUNCIONAMENTO_PADRAO
+  config: ConfiguracaoHorario = HORARIO_FUNCIONAMENTO_PADRAO,
+  dataSelecionada?: string // formato yyyy-MM-dd
 ): HorarioComStatus[] {
   const horarios: HorarioComStatus[] = [];
   const dataBase = new Date(2000, 0, 1);
+  
+  // Verificar se é hoje para filtrar horários passados
+  const agora = new Date();
+  const hoje = format(agora, 'yyyy-MM-dd');
+  const ehHoje = dataSelecionada === hoje;
+  const horaAtualMinutos = ehHoje ? agora.getHours() * 60 + agora.getMinutes() : 0;
   
   // Normalizar horários para garantir formato HH:mm
   const inicioNormalizado = normalizarHorario(config.inicio) || '09:00';
@@ -126,9 +133,14 @@ export function gerarTodosHorarios(
         );
       });
       
+      // Verificar se o horário já passou (para hoje)
+      const [hora, minuto] = horarioFormatado.split(':').map(Number);
+      const horarioEmMinutos = hora * 60 + minuto;
+      const jaPassou = ehHoje && horarioEmMinutos <= horaAtualMinutos;
+      
       horarios.push({
         horario: horarioFormatado,
-        disponivel: !temConflito && !estaNoAlmoco
+        disponivel: !temConflito && !estaNoAlmoco && !jaPassou
       });
     }
     
