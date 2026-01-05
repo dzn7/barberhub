@@ -94,6 +94,8 @@ export function GestaoHorariosAvancada() {
     aberto: false,
     id: null
   });
+  const [intervaloPersonalizado, setIntervaloPersonalizado] = useState(false);
+  const [valorIntervaloPersonalizado, setValorIntervaloPersonalizado] = useState("");
 
   useEffect(() => {
     if (!tenant) return;
@@ -611,8 +613,16 @@ export function GestaoHorariosAvancada() {
               ⏱️ Intervalo (em minutos)
             </label>
             <Select.Root
-              value={String(config.intervalo_horarios || 20)}
-              onValueChange={(value: string) => setConfig({ ...config, intervalo_horarios: Number(value) })}
+              value={intervaloPersonalizado ? "personalizado" : String(config.intervalo_horarios || 20)}
+              onValueChange={(value: string) => {
+                if (value === "personalizado") {
+                  setIntervaloPersonalizado(true);
+                  setValorIntervaloPersonalizado(String(config.intervalo_horarios || 20));
+                } else {
+                  setIntervaloPersonalizado(false);
+                  setConfig({ ...config, intervalo_horarios: Number(value) });
+                }
+              }}
               size="3"
             >
               <Select.Trigger className="w-full max-w-full" />
@@ -670,8 +680,81 @@ export function GestaoHorariosAvancada() {
                     </div>
                   </Select.Item>
                 </Select.Group>
+                <Select.Separator />
+                <Select.Group>
+                  <Select.Label className="text-xs text-zinc-500 px-2 py-1">Outros</Select.Label>
+                  <Select.Item value="25">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">25 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:25, 08:50...)</span>
+                    </div>
+                  </Select.Item>
+                  <Select.Item value="35">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">35 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:35, 09:10...)</span>
+                    </div>
+                  </Select.Item>
+                  <Select.Item value="40">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">40 minutos</span>
+                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:40, 09:20...)</span>
+                    </div>
+                  </Select.Item>
+                  <Select.Item value="personalizado">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="font-semibold">✏️ Personalizado</span>
+                      <span className="text-xs text-zinc-500">(Digite o valor desejado)</span>
+                    </div>
+                  </Select.Item>
+                </Select.Group>
               </Select.Content>
             </Select.Root>
+            
+            {/* Input para intervalo personalizado */}
+            {intervaloPersonalizado && (
+              <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                <label className="block text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                  Digite o intervalo desejado (em minutos):
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="1"
+                    max="120"
+                    value={valorIntervaloPersonalizado}
+                    onChange={(e) => setValorIntervaloPersonalizado(e.target.value)}
+                    className="w-24 px-3 py-2 bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 rounded-lg text-zinc-900 dark:text-white text-center font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="25"
+                  />
+                  <span className="text-sm text-amber-700 dark:text-amber-300">minutos</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const valor = parseInt(valorIntervaloPersonalizado);
+                      if (valor >= 1 && valor <= 120) {
+                        setConfig({ ...config, intervalo_horarios: valor });
+                        setIntervaloPersonalizado(false);
+                      }
+                    }}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    Aplicar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIntervaloPersonalizado(false)}
+                    className="px-3 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 font-medium rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                  Valor atual: <strong>{config.intervalo_horarios} minutos</strong>
+                </p>
+              </div>
+            )}
+            
             <div className="mt-3 p-3 bg-teal-50 dark:bg-teal-950/30 rounded-lg border border-teal-200 dark:border-teal-800">
               <p className="text-xs text-teal-700 dark:text-teal-300">
                 💡 <strong>Dica:</strong> Intervalos menores (15-20 min) permitem mais flexibilidade, 

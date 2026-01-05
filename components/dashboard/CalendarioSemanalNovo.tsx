@@ -55,6 +55,17 @@ const STATUS_CORES = {
 
 type ModoVisualizacao = 'timeline' | 'lista';
 
+// Mapeamento de dia da semana para abreviação
+const DIAS_SEMANA_MAP: Record<number, string> = {
+  0: 'dom',
+  1: 'seg',
+  2: 'ter',
+  3: 'qua',
+  4: 'qui',
+  5: 'sex',
+  6: 'sab'
+};
+
 export function CalendarioSemanalNovo() {
   const { tenant } = useAuth();
   const [dataBase, setDataBase] = useState(new Date());
@@ -66,6 +77,7 @@ export function CalendarioSemanalNovo() {
   const [modalRemarcacaoAberto, setModalRemarcacaoAberto] = useState(false);
   const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
   const [processandoExclusao, setProcessandoExclusao] = useState(false);
+  const [diasFuncionamento, setDiasFuncionamento] = useState<string[]>(['seg', 'ter', 'qua', 'qui', 'sex', 'sab']);
   
   // Configurações de visualização
   const [visualizacao, setVisualizacao] = useState<TipoVisualizacao>('semana');
@@ -77,7 +89,26 @@ export function CalendarioSemanalNovo() {
 
   const alturaHora = TAMANHOS_HORA[tamanhoHora];
 
-  // Calcular dias a exibir baseado na visualização
+  // Buscar configuração da barbearia para dias de funcionamento
+  useEffect(() => {
+    const buscarConfiguracao = async () => {
+      if (!tenant?.id) return;
+      
+      const { data, error } = await supabase
+        .from('configuracoes_barbearia')
+        .select('dias_funcionamento')
+        .eq('tenant_id', tenant.id)
+        .single();
+      
+      if (!error && data?.dias_funcionamento) {
+        setDiasFuncionamento(data.dias_funcionamento);
+      }
+    };
+    
+    buscarConfiguracao();
+  }, [tenant?.id]);
+
+  // Calcular dias a exibir baseado na visualização e dias de funcionamento
   const diasExibidos = useMemo(() => {
     if (visualizacao === 'dia') {
       return [dataBase];
@@ -85,10 +116,20 @@ export function CalendarioSemanalNovo() {
     if (visualizacao === '3dias') {
       return [subDays(dataBase, 1), dataBase, addDays(dataBase, 1)];
     }
-    // Semana completa
+    // Semana - filtrar apenas dias de funcionamento
     const inicio = startOfWeek(dataBase, { weekStartsOn: 0 });
-    return Array.from({ length: 7 }, (_, i) => addDays(inicio, i));
-  }, [dataBase, visualizacao]);
+    const todosDias = Array.from({ length: 7 }, (_, i) => addDays(inicio, i));
+    
+    // Filtrar apenas os dias que a barbearia funciona
+    const diasFiltrados = todosDias.filter(dia => {
+      const diaSemana = dia.getDay();
+      const abreviacao = DIAS_SEMANA_MAP[diaSemana];
+      return diasFuncionamento.includes(abreviacao);
+    });
+    
+    // Se não houver dias filtrados (configuração vazia), mostrar todos
+    return diasFiltrados.length > 0 ? diasFiltrados : todosDias;
+  }, [dataBase, visualizacao, diasFuncionamento]);
 
   // Título do período
   const tituloPeriodo = useMemo(() => {

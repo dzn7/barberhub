@@ -11,6 +11,7 @@ import {
   Download, ChevronDown, Users, Star, AlertCircle
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   startOfYear, endOfYear, subDays, subMonths, parseISO, eachDayOfInterval,
@@ -134,6 +135,7 @@ const CORES_FORMA_PAGAMENTO: Record<string, string> = {
 };
 
 export function Relatorios() {
+  const { tenant } = useAuth();
   const [carregando, setCarregando] = useState(true);
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [filtro, setFiltro] = useState<FiltroRelatorio>({
@@ -177,6 +179,12 @@ export function Relatorios() {
 
   // Buscar dados do relatório
   const buscarDadosRelatorio = async () => {
+    if (!tenant?.id) {
+      setErroCarregamento("Tenant não identificado");
+      setCarregando(false);
+      return;
+    }
+
     setCarregando(true);
     setErroCarregamento(null);
 
@@ -184,7 +192,7 @@ export function Relatorios() {
       const inicioISO = filtro.dataInicio.toISOString();
       const fimISO = filtro.dataFim.toISOString();
 
-      // Buscar agendamentos do período
+      // Buscar agendamentos do período - FILTRADO POR TENANT
       const { data: agendamentos, error: erroAgendamentos } = await supabase
         .from("agendamentos")
         .select(`
@@ -198,6 +206,7 @@ export function Relatorios() {
           clientes (id, nome),
           barbeiros (id, nome)
         `)
+        .eq("tenant_id", tenant.id)
         .gte("data_hora", inicioISO)
         .lte("data_hora", fimISO);
 
@@ -205,7 +214,7 @@ export function Relatorios() {
         throw new Error("Erro ao buscar agendamentos: " + erroAgendamentos.message);
       }
 
-      // Buscar atendimentos presenciais
+      // Buscar atendimentos presenciais - FILTRADO POR TENANT
       const { data: atendimentosPresenciais, error: erroAtendimentos } = await supabase
         .from("atendimentos_presenciais")
         .select(`
@@ -216,6 +225,7 @@ export function Relatorios() {
           servicos (id, nome, preco),
           barbeiros (id, nome)
         `)
+        .eq("tenant_id", tenant.id)
         .gte("data", inicioISO)
         .lte("data", fimISO);
 
@@ -417,10 +427,12 @@ export function Relatorios() {
     });
   };
 
-  // Efeito para buscar dados quando filtro muda
+  // Efeito para buscar dados quando filtro ou tenant muda
   useEffect(() => {
-    buscarDadosRelatorio();
-  }, [filtro]);
+    if (tenant?.id) {
+      buscarDadosRelatorio();
+    }
+  }, [filtro, tenant?.id]);
 
   // Tooltip customizado para gráficos
   const TooltipCustomizado = ({ active, payload, label }: any) => {
