@@ -101,19 +101,25 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
     instagram: "",
   });
 
-  // Lista de fontes disponíveis
+  // Lista de fontes disponíveis com classe CSS correspondente
   const FONTES_DISPONIVEIS = [
-    { nome: "Inter", descricao: "Moderna e legível" },
-    { nome: "Poppins", descricao: "Geométrica e elegante" },
-    { nome: "Roboto", descricao: "Clássica e versátil" },
-    { nome: "Montserrat", descricao: "Sofisticada e bold" },
-    { nome: "Open Sans", descricao: "Limpa e neutra" },
-    { nome: "Playfair Display", descricao: "Serifada clássica" },
-    { nome: "Oswald", descricao: "Condensada impactante" },
-    { nome: "Lato", descricao: "Humanista e amigável" },
-    { nome: "Raleway", descricao: "Elegante e fina" },
-    { nome: "Nunito", descricao: "Arredondada e suave" },
+    { nome: "Inter", classe: "font-inter", descricao: "Moderna e legível" },
+    { nome: "Poppins", classe: "font-poppins", descricao: "Geométrica e elegante" },
+    { nome: "Roboto", classe: "font-roboto", descricao: "Clássica e versátil" },
+    { nome: "Montserrat", classe: "font-montserrat", descricao: "Sofisticada e bold" },
+    { nome: "Open Sans", classe: "font-open-sans", descricao: "Limpa e neutra" },
+    { nome: "Playfair Display", classe: "font-playfair", descricao: "Serifada clássica" },
+    { nome: "Oswald", classe: "font-oswald", descricao: "Condensada impactante" },
+    { nome: "Lato", classe: "font-lato", descricao: "Humanista e amigável" },
+    { nome: "Raleway", classe: "font-raleway", descricao: "Elegante e fina" },
+    { nome: "Nunito", classe: "font-nunito", descricao: "Arredondada e suave" },
   ];
+
+  // Helper para obter classe CSS da fonte pelo nome
+  const obterClasseFonte = (nomeFonte: string) => {
+    const fonte = FONTES_DISPONIVEIS.find(f => f.nome === nomeFonte);
+    return fonte?.classe || "font-inter";
+  };
 
   // Carregar dados do tenant
   useEffect(() => {
@@ -532,7 +538,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
               Tipografia
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              Escolha as fontes que representam sua marca
+              Escolha as fontes que representam {ehNail ? 'seu estúdio' : 'sua barbearia'}
             </p>
 
             <div className="space-y-4">
@@ -552,10 +558,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                           : "bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                       }`}
                     >
-                      <span 
-                        className="block font-medium text-sm"
-                        style={{ fontFamily: fonte.nome }}
-                      >
+                      <span className={`block font-medium text-sm ${fonte.classe}`}>
                         {fonte.nome}
                       </span>
                       <span className={`text-xs ${
@@ -586,10 +589,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                           : "bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                       }`}
                     >
-                      <span 
-                        className="block font-bold text-sm"
-                        style={{ fontFamily: fonte.nome }}
-                      >
+                      <span className={`block font-bold text-sm ${fonte.classe}`}>
                         {fonte.nome}
                       </span>
                     </button>
@@ -613,22 +613,16 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
               {/* Header simulado */}
               <div className="p-4 border-b" style={{ borderColor: dados.cor_destaque + '30' }}>
                 <h4 
-                  className="text-lg font-bold"
-                  style={{ 
-                    color: dados.cor_texto,
-                    fontFamily: dados.fonte_titulos
-                  }}
+                  className={`text-lg font-bold ${obterClasseFonte(dados.fonte_titulos)}`}
+                  style={{ color: dados.cor_texto }}
                 >
-                  {dados.nome || "Seu Estabelecimento"}
+                  {dados.nome || (ehNail ? "Seu Estúdio" : "Sua Barbearia")}
                 </h4>
                 <p 
-                  className="text-sm opacity-80"
-                  style={{ 
-                    color: dados.cor_texto,
-                    fontFamily: dados.fonte_principal
-                  }}
+                  className={`text-sm opacity-80 ${obterClasseFonte(dados.fonte_principal)}`}
+                  style={{ color: dados.cor_texto }}
                 >
-                  Bem-vindo ao nosso espaço
+                  {ehNail ? 'Bem-vinda ao nosso espaço' : 'Bem-vindo ao nosso espaço'}
                 </p>
               </div>
 
@@ -639,19 +633,16 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                   style={{ backgroundColor: dados.cor_secundaria }}
                 >
                   <p 
-                    className="font-medium text-sm"
-                    style={{ 
-                      color: dados.cor_primaria,
-                      fontFamily: dados.fonte_principal
-                    }}
+                    className={`font-medium text-sm ${obterClasseFonte(dados.fonte_principal)}`}
+                    style={{ color: dados.cor_primaria }}
                   >
-                    ✂️ Corte Masculino
+                    {ehNail ? '💅 Unhas em Gel' : '✂️ Corte Masculino'}
                   </p>
                   <p 
                     className="text-xs opacity-70"
                     style={{ color: dados.cor_primaria }}
                   >
-                    30 min • R$ 35,00
+                    {ehNail ? '60 min • R$ 120,00' : '30 min • R$ 35,00'}
                   </p>
                 </div>
 
@@ -660,29 +651,25 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                   style={{ backgroundColor: dados.cor_secundaria }}
                 >
                   <p 
-                    className="font-medium text-sm"
-                    style={{ 
-                      color: dados.cor_primaria,
-                      fontFamily: dados.fonte_principal
-                    }}
+                    className={`font-medium text-sm ${obterClasseFonte(dados.fonte_principal)}`}
+                    style={{ color: dados.cor_primaria }}
                   >
-                    🧔 Barba Completa
+                    {ehNail ? '✨ Esmaltação' : '🧔 Barba Completa'}
                   </p>
                   <p 
                     className="text-xs opacity-70"
                     style={{ color: dados.cor_primaria }}
                   >
-                    20 min • R$ 25,00
+                    {ehNail ? '30 min • R$ 45,00' : '20 min • R$ 25,00'}
                   </p>
                 </div>
 
                 {/* Botão de ação */}
                 <button
-                  className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
+                  className={`w-full py-3 rounded-lg font-semibold text-sm transition-all hover:opacity-90 ${obterClasseFonte(dados.fonte_principal)}`}
                   style={{ 
                     backgroundColor: dados.cor_destaque, 
-                    color: dados.cor_primaria,
-                    fontFamily: dados.fonte_principal
+                    color: dados.cor_primaria
                   }}
                 >
                   Agendar Agora

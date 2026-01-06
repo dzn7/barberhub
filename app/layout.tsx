@@ -1,5 +1,16 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { 
+  Inter, 
+  Poppins, 
+  Roboto, 
+  Montserrat, 
+  Open_Sans, 
+  Playfair_Display, 
+  Oswald, 
+  Lato, 
+  Raleway, 
+  Nunito 
+} from 'next/font/google'
 import './globals.css'
 import '@radix-ui/themes/styles.css'
 import { ProvedorTema } from '@/components/provedores/provedor-tema'
@@ -7,11 +18,89 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/hooks/useToast'
 import { RadixThemeWrapper } from '@/components/provedores/radix-theme-wrapper'
 
+// Fontes disponíveis para personalização do tenant
 const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
 })
+
+const poppins = Poppins({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-poppins',
+})
+
+const roboto = Roboto({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '700'],
+  display: 'swap',
+  variable: '--font-roboto',
+})
+
+const montserrat = Montserrat({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-montserrat',
+})
+
+const openSans = Open_Sans({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-open-sans',
+})
+
+const playfairDisplay = Playfair_Display({ 
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-playfair',
+})
+
+const oswald = Oswald({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-oswald',
+})
+
+const lato = Lato({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '700'],
+  display: 'swap',
+  variable: '--font-lato',
+})
+
+const raleway = Raleway({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-raleway',
+})
+
+const nunito = Nunito({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-nunito',
+})
+
+// Combina todas as variáveis de fonte
+const fontVariables = [
+  inter.variable,
+  poppins.variable,
+  roboto.variable,
+  montserrat.variable,
+  openSans.variable,
+  playfairDisplay.variable,
+  oswald.variable,
+  lato.variable,
+  raleway.variable,
+  nunito.variable,
+].join(' ')
 
 const URL_BASE = 'https://barberhub.online'
 
@@ -128,7 +217,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${fontVariables}`}>
         <ProvedorTema
           attribute="class"
           defaultTheme="system"

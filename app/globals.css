@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Classes de fontes personalizáveis para tenants */
+.font-inter { font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif; }
+.font-poppins { font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif; }
+.font-roboto { font-family: var(--font-roboto), ui-sans-serif, system-ui, sans-serif; }
+.font-montserrat { font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif; }
+.font-open-sans { font-family: var(--font-open-sans), ui-sans-serif, system-ui, sans-serif; }
+.font-playfair { font-family: var(--font-playfair), ui-serif, Georgia, serif; }
+.font-oswald { font-family: var(--font-oswald), ui-sans-serif, system-ui, sans-serif; }
+.font-lato { font-family: var(--font-lato), ui-sans-serif, system-ui, sans-serif; }
+.font-raleway { font-family: var(--font-raleway), ui-sans-serif, system-ui, sans-serif; }
+.font-nunito { font-family: var(--font-nunito), ui-sans-serif, system-ui, sans-serif; }
+
 @theme inline {
   --animate-cell-ripple: cell-ripple var(--duration, 200ms) ease-out none 1 var(--delay, 0ms);
 
