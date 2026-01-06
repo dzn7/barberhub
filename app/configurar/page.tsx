@@ -490,10 +490,10 @@ function CardPasso({
           )}
         </div>
         
-        {/* Badge de destaque - posicionado abaixo do cabeçalho no mobile */}
+        {/* Badge de destaque - dentro do card para não ser cortado */}
         {destaque && (
-          <div className="absolute -top-3 left-6 px-3 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-md">
-            Comece por aqui
+          <div className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-500 text-white text-[10px] font-semibold rounded-md shadow-sm">
+            Comece aqui
           </div>
         )}
       </div>
@@ -1067,7 +1067,7 @@ export default function ConfigurarPage() {
               {etapaAtual === 5 && (
                 <motion.div key="etapa5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[4]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <ServicosMiniGestao tenantId={tenant.id} limiteServicos={tenant.limite_servicos || 10} onTotalChange={setTotalServicos} tipoNegocio={tipoNegocio} />
+                  <ServicosMiniGestao tenantId={tenant.id} onTotalChange={setTotalServicos} tipoNegocio={tipoNegocio} />
                 </motion.div>
               )}
               {etapaAtual === 6 && (

@@ -32,7 +32,6 @@ interface Servico {
 
 interface ServicosMiniGestaoProps {
   tenantId: string
-  limiteServicos?: number
   onTotalChange?: (total: number) => void
   tipoNegocio?: TipoNegocio
 }
@@ -90,7 +89,6 @@ const SERVICOS_SUGERIDOS_NAIL = [
  */
 export function ServicosMiniGestao({
   tenantId,
-  limiteServicos = 10,
   onTotalChange,
   tipoNegocio = 'barbearia'
 }: ServicosMiniGestaoProps) {
@@ -152,11 +150,6 @@ export function ServicosMiniGestao({
       toast({ tipo: 'erro', mensagem: 'O preço deve ser maior que zero' })
       return
     }
-    if (servicos.length >= limiteServicos) {
-      toast({ tipo: 'aviso', mensagem: `Limite de ${limiteServicos} serviços atingido` })
-      return
-    }
-
     setSalvando(true)
     try {
       const proximaOrdem = servicos.length > 0 
@@ -257,10 +250,6 @@ export function ServicosMiniGestao({
   }
 
   const adicionarSugerido = async (sugerido: typeof SERVICOS_SUGERIDOS[0]) => {
-    if (servicos.length >= limiteServicos) {
-      toast({ tipo: 'aviso', mensagem: `Limite de ${limiteServicos} serviços atingido` })
-      return
-    }
 
     // Verificar se já existe
     if (servicos.some(s => s.nome.toLowerCase() === sugerido.nome.toLowerCase())) {
@@ -310,10 +299,10 @@ export function ServicosMiniGestao({
         <div className="flex items-center gap-2">
           <Scissors className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {servicos.length}/{limiteServicos} serviços
+            {servicos.length} {servicos.length === 1 ? 'serviço' : 'serviços'}
           </span>
         </div>
-        {!mostrarFormulario && !editando && servicos.length < limiteServicos && (
+        {!mostrarFormulario && !editando && (
           <button
             onClick={() => setMostrarFormulario(true)}
             className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-900 dark:bg-zinc-800 text-white rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors"
@@ -578,7 +567,7 @@ export function ServicosMiniGestao({
       </div>
 
       {/* Dica quando tem serviços */}
-      {servicos.length > 0 && servicos.length < limiteServicos && !mostrarFormulario && !editando && (
+      {servicos.length > 0 && !mostrarFormulario && !editando && (
         <p className="text-xs text-zinc-500 dark:text-zinc-600 text-center hidden sm:block">
           Passe o mouse sobre um serviço para editar ou remover
         </p>
