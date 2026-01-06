@@ -524,8 +524,8 @@ export function CadastroBarbeirosOnboarding({
   }
 
   const linkAcesso = typeof window !== 'undefined' 
-    ? `${window.location.origin}/barbeiro/entrar`
-    : '/barbeiro/entrar'
+    ? `${window.location.origin}/colaborador/entrar`
+    : '/colaborador/entrar'
 
   if (carregando) {
     return (
@@ -566,6 +566,8 @@ export function CadastroBarbeirosOnboarding({
           <EtapaPerguntaEquipe
             onSim={() => setEtapa('cadastro_equipe')}
             onNao={() => setEtapa('lista')}
+            tipoNegocio={tipoNegocio}
+            terminologia={terminologia}
           />
         )}
 
@@ -995,11 +997,21 @@ function EtapaCadastroProprietario({
  */
 function EtapaPerguntaEquipe({
   onSim,
-  onNao
+  onNao,
+  tipoNegocio,
+  terminologia
 }: {
   onSim: () => void
   onNao: () => void
+  tipoNegocio: TipoNegocio
+  terminologia: ReturnType<typeof obterTerminologia>
 }) {
+  const ehNail = tipoNegocio === 'nail_designer'
+  const profissionalPlural = terminologia.profissional.plural.toLowerCase()
+  const profissionalSingular = terminologia.profissional.singular.toLowerCase()
+  const artigoPlural = terminologia.profissional.artigoPlural
+  const artigo = terminologia.profissional.artigo
+  
   return (
     <motion.div
       key="pergunta_equipe"
@@ -1014,10 +1026,10 @@ function EtapaPerguntaEquipe({
         </div>
         
         <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mb-2">
-          Você tem outros barbeiros na equipe?
+          Você tem outr{ehNail ? 'as' : 'os'} {profissionalPlural} na equipe?
         </h3>
         <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8 max-w-md mx-auto">
-          Cada barbeiro terá seu próprio acesso pelo <strong>/barbeiro</strong> e será notificado via WhatsApp com o link e código de acesso.
+          Cada {profissionalSingular} terá seu próprio acesso pelo <strong>/colaborador</strong> e será notificad{ehNail ? 'a' : 'o'} via WhatsApp com o link e código de acesso.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -1032,7 +1044,7 @@ function EtapaPerguntaEquipe({
             onClick={onNao}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           >
-            Não, trabalho sozinho
+            Não, trabalho sozinh{ehNail ? 'a' : 'o'}
           </button>
         </div>
       </div>
@@ -1042,7 +1054,7 @@ function EtapaPerguntaEquipe({
         <div className="text-sm">
           <p className="text-emerald-700 dark:text-emerald-300 font-medium mb-1">Notificação automática via WhatsApp</p>
           <p className="text-emerald-600/80 dark:text-emerald-200/70">
-            Cada barbeiro cadastrado receberá uma mensagem no WhatsApp com o link de acesso e código único.
+            Cada {profissionalSingular} cadastrad{ehNail ? 'a' : 'o'} receberá uma mensagem no WhatsApp com o link de acesso e código único.
           </p>
         </div>
       </div>

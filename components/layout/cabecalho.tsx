@@ -37,12 +37,12 @@ export function Cabecalho() {
       )}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center justify-between h-16 md:h-20 relative">
           <button className="flex items-center space-x-2 cursor-pointer" onClick={() => rolarPara('inicio')} aria-label="Ir para o início">
             <LogoMarca />
           </button>
 
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-8 md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
             <button
               onClick={() => rolarPara('vantagens')}
               className="text-sm font-medium hover:text-primary transition-colors"

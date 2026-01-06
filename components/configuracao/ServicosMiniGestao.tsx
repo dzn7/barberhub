@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
+import { obterCategoriasServicos, obterTerminologia } from '@/lib/configuracoes-negocio'
+import { TipoNegocio } from '@/lib/tipos-negocio'
 import {
   Scissors,
   Plus,
@@ -32,9 +34,13 @@ interface ServicosMiniGestaoProps {
   tenantId: string
   limiteServicos?: number
   onTotalChange?: (total: number) => void
+  tipoNegocio?: TipoNegocio
 }
 
-const CATEGORIAS = [
+/**
+ * Categorias de serviços para Barbearias
+ */
+const CATEGORIAS_BARBEARIA = [
   { valor: 'corte', label: 'Corte' },
   { valor: 'barba', label: 'Barba' },
   { valor: 'combo', label: 'Combo' },
@@ -42,12 +48,40 @@ const CATEGORIAS = [
   { valor: 'outros', label: 'Outros' },
 ]
 
-const SERVICOS_SUGERIDOS = [
+/**
+ * Categorias de serviços para Nail Designers
+ */
+const CATEGORIAS_NAIL = [
+  { valor: 'alongamento', label: 'Alongamento' },
+  { valor: 'esmaltacao', label: 'Esmaltação em Gel' },
+  { valor: 'manicure', label: 'Manicure' },
+  { valor: 'pedicure', label: 'Pedicure' },
+  { valor: 'nail_art', label: 'Nail Art' },
+  { valor: 'manutencao', label: 'Manutenção' },
+  { valor: 'spa', label: 'Spa dos Pés' },
+  { valor: 'outros', label: 'Outros' },
+]
+
+/**
+ * Serviços sugeridos para Barbearias
+ */
+const SERVICOS_SUGERIDOS_BARBEARIA = [
   { nome: 'Corte Masculino', descricao: 'Corte tradicional masculino', preco: 35, duracao: 30, categoria: 'corte' },
   { nome: 'Corte Degradê', descricao: 'Corte com degradê nas laterais', preco: 45, duracao: 40, categoria: 'corte' },
   { nome: 'Barba', descricao: 'Aparar e modelar barba', preco: 25, duracao: 20, categoria: 'barba' },
   { nome: 'Corte + Barba', descricao: 'Combo corte e barba', preco: 55, duracao: 50, categoria: 'combo' },
   { nome: 'Sobrancelha', descricao: 'Design de sobrancelha', preco: 15, duracao: 10, categoria: 'outros' },
+]
+
+/**
+ * Serviços sugeridos para Nail Designers
+ */
+const SERVICOS_SUGERIDOS_NAIL = [
+  { nome: 'Alongamento em Gel', descricao: 'Alongamento com gel moldado', preco: 150, duracao: 120, categoria: 'alongamento' },
+  { nome: 'Esmaltação em Gel', descricao: 'Esmaltação durável em gel', preco: 80, duracao: 60, categoria: 'esmaltacao' },
+  { nome: 'Manutenção', descricao: 'Manutenção de alongamento', preco: 100, duracao: 90, categoria: 'manutencao' },
+  { nome: 'Nail Art', descricao: 'Decoração artística nas unhas', preco: 120, duracao: 90, categoria: 'nail_art' },
+  { nome: 'Spa dos Pés', descricao: 'Tratamento completo para os pés', preco: 90, duracao: 60, categoria: 'spa' },
 ]
 
 /**
@@ -57,7 +91,8 @@ const SERVICOS_SUGERIDOS = [
 export function ServicosMiniGestao({
   tenantId,
   limiteServicos = 10,
-  onTotalChange
+  onTotalChange,
+  tipoNegocio = 'barbearia'
 }: ServicosMiniGestaoProps) {
   const { toast } = useToast()
   const [servicos, setServicos] = useState<Servico[]>([])
@@ -66,12 +101,19 @@ export function ServicosMiniGestao({
   const [editando, setEditando] = useState<string | null>(null)
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   
+  // Categorias e serviços dinâmicos baseados no tipo de negócio
+  const ehNail = tipoNegocio === 'nail_designer'
+  const CATEGORIAS = useMemo(() => ehNail ? CATEGORIAS_NAIL : CATEGORIAS_BARBEARIA, [ehNail])
+  const SERVICOS_SUGERIDOS = useMemo(() => ehNail ? SERVICOS_SUGERIDOS_NAIL : SERVICOS_SUGERIDOS_BARBEARIA, [ehNail])
+  const categoriaInicial = ehNail ? 'alongamento' : 'corte'
+  const placeholderNome = ehNail ? 'Ex: Alongamento em Gel' : 'Ex: Corte Degradê'
+  
   const [formulario, setFormulario] = useState({
     nome: '',
     descricao: '',
     preco: '',
     duracao: '30',
-    categoria: 'corte'
+    categoria: categoriaInicial
   })
 
   useEffect(() => {
@@ -322,7 +364,7 @@ export function ServicosMiniGestao({
                     type="text"
                     value={formulario.nome}
                     onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
-                    placeholder="Ex: Corte Degradê"
+                    {...{ placeholder: placeholderNome }}
                     className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                   />
                 </div>

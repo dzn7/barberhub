@@ -294,7 +294,7 @@ function CabecalhoEtapa({ etapa, etapaAtual, totalEtapas }: CabecalhoEtapaProps)
 
 /**
  * Componente de tela de sucesso após configuração
- * Design premium step-by-step sem parecer feito por IA
+ * Design acolhedor, explicativo e celebratório
  */
 interface TelaSucessoProps {
   tenant: {
@@ -310,18 +310,209 @@ interface TelaSucessoProps {
   tipoNegocio?: TipoNegocio
 }
 
+/**
+ * Ícone de check animado para celebração
+ */
+function IconeCheckAnimado() {
+  return (
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ 
+        type: "spring",
+        stiffness: 200,
+        damping: 15,
+        delay: 0.2
+      }}
+      className="relative"
+    >
+      {/* Círculo externo com gradiente sutil */}
+      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/20 flex items-center justify-center">
+        {/* Círculo interno */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+          className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/25"
+        >
+          {/* Check mark animado */}
+          <motion.svg
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+            className="w-7 h-7 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <motion.path
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              d="M5 13l4 4L19 7"
+            />
+          </motion.svg>
+        </motion.div>
+      </div>
+      
+      {/* Pulso sutil */}
+      <motion.div
+        initial={{ scale: 1, opacity: 0.5 }}
+        animate={{ scale: 1.5, opacity: 0 }}
+        transition={{ delay: 0.8, duration: 1, repeat: 2 }}
+        className="absolute inset-0 rounded-full bg-emerald-400/30"
+      />
+    </motion.div>
+  )
+}
+
+/**
+ * Card de passo com design acolhedor
+ */
+interface CardPassoProps {
+  numero: number
+  titulo: string
+  descricao: string
+  explicacao: string
+  link?: string
+  acao?: () => void
+  textoBotao: string
+  icone: React.ElementType
+  externo?: boolean
+  destaque?: boolean
+  delay: number
+  concluido?: boolean
+}
+
+function CardPasso({ 
+  numero, 
+  titulo, 
+  descricao, 
+  explicacao,
+  link, 
+  acao, 
+  textoBotao, 
+  icone: Icone, 
+  externo, 
+  destaque,
+  delay,
+  concluido
+}: CardPassoProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="group"
+    >
+      <div className={`
+        relative overflow-hidden rounded-2xl transition-all duration-300
+        ${destaque 
+          ? 'bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-800 dark:to-zinc-900 text-white shadow-xl shadow-zinc-900/10 dark:shadow-black/20' 
+          : 'bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg hover:shadow-zinc-900/5 dark:hover:shadow-black/10'
+        }
+      `}>
+        {/* Gradiente decorativo sutil para o card destaque */}
+        {destaque && (
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+        )}
+        
+        <div className="relative p-6">
+          {/* Cabeçalho do card */}
+          <div className="flex items-start gap-4 mb-4">
+            {/* Indicador de número/passo */}
+            <div className={`
+              flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold
+              ${destaque 
+                ? 'bg-white/10 text-white' 
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+              }
+            `}>
+              {concluido ? (
+                <Check className="w-5 h-5 text-emerald-500" />
+              ) : (
+                numero
+              )}
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h3 className={`text-lg font-semibold mb-1 ${destaque ? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
+                {titulo}
+              </h3>
+              <p className={`text-sm ${destaque ? 'text-zinc-300' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                {descricao}
+              </p>
+            </div>
+          </div>
+          
+          {/* Explicação detalhada para leigos */}
+          <div className={`
+            mb-5 p-4 rounded-xl text-sm leading-relaxed
+            ${destaque 
+              ? 'bg-white/5 text-zinc-300' 
+              : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400'
+            }
+          `}>
+            {explicacao}
+          </div>
+          
+          {/* Botão de ação */}
+          {link ? (
+            <Link
+              href={link}
+              target={externo ? '_blank' : undefined}
+              className={`
+                inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200
+                ${destaque
+                  ? 'bg-white text-zinc-900 hover:bg-zinc-100 shadow-lg shadow-white/10'
+                  : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'
+                }
+              `}
+            >
+              <Icone className="w-4 h-4" />
+              {textoBotao}
+              {externo && <ExternalLink className="w-3.5 h-3.5 ml-0.5 opacity-60" />}
+            </Link>
+          ) : (
+            <button
+              onClick={acao}
+              className={`
+                inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200
+                bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700
+              `}
+            >
+              <Icone className="w-4 h-4" />
+              {textoBotao}
+            </button>
+          )}
+        </div>
+        
+        {/* Badge de destaque */}
+        {destaque && (
+          <div className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-500 text-white text-xs font-medium rounded-full">
+            Comece por aqui
+          </div>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros, tipoNegocio }: TelaSucessoProps) {
   const [linkCopiado, setLinkCopiado] = useState(false)
   const linkPublico = `barberhub.online/${tenant.slug}`
   const ehNail = tipoNegocio === 'nail_designer'
+  const nomeNegocio = dados.nome || tenant.nome
   
   const copiarLink = async () => {
     try {
       await navigator.clipboard.writeText(`https://${linkPublico}`)
       setLinkCopiado(true)
-      setTimeout(() => setLinkCopiado(false), 2000)
+      setTimeout(() => setLinkCopiado(false), 3000)
     } catch {
-      // Fallback para navegadores antigos
       const input = document.createElement('input')
       input.value = `https://${linkPublico}`
       document.body.appendChild(input)
@@ -329,237 +520,231 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
       document.execCommand('copy')
       document.body.removeChild(input)
       setLinkCopiado(true)
-      setTimeout(() => setLinkCopiado(false), 2000)
+      setTimeout(() => setLinkCopiado(false), 3000)
     }
   }
 
-  const proximosPassos = [
-    {
-      numero: 1,
-      titulo: 'Acesse o Painel Administrativo',
-      descricao: ehNail 
-        ? 'Gerencie agendamentos, veja relatórios e configure seu estúdio'
-        : 'Gerencie agendamentos, veja relatórios e configure sua barbearia',
-      link: '/admin',
-      textoBotao: 'Abrir Painel',
-      icone: LayoutDashboard,
-      destaque: true
-    },
-    {
-      numero: 2,
-      titulo: 'Veja seu Site Público',
-      descricao: ehNail
-        ? 'Confira como suas clientes vão ver sua página de agendamentos'
-        : 'Confira como seus clientes vão ver sua página de agendamentos',
-      link: `/${tenant.slug}`,
-      textoBotao: 'Ver Site',
-      icone: Globe,
-      externo: true
-    },
-    {
-      numero: 3,
-      titulo: ehNail ? 'Compartilhe com Clientes' : 'Compartilhe com Clientes',
-      descricao: ehNail
-        ? 'Envie o link da sua página para suas clientes agendarem'
-        : 'Envie o link da sua página para seus clientes agendarem',
-      acao: copiarLink,
-      textoBotao: linkCopiado ? 'Copiado!' : 'Copiar Link',
-      icone: linkCopiado ? CheckCircle2 : Copy
-    }
-  ]
-
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black transition-colors">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-950 dark:to-black transition-colors">
       {/* Header minimalista */}
-      <header className="border-b border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-black">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+      <header className="border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-black/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto px-4 py-4">
           <Link href="/">
             <LogoMarca className="h-8" />
           </Link>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-12 md:py-20">
+      <main className="max-w-2xl mx-auto px-4 py-10 md:py-16">
+        {/* Seção de celebração */}
+        <div className="text-center mb-12">
+          {/* Ícone animado de sucesso */}
+          <div className="flex justify-center mb-6">
+            <IconeCheckAnimado />
+          </div>
+          
+          {/* Título celebratório */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+          >
+            <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-white mb-3">
+              Parabéns! {nomeNegocio} está pronto
+            </h1>
+            <p className="text-zinc-600 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+              {ehNail 
+                ? 'Seu estúdio agora tem uma página própria na internet onde suas clientes podem agendar horários a qualquer momento.'
+                : 'Sua barbearia agora tem uma página própria na internet onde seus clientes podem agendar horários a qualquer momento.'
+              }
+            </p>
+          </motion.div>
+        </div>
 
-        {/* Título principal */}
+        {/* Card do link - destaque especial */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-12"
+          transition={{ delay: 1, duration: 0.5 }}
+          className="mb-10"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-4">
-            {dados.nome || tenant.nome} está no ar
-          </h1>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-xl">
-            {ehNail 
-              ? 'Seu estúdio está configurado e pronto para receber agendamentos.'
-              : 'Sua barbearia está configurada e pronta para receber agendamentos.'
-            }
-            {' '}Veja abaixo os próximos passos para começar.
-          </p>
-        </motion.div>
-
-        {/* resumo da configuraçao */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-12"
-        >
-          <div className="bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm dark:shadow-none">
-            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 uppercase tracking-wider">
-              Resumo
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div>
-                <p className="text-2xl font-bold text-zinc-900 dark:text-white">{totalServicos}</p>
-                <p className="text-sm text-zinc-500">Serviços</p>
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/10 border border-emerald-200/50 dark:border-emerald-800/30 rounded-2xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <Globe className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-zinc-900 dark:text-white">{totalBarbeiros}</p>
-                <p className="text-sm text-zinc-500">Profissionais</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-sm text-zinc-500 mb-1">Seu link</p>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">
+                  Seu endereço na internet
+                </h2>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                  {ehNail 
+                    ? 'Este é o link que você vai compartilhar com suas clientes. Elas podem acessar de qualquer celular ou computador.'
+                    : 'Este é o link que você vai compartilhar com seus clientes. Eles podem acessar de qualquer celular ou computador.'
+                  }
+                </p>
+                
+                {/* Link copiável */}
                 <div className="flex items-center gap-2">
-                  <code className="text-zinc-900 dark:text-white font-mono text-sm bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-lg flex-1 truncate">
-                    {linkPublico}
-                  </code>
-                  <button
+                  <div className="flex-1 flex items-center gap-2 px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">🔗</span>
+                    <code className="text-zinc-900 dark:text-white font-medium text-sm flex-1 truncate">
+                      {linkPublico}
+                    </code>
+                  </div>
+                  <motion.button
                     onClick={copiarLink}
-                    className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                    title="Copiar link"
+                    whileTap={{ scale: 0.95 }}
+                    className={`
+                      flex items-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200
+                      ${linkCopiado 
+                        ? 'bg-emerald-500 text-white' 
+                        : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'
+                      }
+                    `}
                   >
                     {linkCopiado ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span className="hidden sm:inline">Copiado!</span>
+                      </>
                     ) : (
-                      <Copy className="w-4 h-4" />
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span className="hidden sm:inline">Copiar</span>
+                      </>
                     )}
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Próximos passos */}
+        {/* O que você configurou - resumo visual */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 1.1, duration: 0.5 }}
+          className="mb-10"
         >
-          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-6 uppercase tracking-wider">
-            Próximos passos
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 uppercase tracking-wider">
+            O que você configurou
           </h2>
-          
-          <div className="space-y-4">
-            {proximosPassos.map((passo, index) => {
-              const Icone = passo.icone
-              
-              return (
-                <motion.div
-                  key={passo.numero}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                  className={`group relative bg-white dark:bg-zinc-900/50 border rounded-2xl p-6 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 shadow-sm dark:shadow-none ${
-                    passo.destaque 
-                      ? 'border-zinc-900/20 dark:border-white/20 hover:border-zinc-900/40 dark:hover:border-white/40' 
-                      : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Número */}
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
-                      passo.destaque 
-                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-black' 
-                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-                    }`}>
-                      {passo.numero}
-                    </div>
-                    
-                    {/* Conteúdo */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">
-                        {passo.titulo}
-                      </h3>
-                      <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4">
-                        {passo.descricao}
-                      </p>
-                      
-                      {/* Botão de ação */}
-                      {passo.link ? (
-                        <Link
-                          href={passo.link}
-                          target={passo.externo ? '_blank' : undefined}
-                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                            passo.destaque
-                              ? 'bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200'
-                              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                          }`}
-                        >
-                          <Icone className="w-4 h-4" />
-                          {passo.textoBotao}
-                          {passo.externo && <ExternalLink className="w-3 h-3 ml-1" />}
-                        </Link>
-                      ) : (
-                        <button
-                          onClick={passo.acao}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg font-medium text-sm transition-colors"
-                        >
-                          <Icone className={`w-4 h-4 ${linkCopiado ? 'text-emerald-500' : ''}`} />
-                          {passo.textoBotao}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Badge de destaque */}
-                  {passo.destaque && (
-                    <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-zinc-900 dark:bg-white text-white dark:text-black text-xs font-medium rounded-full">
-                      Recomendado
-                    </div>
-                  )}
-                </motion.div>
-              )
-            })}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+              <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{totalServicos}</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                {totalServicos === 1 ? 'Serviço cadastrado' : 'Serviços cadastrados'}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+              <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{totalBarbeiros}</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                {totalBarbeiros === 1 
+                  ? (ehNail ? 'Profissional' : 'Profissional')
+                  : (ehNail ? 'Profissionais' : 'Profissionais')
+                }
+              </p>
+            </div>
           </div>
         </motion.div>
 
-        {/* Dicas adicionais */}
+        {/* Próximos passos - cards explicativos */}
+        <div className="mb-10">
+          <motion.h2
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 uppercase tracking-wider"
+          >
+            Próximos passos
+          </motion.h2>
+          
+          <div className="space-y-4">
+            <CardPasso
+              numero={1}
+              titulo="Acesse seu Painel de Controle"
+              descricao="Onde você gerencia tudo do seu negócio"
+              explicacao={ehNail 
+                ? "No painel você vai ver os agendamentos que suas clientes fizerem, controlar os horários disponíveis, ver relatórios de quanto está faturando, e muito mais. É como a central de comando do seu estúdio!"
+                : "No painel você vai ver os agendamentos que seus clientes fizerem, controlar os horários disponíveis, ver relatórios de quanto está faturando, e muito mais. É como a central de comando da sua barbearia!"
+              }
+              link="/admin"
+              textoBotao="Entrar no Painel"
+              icone={LayoutDashboard}
+              destaque={true}
+              delay={1.3}
+            />
+            
+            <CardPasso
+              numero={2}
+              titulo="Veja como ficou sua página"
+              descricao="Teste a experiência que seus clientes terão"
+              explicacao={ehNail 
+                ? "Clique para abrir sua página pública em uma nova aba. É exatamente isso que suas clientes vão ver quando acessarem o link. Você pode testar fazer um agendamento para ver como funciona!"
+                : "Clique para abrir sua página pública em uma nova aba. É exatamente isso que seus clientes vão ver quando acessarem o link. Você pode testar fazer um agendamento para ver como funciona!"
+              }
+              link={`/${tenant.slug}`}
+              textoBotao="Ver minha página"
+              icone={Eye}
+              externo={true}
+              delay={1.4}
+            />
+            
+            <CardPasso
+              numero={3}
+              titulo="Compartilhe nas redes sociais"
+              descricao="Divulgue seu link para começar a receber agendamentos"
+              explicacao={ehNail 
+                ? "Cole o link no seu Instagram, WhatsApp, ou onde preferir. Quando uma cliente clicar, ela vai direto para sua página de agendamentos. Simples assim!"
+                : "Cole o link no seu Instagram, WhatsApp, ou onde preferir. Quando um cliente clicar, ele vai direto para sua página de agendamentos. Simples assim!"
+              }
+              acao={copiarLink}
+              textoBotao={linkCopiado ? "Link copiado!" : "Copiar link"}
+              icone={linkCopiado ? Check : Copy}
+              delay={1.5}
+            />
+          </div>
+        </div>
+
+        {/* Dicas visuais */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="mt-12 pt-12 border-t border-zinc-800"
+          transition={{ delay: 1.6, duration: 0.5 }}
+          className="mb-10"
         >
-          <h2 className="text-sm font-medium text-zinc-400 mb-6 uppercase tracking-wider">
-            Dicas para começar
+          <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-4 uppercase tracking-wider">
+            Dicas para aproveitar melhor
           </h2>
           
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="flex items-start gap-3 p-4 bg-zinc-900/30 rounded-xl">
-              <Calendar className="w-5 h-5 text-zinc-500 flex-shrink-0 mt-0.5" />
+          <div className="grid gap-4">
+            <div className="flex items-start gap-4 p-4 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
               <div>
-                <p className="text-sm text-white font-medium mb-1">Configure seus horários</p>
-                <p className="text-xs text-zinc-500">
+                <p className="font-medium text-zinc-900 dark:text-white mb-1">Configure seus horários de funcionamento</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
                   {ehNail 
-                    ? 'No painel, defina os dias e horários que seu estúdio funciona'
-                    : 'No painel, defina os dias e horários que sua barbearia funciona'
+                    ? 'No painel, vá em "Horários" para definir quais dias e horários seu estúdio atende. Assim o sistema só mostra horários disponíveis para suas clientes.'
+                    : 'No painel, vá em "Horários" para definir quais dias e horários sua barbearia atende. Assim o sistema só mostra horários disponíveis para seus clientes.'
                   }
                 </p>
               </div>
             </div>
             
-            <div className="flex items-start gap-3 p-4 bg-zinc-900/30 rounded-xl">
-              <Settings className="w-5 h-5 text-zinc-500 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-4 p-4 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
               <div>
-                <p className="text-sm text-white font-medium mb-1">Personalize ainda mais</p>
-                <p className="text-xs text-zinc-500">
-                  {ehNail
-                    ? 'Adicione fotos do seu portfólio, ajuste preços e configure notificações'
-                    : 'Adicione fotos, ajuste preços e configure notificações'
+                <p className="font-medium text-zinc-900 dark:text-white mb-1">Personalize ainda mais</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  {ehNail 
+                    ? 'Você pode adicionar fotos do seu trabalho, ajustar preços, criar promoções e muito mais. Explore o painel com calma!'
+                    : 'Você pode adicionar fotos do seu trabalho, ajustar preços, criar promoções e muito mais. Explore o painel com calma!'
                   }
                 </p>
               </div>
@@ -571,20 +756,23 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-12 text-center"
+          transition={{ delay: 1.8 }}
+          className="text-center pt-8 border-t border-zinc-200 dark:border-zinc-800"
         >
-          <p className="text-sm text-zinc-600">
-            Precisa de ajuda? Entre em contato pelo{' '}
-            <a 
-              href="https://wa.me/5511999999999" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-zinc-400 hover:text-white transition-colors"
-            >
-              WhatsApp
-            </a>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
+            Ficou com alguma dúvida?
           </p>
+          <a 
+            href="https://wa.me/5511999999999" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Falar no WhatsApp
+          </a>
         </motion.div>
       </main>
     </div>
@@ -874,13 +1062,13 @@ export default function ConfigurarPage() {
               {etapaAtual === 5 && (
                 <motion.div key="etapa5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[4]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <ServicosMiniGestao tenantId={tenant.id} limiteServicos={tenant.limite_servicos || 10} onTotalChange={setTotalServicos} />
+                  <ServicosMiniGestao tenantId={tenant.id} limiteServicos={tenant.limite_servicos || 10} onTotalChange={setTotalServicos} tipoNegocio={tipoNegocio} />
                 </motion.div>
               )}
               {etapaAtual === 6 && (
                 <motion.div key="etapa6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[5]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <CadastroBarbeirosOnboarding tenantId={tenant.id} onTotalChange={setTotalBarbeiros} />
+                  <CadastroBarbeirosOnboarding tenantId={tenant.id} onTotalChange={setTotalBarbeiros} tipoNegocio={tipoNegocio} />
                 </motion.div>
               )}
             </AnimatePresence>
