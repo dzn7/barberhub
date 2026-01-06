@@ -197,15 +197,16 @@ export function validarDataPermitida(data: string): boolean {
 }
 
 /**
- * Gera array de datas disponíveis (hoje + 15 dias)
+ * Gera array de datas disponíveis (hoje + X dias)
  * 
+ * @param diasAntecedencia - Quantidade de dias a partir de hoje (padrão: 60 dias)
  * @returns Array de objetos com valor e label das datas
  */
-export function gerarDatasDisponiveis(): Array<{ valor: string; label: string }> {
+export function gerarDatasDisponiveis(diasAntecedencia: number = 60): Array<{ valor: string; label: string }> {
   const datas: Array<{ valor: string; label: string }> = [];
   const hoje = new Date();
   
-  for (let i = 0; i <= 15; i++) {
+  for (let i = 0; i <= diasAntecedencia; i++) {
     const data = new Date(hoje);
     data.setDate(data.getDate() + i);
     

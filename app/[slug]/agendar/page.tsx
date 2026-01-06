@@ -23,12 +23,27 @@ import {
   Sunset,
   Moon
 } from 'lucide-react'
-import { format, parse } from 'date-fns'
+import { 
+  format, 
+  parse, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  isSameMonth, 
+  isSameDay, 
+  addMonths, 
+  subMonths, 
+  isToday, 
+  isBefore, 
+  startOfDay,
+  getDay
+} from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { 
   gerarTodosHorarios, 
   gerarDatasDisponiveis
 } from '@/lib/horarios'
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 
 interface Tenant {
   id: string
@@ -87,6 +102,8 @@ export default function PaginaAgendar() {
   const [servicoSelecionado, setServicoSelecionado] = useState('')
   const [dataSelecionada, setDataSelecionada] = useState('')
   const [horarioSelecionado, setHorarioSelecionado] = useState('')
+  const [mesAtual, setMesAtual] = useState(new Date())
+  const [modoCalendario, setModoCalendario] = useState<'rapido' | 'calendario'>('rapido')
   const [nomeCliente, setNomeCliente] = useState('')
   const [telefoneCliente, setTelefoneCliente] = useState('')
   const [observacoes, setObservacoes] = useState('')
@@ -986,46 +1003,287 @@ export default function PaginaAgendar() {
               key="etapa2"
               className="space-y-8 animate-in fade-in duration-200"
             >
-              {/* Datas */}
+              {/* Seletor de Data */}
               <div>
-                <h2 
-                  className="text-lg font-semibold mb-4 flex items-center gap-2"
-                  style={{ color: cores.secundaria }}
-                >
-                  <Calendar className="w-5 h-5" style={{ color: cores.destaque }} />
-                  Escolha a Data
-                </h2>
-                <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-                  {datasDisponiveis.slice(0, 10).map((data) => {
-                    const dataObj = parse(data.valor, 'yyyy-MM-dd', new Date())
-                    const diaSemana = format(dataObj, 'EEE', { locale: ptBR })
-                    const diaNumero = format(dataObj, 'dd')
-                    const mes = format(dataObj, 'MMM', { locale: ptBR })
-                    
-                    return (
-                      <button
-                        key={data.valor}
-                        onClick={() => {
-                          setDataSelecionada(data.valor)
-                          setHorarioSelecionado('')
-                        }}
-                        className="flex-shrink-0 w-20 p-3 rounded-xl border text-center transition-all hover:scale-[1.02]"
-                        style={{
-                          backgroundColor: dataSelecionada === data.valor 
-                            ? cores.secundaria + '15' 
-                            : cores.destaque + '08',
-                          borderColor: dataSelecionada === data.valor 
-                            ? cores.secundaria 
-                            : cores.destaque + '20'
-                        }}
-                      >
-                        <p className="text-xs uppercase" style={{ color: cores.destaque }}>{diaSemana}</p>
-                        <p className="text-2xl font-bold" style={{ color: cores.secundaria }}>{diaNumero}</p>
-                        <p className="text-xs" style={{ color: cores.destaque }}>{mes}</p>
-                      </button>
-                    )
-                  })}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 
+                    className="text-lg font-semibold flex items-center gap-2"
+                    style={{ color: cores.secundaria }}
+                  >
+                    <Calendar className="w-5 h-5" style={{ color: cores.destaque }} />
+                    Escolha a Data
+                  </h2>
+                  
+                  {/* Toggle modo de visualização */}
+                  <div 
+                    className="flex items-center rounded-lg p-0.5"
+                    style={{ backgroundColor: cores.destaque + '15' }}
+                  >
+                    <button
+                      onClick={() => setModoCalendario('rapido')}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                        modoCalendario === 'rapido' ? 'shadow-sm' : ''
+                      }`}
+                      style={{
+                        backgroundColor: modoCalendario === 'rapido' ? cores.secundaria : 'transparent',
+                        color: modoCalendario === 'rapido' ? cores.primaria : cores.destaque
+                      }}
+                    >
+                      Rápido
+                    </button>
+                    <button
+                      onClick={() => setModoCalendario('calendario')}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1 ${
+                        modoCalendario === 'calendario' ? 'shadow-sm' : ''
+                      }`}
+                      style={{
+                        backgroundColor: modoCalendario === 'calendario' ? cores.secundaria : 'transparent',
+                        color: modoCalendario === 'calendario' ? cores.primaria : cores.destaque
+                      }}
+                    >
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      Calendário
+                    </button>
+                  </div>
                 </div>
+
+                {/* Modo Rápido - Scroll horizontal com próximos 14 dias */}
+                {modoCalendario === 'rapido' && (
+                  <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                    {datasDisponiveis.slice(0, 14).map((data) => {
+                      const dataObj = parse(data.valor, 'yyyy-MM-dd', new Date())
+                      const diaSemana = format(dataObj, 'EEE', { locale: ptBR })
+                      const diaNumero = format(dataObj, 'dd')
+                      const mes = format(dataObj, 'MMM', { locale: ptBR })
+                      const ehHoje = isToday(dataObj)
+                      
+                      return (
+                        <button
+                          key={data.valor}
+                          onClick={() => {
+                            setDataSelecionada(data.valor)
+                            setHorarioSelecionado('')
+                          }}
+                          className="flex-shrink-0 w-[72px] p-3 rounded-xl border text-center transition-all hover:scale-[1.02] active:scale-[0.98]"
+                          style={{
+                            backgroundColor: dataSelecionada === data.valor 
+                              ? cores.secundaria + '15' 
+                              : cores.destaque + '08',
+                            borderColor: dataSelecionada === data.valor 
+                              ? cores.secundaria 
+                              : cores.destaque + '20'
+                          }}
+                        >
+                          <p className="text-[10px] uppercase font-medium" style={{ color: cores.destaque }}>
+                            {ehHoje ? 'Hoje' : diaSemana}
+                          </p>
+                          <p className="text-2xl font-bold" style={{ color: cores.secundaria }}>{diaNumero}</p>
+                          <p className="text-[10px]" style={{ color: cores.destaque }}>{mes}</p>
+                        </button>
+                      )
+                    })}
+                    
+                    {/* Botão para ver mais datas */}
+                    <button
+                      onClick={() => setModoCalendario('calendario')}
+                      className="flex-shrink-0 w-[72px] p-3 rounded-xl border border-dashed text-center transition-all hover:scale-[1.02] flex flex-col items-center justify-center gap-1"
+                      style={{ borderColor: cores.destaque + '40' }}
+                    >
+                      <CalendarDays className="w-5 h-5" style={{ color: cores.destaque }} />
+                      <p className="text-[10px] font-medium" style={{ color: cores.destaque }}>
+                        Ver mais
+                      </p>
+                    </button>
+                  </div>
+                )}
+
+                {/* Modo Calendário - Calendário mensal completo */}
+                {modoCalendario === 'calendario' && (() => {
+                  const hoje = startOfDay(new Date())
+                  const dataLimite = new Date()
+                  dataLimite.setDate(dataLimite.getDate() + 60)
+                  
+                  const inicioMes = startOfMonth(mesAtual)
+                  const fimMes = endOfMonth(mesAtual)
+                  const diasDoMes = eachDayOfInterval({ start: inicioMes, end: fimMes })
+                  
+                  const primeiroDiaSemana = getDay(inicioMes)
+                  const diasVaziosInicio = Array(primeiroDiaSemana).fill(null)
+                  
+                  const podeMesAnterior = !isBefore(startOfMonth(subMonths(mesAtual, 1)), startOfMonth(hoje))
+                  const podeMesSeguinte = isBefore(startOfMonth(addMonths(mesAtual, 1)), dataLimite)
+                  
+                  const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+                  
+                  return (
+                    <div 
+                      className="rounded-xl border p-4"
+                      style={{ 
+                        backgroundColor: cores.destaque + '05',
+                        borderColor: cores.destaque + '20'
+                      }}
+                    >
+                      {/* Header do calendário */}
+                      <div className="flex items-center justify-between mb-4">
+                        <button
+                          onClick={() => podeMesAnterior && setMesAtual(subMonths(mesAtual, 1))}
+                          disabled={!podeMesAnterior}
+                          className={`p-2 rounded-lg transition-all ${podeMesAnterior ? 'hover:bg-white/10' : 'opacity-30 cursor-not-allowed'}`}
+                          style={{ color: cores.secundaria }}
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        
+                        <h3 className="text-base font-semibold capitalize" style={{ color: cores.secundaria }}>
+                          {format(mesAtual, 'MMMM yyyy', { locale: ptBR })}
+                        </h3>
+                        
+                        <button
+                          onClick={() => podeMesSeguinte && setMesAtual(addMonths(mesAtual, 1))}
+                          disabled={!podeMesSeguinte}
+                          className={`p-2 rounded-lg transition-all ${podeMesSeguinte ? 'hover:bg-white/10' : 'opacity-30 cursor-not-allowed'}`}
+                          style={{ color: cores.secundaria }}
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      </div>
+                      
+                      {/* Dias da semana */}
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {diasSemana.map((dia) => (
+                          <div 
+                            key={dia} 
+                            className="text-center text-[10px] font-medium py-2"
+                            style={{ color: cores.destaque }}
+                          >
+                            {dia}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Grid de dias */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {/* Dias vazios no início */}
+                        {diasVaziosInicio.map((_, idx) => (
+                          <div key={`vazio-${idx}`} className="aspect-square" />
+                        ))}
+                        
+                        {/* Dias do mês */}
+                        {diasDoMes.map((dia) => {
+                          const dataFormatada = format(dia, 'yyyy-MM-dd')
+                          const estaSelecionado = dataSelecionada === dataFormatada
+                          const ehHoje = isToday(dia)
+                          const diaNumero = getDay(dia)
+                          
+                          const mapaDias: Record<number, string> = {
+                            0: 'dom', 1: 'seg', 2: 'ter', 3: 'qua', 4: 'qui', 5: 'sex', 6: 'sab'
+                          }
+                          const diaSemanaStr = mapaDias[diaNumero]
+                          const diaFunciona = configuracaoHorario.diasFuncionamento.includes(diaSemanaStr)
+                          
+                          const passado = isBefore(dia, hoje)
+                          const muitoFuturo = isBefore(dataLimite, dia)
+                          const desabilitado = passado || muitoFuturo || !diaFunciona
+                          
+                          return (
+                            <button
+                              key={dataFormatada}
+                              onClick={() => {
+                                if (!desabilitado) {
+                                  setDataSelecionada(dataFormatada)
+                                  setHorarioSelecionado('')
+                                }
+                              }}
+                              disabled={desabilitado}
+                              className={`
+                                aspect-square rounded-lg flex items-center justify-center text-sm font-medium
+                                transition-all duration-150
+                                ${desabilitado 
+                                  ? 'opacity-30 cursor-not-allowed' 
+                                  : 'hover:scale-105 active:scale-95 cursor-pointer'
+                                }
+                                ${ehHoje && !estaSelecionado ? 'ring-2 ring-offset-1' : ''}
+                              `}
+                              style={{
+                                backgroundColor: estaSelecionado 
+                                  ? cores.secundaria 
+                                  : 'transparent',
+                                color: estaSelecionado 
+                                  ? cores.primaria 
+                                  : desabilitado 
+                                    ? cores.destaque 
+                                    : cores.secundaria,
+                                boxShadow: ehHoje && !estaSelecionado 
+                                  ? `0 0 0 2px ${cores.primaria}, 0 0 0 4px ${cores.secundaria}50` 
+                                  : 'none'
+                              }}
+                            >
+                              {format(dia, 'd')}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      
+                      {/* Legenda */}
+                      <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t" style={{ borderColor: cores.destaque + '15' }}>
+                        <div className="flex items-center gap-1.5">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ boxShadow: `0 0 0 2px ${cores.primaria}, 0 0 0 4px ${cores.secundaria}50` }}
+                          />
+                          <span className="text-[10px]" style={{ color: cores.destaque }}>Hoje</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: cores.secundaria }}
+                          />
+                          <span className="text-[10px]" style={{ color: cores.destaque }}>Selecionado</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div 
+                            className="w-3 h-3 rounded-full opacity-30"
+                            style={{ backgroundColor: cores.destaque }}
+                          />
+                          <span className="text-[10px]" style={{ color: cores.destaque }}>Indisponível</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+                
+                {/* Data selecionada - Feedback visual */}
+                {dataSelecionada && (
+                  <div 
+                    className="mt-4 p-3 rounded-xl flex items-center gap-3"
+                    style={{ backgroundColor: cores.secundaria + '10' }}
+                  >
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: cores.secundaria + '20' }}
+                    >
+                      <Calendar className="w-5 h-5" style={{ color: cores.secundaria }} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium" style={{ color: cores.secundaria }}>
+                        {format(parse(dataSelecionada, 'yyyy-MM-dd', new Date()), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                      </p>
+                      <p className="text-xs" style={{ color: cores.destaque }}>
+                        {isToday(parse(dataSelecionada, 'yyyy-MM-dd', new Date())) ? 'Hoje' : 'Data selecionada'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setDataSelecionada('')
+                        setHorarioSelecionado('')
+                      }}
+                      className="p-1.5 rounded-lg transition-all hover:bg-white/10"
+                      style={{ color: cores.destaque }}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Horários agrupados por período */}
