@@ -89,6 +89,9 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
     cor_primaria: "#18181b",
     cor_secundaria: "#f4f4f5",
     cor_destaque: "#a1a1aa",
+    cor_texto: "#fafafa",
+    fonte_principal: "Inter",
+    fonte_titulos: "Inter",
     telefone: "",
     whatsapp: "",
     email: "",
@@ -97,6 +100,20 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
     estado: "",
     instagram: "",
   });
+
+  // Lista de fontes disponíveis
+  const FONTES_DISPONIVEIS = [
+    { nome: "Inter", descricao: "Moderna e legível" },
+    { nome: "Poppins", descricao: "Geométrica e elegante" },
+    { nome: "Roboto", descricao: "Clássica e versátil" },
+    { nome: "Montserrat", descricao: "Sofisticada e bold" },
+    { nome: "Open Sans", descricao: "Limpa e neutra" },
+    { nome: "Playfair Display", descricao: "Serifada clássica" },
+    { nome: "Oswald", descricao: "Condensada impactante" },
+    { nome: "Lato", descricao: "Humanista e amigável" },
+    { nome: "Raleway", descricao: "Elegante e fina" },
+    { nome: "Nunito", descricao: "Arredondada e suave" },
+  ];
 
   // Carregar dados do tenant
   useEffect(() => {
@@ -107,6 +124,9 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
         cor_primaria: tenant.cor_primaria || "#18181b",
         cor_secundaria: tenant.cor_secundaria || "#f4f4f5",
         cor_destaque: tenant.cor_destaque || "#a1a1aa",
+        cor_texto: (tenant as any).cor_texto || "#fafafa",
+        fonte_principal: (tenant as any).fonte_principal || "Inter",
+        fonte_titulos: (tenant as any).fonte_titulos || "Inter",
         telefone: tenant.telefone || "",
         whatsapp: tenant.whatsapp || "",
         email: tenant.email || "",
@@ -216,6 +236,9 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
           cor_primaria: dados.cor_primaria,
           cor_secundaria: dados.cor_secundaria,
           cor_destaque: dados.cor_destaque,
+          cor_texto: dados.cor_texto,
+          fonte_principal: dados.fonte_principal,
+          fonte_titulos: dados.fonte_titulos,
           telefone: dados.telefone || null,
           whatsapp: dados.whatsapp || null,
           email: dados.email,
@@ -405,16 +428,20 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
 
           {/* Cores Personalizadas */}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
               Cores Personalizadas
             </h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              Ajuste cada cor individualmente para criar sua identidade visual única
+            </p>
 
             <div className="space-y-4">
               {/* Cor Primária */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Cor Primária (Fundo/Cabeçalho)
+              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  🎨 Cor de Fundo Principal
                 </label>
+                <p className="text-xs text-zinc-500 mb-2">Cor do cabeçalho e fundo principal do site</p>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
@@ -426,16 +453,39 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     type="text"
                     value={dados.cor_primaria}
                     onChange={(e) => setDados({ ...dados, cor_primaria: e.target.value })}
-                    className="flex-1 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono text-sm"
+                    className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Cor de Texto */}
+              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  ✏️ Cor do Texto
+                </label>
+                <p className="text-xs text-zinc-500 mb-2">Cor dos textos e títulos sobre o fundo principal</p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={dados.cor_texto}
+                    onChange={(e) => setDados({ ...dados, cor_texto: e.target.value })}
+                    className="w-12 h-12 rounded-xl cursor-pointer border-2 border-zinc-200 dark:border-zinc-700"
+                  />
+                  <input
+                    type="text"
+                    value={dados.cor_texto}
+                    onChange={(e) => setDados({ ...dados, cor_texto: e.target.value })}
+                    className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono text-sm"
                   />
                 </div>
               </div>
 
               {/* Cor Secundária */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Cor Secundária (Texto/Fundo Cards)
+              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  📦 Cor dos Cards
                 </label>
+                <p className="text-xs text-zinc-500 mb-2">Cor de fundo dos cards de serviços e profissionais</p>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
@@ -447,16 +497,17 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     type="text"
                     value={dados.cor_secundaria}
                     onChange={(e) => setDados({ ...dados, cor_secundaria: e.target.value })}
-                    className="flex-1 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono text-sm"
+                    className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono text-sm"
                   />
                 </div>
               </div>
 
               {/* Cor de Destaque */}
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Cor de Destaque (Botões/Links)
+              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                  ⭐ Cor de Destaque
                 </label>
+                <p className="text-xs text-zinc-500 mb-2">Cor dos botões, links e elementos de ação</p>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
@@ -468,23 +519,175 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     type="text"
                     value={dados.cor_destaque}
                     onChange={(e) => setDados({ ...dados, cor_destaque: e.target.value })}
-                    className="flex-1 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono text-sm"
+                    className="flex-1 px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white font-mono text-sm"
                   />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Preview das cores */}
-            <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: dados.cor_primaria }}>
-              <p className="text-sm font-medium" style={{ color: dados.cor_secundaria }}>
-                Preview do visual
-              </p>
-              <button
-                className="mt-2 px-4 py-2 rounded-lg text-sm font-medium"
-                style={{ backgroundColor: dados.cor_destaque, color: dados.cor_primaria }}
-              >
-                Botão de Exemplo
-              </button>
+          {/* Fontes */}
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+              Tipografia
+            </h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              Escolha as fontes que representam sua marca
+            </p>
+
+            <div className="space-y-4">
+              {/* Fonte Principal */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Fonte Principal (Textos)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {FONTES_DISPONIVEIS.map((fonte) => (
+                    <button
+                      key={fonte.nome}
+                      onClick={() => setDados({ ...dados, fonte_principal: fonte.nome })}
+                      className={`p-3 rounded-xl text-left transition-all ${
+                        dados.fonte_principal === fonte.nome
+                          ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ring-2 ring-zinc-900 dark:ring-white"
+                          : "bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                      }`}
+                    >
+                      <span 
+                        className="block font-medium text-sm"
+                        style={{ fontFamily: fonte.nome }}
+                      >
+                        {fonte.nome}
+                      </span>
+                      <span className={`text-xs ${
+                        dados.fonte_principal === fonte.nome 
+                          ? "text-white/70 dark:text-zinc-900/70" 
+                          : "text-zinc-500"
+                      }`}>
+                        {fonte.descricao}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fonte de Títulos */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Fonte de Títulos (Destaques)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {FONTES_DISPONIVEIS.slice(0, 6).map((fonte) => (
+                    <button
+                      key={fonte.nome}
+                      onClick={() => setDados({ ...dados, fonte_titulos: fonte.nome })}
+                      className={`p-3 rounded-xl text-left transition-all ${
+                        dados.fonte_titulos === fonte.nome
+                          ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ring-2 ring-zinc-900 dark:ring-white"
+                          : "bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                      }`}
+                    >
+                      <span 
+                        className="block font-bold text-sm"
+                        style={{ fontFamily: fonte.nome }}
+                      >
+                        {fonte.nome}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Preview em Tempo Real */}
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Preview em Tempo Real
+            </h3>
+            
+            <div 
+              className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700"
+              style={{ backgroundColor: dados.cor_primaria }}
+            >
+              {/* Header simulado */}
+              <div className="p-4 border-b" style={{ borderColor: dados.cor_destaque + '30' }}>
+                <h4 
+                  className="text-lg font-bold"
+                  style={{ 
+                    color: dados.cor_texto,
+                    fontFamily: dados.fonte_titulos
+                  }}
+                >
+                  {dados.nome || "Seu Estabelecimento"}
+                </h4>
+                <p 
+                  className="text-sm opacity-80"
+                  style={{ 
+                    color: dados.cor_texto,
+                    fontFamily: dados.fonte_principal
+                  }}
+                >
+                  Bem-vindo ao nosso espaço
+                </p>
+              </div>
+
+              {/* Cards simulados */}
+              <div className="p-4 space-y-3">
+                <div 
+                  className="p-3 rounded-lg"
+                  style={{ backgroundColor: dados.cor_secundaria }}
+                >
+                  <p 
+                    className="font-medium text-sm"
+                    style={{ 
+                      color: dados.cor_primaria,
+                      fontFamily: dados.fonte_principal
+                    }}
+                  >
+                    ✂️ Corte Masculino
+                  </p>
+                  <p 
+                    className="text-xs opacity-70"
+                    style={{ color: dados.cor_primaria }}
+                  >
+                    30 min • R$ 35,00
+                  </p>
+                </div>
+
+                <div 
+                  className="p-3 rounded-lg"
+                  style={{ backgroundColor: dados.cor_secundaria }}
+                >
+                  <p 
+                    className="font-medium text-sm"
+                    style={{ 
+                      color: dados.cor_primaria,
+                      fontFamily: dados.fonte_principal
+                    }}
+                  >
+                    🧔 Barba Completa
+                  </p>
+                  <p 
+                    className="text-xs opacity-70"
+                    style={{ color: dados.cor_primaria }}
+                  >
+                    20 min • R$ 25,00
+                  </p>
+                </div>
+
+                {/* Botão de ação */}
+                <button
+                  className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
+                  style={{ 
+                    backgroundColor: dados.cor_destaque, 
+                    color: dados.cor_primaria,
+                    fontFamily: dados.fonte_principal
+                  }}
+                >
+                  Agendar Agora
+                </button>
+              </div>
             </div>
           </div>
         </div>

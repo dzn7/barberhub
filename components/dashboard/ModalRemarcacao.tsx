@@ -448,9 +448,10 @@ export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipo
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900 dark:border-white"></div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-96 overflow-y-auto pr-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-96 overflow-y-auto pr-2">
                     {horariosDisponiveis.map((horario) => {
                       const ehSelecionado = horarioSelecionado === horario.hora;
+                      const ehOcupado = !horario.disponivel;
 
                       return (
                         <button
@@ -460,30 +461,41 @@ export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipo
                               setHorarioSelecionado(horario.hora);
                             }
                           }}
-                          disabled={!horario.disponivel}
-                          className={`p-2.5 rounded-lg text-center transition-all relative ${
-                            !horario.disponivel
-                              ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 cursor-not-allowed opacity-60"
+                          disabled={ehOcupado}
+                          className={`relative p-2 sm:p-2.5 rounded-lg text-center transition-all ${
+                            ehOcupado
+                              ? "bg-red-500/90 dark:bg-red-600/90 cursor-not-allowed"
                               : ehSelecionado
-                              ? "bg-green-600 dark:bg-green-500 text-white shadow-lg scale-105"
-                              : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-green-500 dark:hover:border-green-400 hover:shadow-md"
+                              ? "bg-emerald-500 dark:bg-emerald-500 text-white shadow-lg ring-2 ring-emerald-300 dark:ring-emerald-400 scale-105"
+                              : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md"
                           }`}
                         >
-                          <div className="flex flex-col items-center gap-1">
+                          {/* Badge de ocupado */}
+                          {ehOcupado && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center shadow-sm">
+                              <X className="w-2.5 h-2.5 text-red-600 dark:text-red-400" />
+                            </div>
+                          )}
+                          
+                          <div className="flex flex-col items-center gap-0.5">
                             <span className={`font-bold text-sm ${
-                              ehSelecionado 
+                              ehOcupado
+                                ? "text-white line-through opacity-80"
+                                : ehSelecionado 
                                 ? "text-white" 
-                                : horario.disponivel 
-                                ? "text-zinc-900 dark:text-white" 
-                                : "text-red-600 dark:text-red-400"
+                                : "text-zinc-900 dark:text-white"
                             }`}>
                               {horario.hora}
                             </span>
-                            {horario.disponivel ? (
-                              <Check className={`w-3 h-3 ${ehSelecionado ? "text-white" : "text-green-600 dark:text-green-400"}`} />
-                            ) : (
-                              <X className="w-3 h-3 text-red-600 dark:text-red-400" />
-                            )}
+                            <span className={`text-[9px] sm:text-[10px] font-medium ${
+                              ehOcupado
+                                ? "text-white/80"
+                                : ehSelecionado 
+                                ? "text-white/80" 
+                                : "text-emerald-600 dark:text-emerald-400"
+                            }`}>
+                              {ehOcupado ? "Ocupado" : "Livre"}
+                            </span>
                           </div>
                         </button>
                       );
