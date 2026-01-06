@@ -11,8 +11,10 @@ import {
   Scissors, Building2, FileText, Power, Download, UserCog, Bot,
   AlertCircle, Globe, ChevronDown, MoreVertical, Copy, Mail,
   MessageSquare, CreditCard, Settings, Activity, TrendingUp,
-  Pause, Play, RotateCcw, Link2, QrCode, Bell, X
+  Pause, Play, RotateCcw, Link2, QrCode, Bell, X, Plus, Minus,
+  Receipt, Key, Send, CalendarPlus, CalendarMinus, Banknote
 } from 'lucide-react'
+import { LogoMarca } from '@/components/ui/logo-marca'
 import { format, formatDistanceToNow, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -286,6 +288,55 @@ export default function PainelSuperAdmin() {
     }
   }
 
+  const alterarTrial = async (tenantId: string, dias: number) => {
+    try {
+      const tenant = tenants.find(t => t.id === tenantId)
+      if (!tenant) return
+      
+      const dataBase = tenant.trial_fim ? new Date(tenant.trial_fim) : new Date()
+      const novaData = new Date(dataBase)
+      novaData.setDate(novaData.getDate() + dias)
+      
+      await supabase.from('tenants').update({ 
+        trial_fim: novaData.toISOString(),
+        plano: 'trial'
+      }).eq('id', tenantId)
+      carregarDados()
+    } catch (error) {
+      console.error('Erro ao alterar trial:', error)
+    }
+  }
+
+  const removerTrial = async (tenantId: string) => {
+    try {
+      await supabase.from('tenants').update({ 
+        trial_fim: null,
+        plano: 'trial'
+      }).eq('id', tenantId)
+      carregarDados()
+    } catch (error) {
+      console.error('Erro ao remover trial:', error)
+    }
+  }
+
+  const solicitarCobranca = (tenant: Tenant) => {
+    const mensagem = encodeURIComponent(
+      `Olá ${tenant.nome}! 👋\n\n` +
+      `Seu período de teste no BarberHub está chegando ao fim.\n\n` +
+      `Para continuar usando todas as funcionalidades e não perder seus dados, ` +
+      `escolha um dos nossos planos:\n\n` +
+      `💼 *Básico* - R$ 49,90/mês\n` +
+      `🚀 *Profissional* - R$ 89,90/mês\n\n` +
+      `Responda essa mensagem para ativar seu plano!`
+    )
+    const numero = tenant.whatsapp?.replace(/\D/g, '') || tenant.telefone?.replace(/\D/g, '')
+    if (numero) {
+      window.open(`https://wa.me/55${numero}?text=${mensagem}`, '_blank')
+    } else {
+      alert('Tenant não possui WhatsApp cadastrado')
+    }
+  }
+
   const excluirTenant = async () => {
     if (!modalExcluir.tenant) return
     setExcluindo(true)
@@ -444,12 +495,9 @@ export default function PainelSuperAdmin() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-zinc-900 dark:bg-white rounded-xl flex items-center justify-center">
-                <Shield className="w-5 h-5 text-white dark:text-zinc-900" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-zinc-900 dark:text-white">BarberHub</h1>
-                <p className="text-xs text-zinc-500">Super Admin</p>
+              <LogoMarca className="h-8" />
+              <div className="hidden sm:block">
+                <p className="text-xs text-zinc-500 font-medium">Super Admin</p>
               </div>
             </div>
 
@@ -623,41 +671,49 @@ export default function PainelSuperAdmin() {
             {/* Negócios (Barbearias e Nail Designers) */}
             {abaAtiva === 'negocios' && (
               <motion.div key="negocios" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                {/* Filtros por Tipo de Negócio */}
-                <div className="flex gap-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl w-fit">
-                  <button
-                    onClick={() => setFiltroTipoNegocio('todos')}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                      filtroTipoNegocio === 'todos'
-                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <Store className="w-4 h-4" />
-                    Todos ({estatisticas?.totalTenants || 0})
-                  </button>
-                  <button
-                    onClick={() => setFiltroTipoNegocio('barbearia')}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                      filtroTipoNegocio === 'barbearia'
-                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <Scissors className="w-4 h-4" />
-                    Barbearias ({estatisticas?.totalBarbearias || 0})
-                  </button>
-                  <button
-                    onClick={() => setFiltroTipoNegocio('nail_designer')}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                      filtroTipoNegocio === 'nail_designer'
-                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <Hand className="w-4 h-4" />
-                    Nail Designers ({estatisticas?.totalNailDesigners || 0})
-                  </button>
+                {/* Filtros por Tipo de Negócio - Responsivo */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {/* Segmented Control para Tipo */}
+                  <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-x-auto">
+                    <button
+                      onClick={() => setFiltroTipoNegocio('todos')}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                        filtroTipoNegocio === 'todos'
+                          ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Store className="w-4 h-4" />
+                      <span className="hidden sm:inline">Todos</span>
+                      <span className="text-xs opacity-60">({estatisticas?.totalTenants || 0})</span>
+                    </button>
+                    <button
+                      onClick={() => setFiltroTipoNegocio('barbearia')}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                        filtroTipoNegocio === 'barbearia'
+                          ? 'bg-blue-500 text-white shadow-sm'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                      }`}
+                    >
+                      <Scissors className="w-4 h-4" />
+                      <span className="hidden sm:inline">Barbearias</span>
+                      <span className="sm:hidden">Barber</span>
+                      <span className="text-xs opacity-60">({estatisticas?.totalBarbearias || 0})</span>
+                    </button>
+                    <button
+                      onClick={() => setFiltroTipoNegocio('nail_designer')}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                        filtroTipoNegocio === 'nail_designer'
+                          ? 'bg-pink-500 text-white shadow-sm'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-pink-50 dark:hover:bg-pink-900/20'
+                      }`}
+                    >
+                      <Hand className="w-4 h-4" />
+                      <span className="hidden sm:inline">Nail Designers</span>
+                      <span className="sm:hidden">Nail</span>
+                      <span className="text-xs opacity-60">({estatisticas?.totalNailDesigners || 0})</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Filtros de Busca e Plano */}
@@ -699,6 +755,9 @@ export default function PainelSuperAdmin() {
                       onAlterarPlano={(plano) => alterarPlano(tenant.id, plano)}
                       onToggleAtivo={() => toggleAtivo(tenant)}
                       onVerDetalhes={() => setModalDetalhes({ aberto: true, tenant })}
+                      onAlterarTrial={(dias) => alterarTrial(tenant.id, dias)}
+                      onRemoverTrial={() => removerTrial(tenant.id)}
+                      onSolicitarCobranca={() => solicitarCobranca(tenant)}
                     />
                   ))}
                 </div>
@@ -948,12 +1007,24 @@ function CardStatSecundario({ titulo, valor, icone: Icone }: { titulo: string; v
   )
 }
 
-function CardTenantItem({ tenant, onExcluir, onAlterarPlano, onToggleAtivo, onVerDetalhes }: {
+function CardTenantItem({ 
+  tenant, 
+  onExcluir, 
+  onAlterarPlano, 
+  onToggleAtivo, 
+  onVerDetalhes,
+  onAlterarTrial,
+  onRemoverTrial,
+  onSolicitarCobranca
+}: {
   tenant: Tenant
   onExcluir: () => void
   onAlterarPlano: (plano: string) => void
   onToggleAtivo: () => void
   onVerDetalhes: () => void
+  onAlterarTrial: (dias: number) => void
+  onRemoverTrial: () => void
+  onSolicitarCobranca: () => void
 }) {
   const [menuAberto, setMenuAberto] = useState(false)
   const [copiado, setCopiado] = useState(false)
@@ -1205,6 +1276,67 @@ function CardTenantItem({ tenant, onExcluir, onAlterarPlano, onToggleAtivo, onVe
                         </button>
                       ))}
                     </div>
+                    
+                    <hr className="my-1.5 border-zinc-200 dark:border-zinc-700" />
+                    
+                    {/* Gestão de Trial */}
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                      Gestão de Trial
+                    </div>
+                    
+                    <div className="px-2 py-1 space-y-1">
+                      <div className="grid grid-cols-3 gap-1">
+                        <button 
+                          onClick={() => { onAlterarTrial(7); setMenuAberto(false) }} 
+                          className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all"
+                          role="menuitem"
+                        >
+                          <CalendarPlus className="w-3 h-3" />
+                          +7d
+                        </button>
+                        <button 
+                          onClick={() => { onAlterarTrial(15); setMenuAberto(false) }} 
+                          className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all"
+                          role="menuitem"
+                        >
+                          <CalendarPlus className="w-3 h-3" />
+                          +15d
+                        </button>
+                        <button 
+                          onClick={() => { onAlterarTrial(30); setMenuAberto(false) }} 
+                          className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all"
+                          role="menuitem"
+                        >
+                          <CalendarPlus className="w-3 h-3" />
+                          +30d
+                        </button>
+                      </div>
+                      <button 
+                        onClick={() => { onRemoverTrial(); setMenuAberto(false) }} 
+                        className="flex items-center justify-center gap-1.5 w-full px-2 py-1.5 text-xs font-medium rounded-lg bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-all"
+                        role="menuitem"
+                      >
+                        <CalendarMinus className="w-3 h-3" />
+                        Remover Prazo (Trial Infinito)
+                      </button>
+                    </div>
+                    
+                    <hr className="my-1.5 border-zinc-200 dark:border-zinc-700" />
+                    
+                    {/* Cobrança */}
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                      Cobrança
+                    </div>
+                    
+                    <button 
+                      onClick={() => { onSolicitarCobranca(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 w-full text-left transition-colors"
+                      role="menuitem"
+                    >
+                      <Banknote className="w-4 h-4" /> 
+                      <span>Solicitar Pagamento</span>
+                      <span className="ml-auto text-xs bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">WhatsApp</span>
+                    </button>
                     
                     <hr className="my-1.5 border-zinc-200 dark:border-zinc-700" />
                     

@@ -490,9 +490,9 @@ function CardPasso({
           )}
         </div>
         
-        {/* Badge de destaque */}
+        {/* Badge de destaque - posicionado abaixo do cabeçalho no mobile */}
         {destaque && (
-          <div className="absolute top-4 right-4 px-2.5 py-1 bg-emerald-500 text-white text-xs font-medium rounded-full">
+          <div className="absolute -top-3 left-6 px-3 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-md">
             Comece por aqui
           </div>
         )}
@@ -506,6 +506,11 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
   const linkPublico = `barberhub.online/${tenant.slug}`
   const ehNail = tipoNegocio === 'nail_designer'
   const nomeNegocio = dados.nome || tenant.nome
+  
+  // Scroll para o topo ao montar o componente
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
   
   const copiarLink = async () => {
     try {
@@ -584,11 +589,11 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
                   }
                 </p>
                 
-                {/* Link copiável */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 flex items-center gap-2 px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">🔗</span>
-                    <code className="text-zinc-900 dark:text-white font-medium text-sm flex-1 truncate">
+                {/* Link copiável - responsivo */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium flex-shrink-0">🔗</span>
+                    <code className="text-zinc-900 dark:text-white font-medium text-sm truncate">
                       {linkPublico}
                     </code>
                   </div>
@@ -596,7 +601,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
                     onClick={copiarLink}
                     whileTap={{ scale: 0.95 }}
                     className={`
-                      flex items-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200
+                      flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex-shrink-0
                       ${linkCopiado 
                         ? 'bg-emerald-500 text-white' 
                         : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'
@@ -606,12 +611,12 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
                     {linkCopiado ? (
                       <>
                         <Check className="w-4 h-4" />
-                        <span className="hidden sm:inline">Copiado!</span>
+                        <span>Copiado!</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-4 h-4" />
-                        <span className="hidden sm:inline">Copiar</span>
+                        <span>Copiar link</span>
                       </>
                     )}
                   </motion.button>
