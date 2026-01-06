@@ -50,3 +50,5 @@ bot-barberhub/auth_info/*
 bot-dowhatsapp
 bot-dowhatsapp/auth_info
 bot-dowhatsapp/auth_info/*
+workers/verificar-pagamentos
+workers

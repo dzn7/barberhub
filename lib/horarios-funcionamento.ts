@@ -55,7 +55,7 @@ export async function buscarConfiguracaoHorarios(
   try {
     const { data, error } = await supabase
       .from('configuracoes_barbearia')
-      .select('horario_abertura, horario_fechamento, intervalo_agendamento, dias_funcionamento')
+      .select('horario_abertura, horario_fechamento, intervalo_horarios, dias_funcionamento')
       .eq('tenant_id', tenantId)
       .single()
 
@@ -76,7 +76,7 @@ export async function buscarConfiguracaoHorarios(
     return {
       horaInicio,
       horaFim,
-      intervalo: data.intervalo_agendamento || HORARIOS_PADRAO.intervalo,
+      intervalo: data.intervalo_horarios || HORARIOS_PADRAO.intervalo,
       diasFuncionamento: data.dias_funcionamento || HORARIOS_PADRAO.diasFuncionamento,
     }
   } catch (erro) {

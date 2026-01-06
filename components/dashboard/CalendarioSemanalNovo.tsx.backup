@@ -216,16 +216,15 @@ export function CalendarioSemanalNovo() {
     return grupos;
   }, [agendamentos, diasExibidos]);
 
-  // Calcular posição do agendamento baseado na hora inicial dinâmica
-  const calcularPosicao = useCallback((dataHora: string, duracao: number) => {
+  // Calcular posição do agendamento
+  const calcularPosicao = (dataHora: string, duracao: number) => {
     const dataBrasilia = toZonedTime(parseISO(dataHora), TIMEZONE_BRASILIA);
     const hora = dataBrasilia.getHours();
     const minutos = dataBrasilia.getMinutes();
-    const horaInicial = horasDia.length > 0 ? horasDia[0] : configHorarios.horaInicio;
-    const top = ((hora - horaInicial) * alturaHora) + ((minutos / 60) * alturaHora);
+    const top = ((hora - 7) * alturaHora) + ((minutos / 60) * alturaHora);
     const height = Math.max((duracao / 60) * alturaHora, 40);
     return { top, height };
-  }, [horasDia, alturaHora, configHorarios.horaInicio]);
+  };
 
   // Navegação
   const navegarAnterior = () => {
@@ -531,7 +530,7 @@ export function CalendarioSemanalNovo() {
         </div>
       </div>
 
-      {/* Área de Agendamentos - Layout com Horários Verticais */}
+      {/* Área de Agendamentos - Modo Lista */}
       <div ref={scrollRef} className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950">
         {carregando ? (
           <div className="flex items-center justify-center h-64">
@@ -541,109 +540,71 @@ export function CalendarioSemanalNovo() {
             </div>
           </div>
         ) : (
-          <div className="flex min-h-[500px]">
-            {/* Coluna de Horários - Fixa à esquerda */}
-            <div className="flex-shrink-0 w-12 sm:w-16 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 sticky left-0 z-10">
-              {horasDia.map((hora) => (
+          <div 
+            className="grid h-full min-h-[400px]" 
+            style={{ gridTemplateColumns: `repeat(${diasExibidos.length}, 1fr)` }}
+          >
+            {diasExibidos.map((dia, diaIdx) => {
+              const dataKey = format(dia, 'yyyy-MM-dd');
+              const agDia = (agendamentosPorDia[dataKey] || []).sort((a, b) => 
+                new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime()
+              );
+              const ehHoje = isToday(dia);
+
+              return (
                 <div
-                  key={hora}
-                  className="flex items-start justify-end pr-2 sm:pr-3 text-[10px] sm:text-xs font-medium text-zinc-400 dark:text-zinc-500"
-                  style={{ height: alturaHora }}
+                  key={diaIdx}
+                  className={`border-l border-zinc-200 dark:border-zinc-800 first:border-l-0 ${
+                    ehHoje ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'bg-white dark:bg-zinc-900/50'
+                  }`}
                 >
-                  <span className="mt-[-6px]">{`${hora.toString().padStart(2, '0')}:00`}</span>
-                </div>
-              ))}
-            </div>
+                  {/* Lista de Agendamentos do Dia */}
+                  <div className="p-2 space-y-2">
+                    {agDia.length === 0 ? (
+                      <div className="flex items-center justify-center h-32 text-zinc-400 text-sm">
+                        <span className="hidden sm:inline">Sem agendamentos</span>
+                      </div>
+                    ) : (
+                      agDia.map((ag) => {
+                        const status = STATUS_CORES[ag.status as keyof typeof STATUS_CORES] || STATUS_CORES.pendente;
+                        const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
 
-            {/* Grid de Dias com Timeline */}
-            <div 
-              className="flex-1 grid relative" 
-              style={{ gridTemplateColumns: `repeat(${diasExibidos.length}, minmax(120px, 1fr))` }}
-            >
-              {diasExibidos.map((dia, diaIdx) => {
-                const dataKey = format(dia, 'yyyy-MM-dd');
-                const agDia = agendamentosPorDia[dataKey] || [];
-                const ehHoje = isToday(dia);
-
-                return (
-                  <div
-                    key={diaIdx}
-                    className={`relative border-l border-zinc-200 dark:border-zinc-800 first:border-l-0 ${
-                      ehHoje ? 'bg-blue-50/30 dark:bg-blue-950/10' : 'bg-white dark:bg-zinc-900/30'
-                    }`}
-                    style={{ minHeight: horasDia.length * alturaHora }}
-                  >
-                    {/* Linhas de hora */}
-                    {horasDia.map((hora, horaIdx) => (
-                      <div
-                        key={hora}
-                        className="absolute left-0 right-0 border-t border-zinc-100 dark:border-zinc-800/50"
-                        style={{ top: horaIdx * alturaHora }}
-                      />
-                    ))}
-
-                    {/* Agendamentos posicionados */}
-                    {agDia.map((ag) => {
-                      const status = STATUS_CORES[ag.status as keyof typeof STATUS_CORES] || STATUS_CORES.pendente;
-                      const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
-                      const pos = calcularPosicao(ag.data_hora, ag.servicos?.duracao || 30);
-
-                      return (
-                        <motion.div
-                          key={ag.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          onClick={() => {
-                            setAgendamentoSelecionado(ag);
-                            setModalDetalhesAberto(true);
-                          }}
-                          className={`absolute left-1 right-1 ${status.bg} rounded-lg cursor-pointer hover:shadow-lg hover:z-20 transition-all overflow-hidden border-l-4 ${status.border}`}
-                          style={{ 
-                            top: pos.top, 
-                            height: Math.max(pos.height, 36),
-                            minHeight: 36
-                          }}
-                        >
-                          <div className={`h-full p-1.5 sm:p-2 ${status.text}`}>
-                            {/* Horário compacto */}
-                            <div className="text-[10px] sm:text-xs font-bold opacity-90">
-                              {format(dataBrasilia, 'HH:mm')}
-                            </div>
-                            
-                            {/* Nome do Cliente */}
-                            <div className="font-semibold text-xs sm:text-sm truncate leading-tight">
-                              {ag.clientes?.nome || 'Cliente'}
-                            </div>
-                            
-                            {/* Serviço - só mostra se tiver espaço */}
-                            {pos.height >= 50 && (
-                              <div className="text-[10px] sm:text-xs opacity-70 truncate">
+                        return (
+                          <motion.div
+                            key={ag.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            onClick={() => {
+                              setAgendamentoSelecionado(ag);
+                              setModalDetalhesAberto(true);
+                            }}
+                            className={`${status.bg} rounded-lg p-3 cursor-pointer hover:shadow-md hover:scale-[1.02] transition-all border border-black/5`}
+                          >
+                            <div className={`${status.text}`}>
+                              {/* Horário */}
+                              <div className="flex items-center gap-1.5 text-sm font-bold">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{format(dataBrasilia, 'HH:mm')}</span>
+                              </div>
+                              
+                              {/* Nome do Cliente */}
+                              <div className="font-semibold text-base mt-1 truncate">
+                                {ag.clientes?.nome || 'Cliente'}
+                              </div>
+                              
+                              {/* Serviço */}
+                              <div className="text-sm opacity-80 truncate">
                                 {ag.servicos?.nome}
                               </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-
-                    {/* Indicador de hora atual */}
-                    {ehHoje && (
-                      <div 
-                        className="absolute left-0 right-0 z-30 pointer-events-none"
-                        style={{ 
-                          top: ((new Date().getHours() - horasDia[0]) * alturaHora) + ((new Date().getMinutes() / 60) * alturaHora)
-                        }}
-                      >
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
-                          <div className="flex-1 h-0.5 bg-red-500/70" />
-                        </div>
-                      </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })
                     )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
