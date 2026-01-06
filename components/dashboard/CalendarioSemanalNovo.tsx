@@ -27,15 +27,24 @@ import { buscarConfiguracaoHorarios, gerarArrayHoras, ConfiguracaoHorarios, HORA
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
 const BOT_URL = process.env.NEXT_PUBLIC_BOT_URL || 'https://bot-barberhub.fly.dev';
 
+interface Servico {
+  id?: string;
+  nome: string;
+  preco: number;
+  duracao: number;
+}
+
 interface Agendamento {
   id: string;
   data_hora: string;
   status: string;
   observacoes?: string;
   barbeiro_id: string;
+  servicos_ids?: string[];
   clientes: { nome: string; telefone: string };
   barbeiros: { id: string; nome: string };
-  servicos: { nome: string; preco: number; duracao: number };
+  servicos: Servico;
+  servicosMultiplos?: Servico[];
 }
 
 type TipoVisualizacao = 'dia' | '3dias' | 'semana';
@@ -68,6 +77,33 @@ const DIAS_SEMANA_MAP: Record<number, string> = {
   5: 'sex',
   6: 'sab'
 };
+
+// Função auxiliar para extrair informações de serviços (único ou múltiplos)
+function obterInfoServicos(agendamento: Agendamento) {
+  const { servicos, servicosMultiplos } = agendamento;
+  
+  if (servicosMultiplos && servicosMultiplos.length > 1) {
+    const nomes = servicosMultiplos.map(s => s.nome);
+    const precoTotal = servicosMultiplos.reduce((acc, s) => acc + (s.preco || 0), 0);
+    const duracaoTotal = servicosMultiplos.reduce((acc, s) => acc + (s.duracao || 0), 0);
+    
+    return {
+      nome: nomes.join(' + '),
+      nomesCurtos: nomes.length > 2 ? `${nomes[0]} +${nomes.length - 1}` : nomes.join(' + '),
+      preco: precoTotal,
+      duracao: duracaoTotal,
+      quantidade: servicosMultiplos.length
+    };
+  }
+  
+  return {
+    nome: servicos?.nome || 'Serviço',
+    nomesCurtos: servicos?.nome || 'Serviço',
+    preco: servicos?.preco || 0,
+    duracao: servicos?.duracao || 30,
+    quantidade: 1
+  };
+}
 
 export function CalendarioSemanalNovo() {
   const { tenant } = useAuth();
@@ -189,14 +225,30 @@ export function CalendarioSemanalNovo() {
 
       const { data, error } = await supabase
         .from('agendamentos')
-        .select(`*, clientes (nome, telefone), barbeiros (id, nome), servicos (nome, preco, duracao)`)
+        .select(`*, clientes (nome, telefone), barbeiros (id, nome), servicos (id, nome, preco, duracao)`)
         .eq('tenant_id', tenant.id)
         .gte('data_hora', inicioUTC.toISOString())
         .lt('data_hora', fimUTC.toISOString())
         .order('data_hora', { ascending: true });
 
       if (error) throw error;
-      setAgendamentos(data || []);
+      
+      // Processar múltiplos serviços se existirem
+      const agendamentosProcessados = await Promise.all((data || []).map(async (ag) => {
+        if (ag.servicos_ids && Array.isArray(ag.servicos_ids) && ag.servicos_ids.length > 1) {
+          const { data: servicosMultiplos } = await supabase
+            .from('servicos')
+            .select('id, nome, preco, duracao')
+            .in('id', ag.servicos_ids);
+          
+          if (servicosMultiplos) {
+            return { ...ag, servicosMultiplos };
+          }
+        }
+        return ag;
+      }));
+      
+      setAgendamentos(agendamentosProcessados);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
     } finally {
@@ -592,7 +644,8 @@ export function CalendarioSemanalNovo() {
                     {agDia.map((ag) => {
                       const status = STATUS_CORES[ag.status as keyof typeof STATUS_CORES] || STATUS_CORES.pendente;
                       const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
-                      const pos = calcularPosicao(ag.data_hora, ag.servicos?.duracao || 30);
+                      const infoServicos = obterInfoServicos(ag);
+                      const pos = calcularPosicao(ag.data_hora, infoServicos.duracao);
 
                       return (
                         <motion.div
@@ -611,9 +664,10 @@ export function CalendarioSemanalNovo() {
                           }}
                         >
                           <div className={`h-full p-1.5 sm:p-2 ${status.text}`}>
-                            {/* Horário compacto */}
-                            <div className="text-[10px] sm:text-xs font-bold opacity-90">
+                            {/* Horário e duração */}
+                            <div className="text-[10px] sm:text-xs font-bold opacity-90 flex items-center gap-1">
                               {format(dataBrasilia, 'HH:mm')}
+                              <span className="opacity-70">({infoServicos.duracao}min)</span>
                             </div>
                             
                             {/* Nome do Cliente */}
@@ -621,10 +675,15 @@ export function CalendarioSemanalNovo() {
                               {ag.clientes?.nome || 'Cliente'}
                             </div>
                             
-                            {/* Serviço - só mostra se tiver espaço */}
+                            {/* Serviço(s) - só mostra se tiver espaço */}
                             {pos.height >= 50 && (
-                              <div className="text-[10px] sm:text-xs opacity-70 truncate">
-                                {ag.servicos?.nome}
+                              <div className="text-[10px] sm:text-xs opacity-70 truncate flex items-center gap-1">
+                                {infoServicos.nomesCurtos}
+                                {infoServicos.quantidade > 1 && (
+                                  <span className="bg-white/20 px-1 rounded text-[8px]">
+                                    {infoServicos.quantidade}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
@@ -681,33 +740,51 @@ export function CalendarioSemanalNovo() {
             </div>
 
             {/* Informações */}
-            <div className="space-y-3 mb-5">
-              <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-                <Clock className="w-5 h-5 text-zinc-500" />
-                <div>
-                  <p className="text-sm font-medium text-zinc-900 dark:text-white">
-                    {format(toZonedTime(parseISO(agendamentoSelecionado.data_hora), TIMEZONE_BRASILIA), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                  </p>
-                  <p className="text-xs text-zinc-500">{agendamentoSelecionado.servicos?.duracao} minutos</p>
-                </div>
-              </div>
+            {(() => {
+              const infoServicos = obterInfoServicos(agendamentoSelecionado);
+              return (
+                <div className="space-y-3 mb-5">
+                  <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                    <Clock className="w-5 h-5 text-zinc-500" />
+                    <div>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                        {format(toZonedTime(parseISO(agendamentoSelecionado.data_hora), TIMEZONE_BRASILIA), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                      <p className="text-xs text-zinc-500">{infoServicos.duracao} minutos</p>
+                    </div>
+                  </div>
 
-              <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-                <Scissors className="w-5 h-5 text-zinc-500" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-zinc-900 dark:text-white">{agendamentoSelecionado.servicos?.nome}</p>
-                  <p className="text-xs text-zinc-500">com {agendamentoSelecionado.barbeiros?.nome}</p>
-                </div>
-                <span className="text-sm font-bold text-emerald-600">R$ {agendamentoSelecionado.servicos?.preco.toFixed(2)}</span>
-              </div>
+                  <div className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                    <Scissors className="w-5 h-5 text-zinc-500 mt-0.5" />
+                    <div className="flex-1">
+                      {infoServicos.quantidade > 1 ? (
+                        <div className="space-y-1">
+                          <p className="text-xs text-zinc-500 font-medium">
+                            {infoServicos.quantidade} serviços selecionados
+                          </p>
+                          {agendamentoSelecionado.servicosMultiplos?.map((s) => (
+                            <p key={s.id} className="text-sm text-zinc-900 dark:text-white">
+                              • {s.nome} <span className="text-xs text-zinc-500">({s.duracao}min)</span>
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm font-medium text-zinc-900 dark:text-white">{infoServicos.nome}</p>
+                      )}
+                      <p className="text-xs text-zinc-500 mt-1">com {agendamentoSelecionado.barbeiros?.nome}</p>
+                    </div>
+                    <span className="text-sm font-bold text-emerald-600">R$ {infoServicos.preco.toFixed(2)}</span>
+                  </div>
 
-              {agendamentoSelecionado.clientes?.telefone && (
-                <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-                  <Phone className="w-5 h-5 text-zinc-500" />
-                  <p className="text-sm font-medium text-zinc-900 dark:text-white">{agendamentoSelecionado.clientes.telefone}</p>
+                  {agendamentoSelecionado.clientes?.telefone && (
+                    <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+                      <Phone className="w-5 h-5 text-zinc-500" />
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">{agendamentoSelecionado.clientes.telefone}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
 
             {/* Ações */}
             <div className="space-y-2">

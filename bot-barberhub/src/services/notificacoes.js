@@ -17,7 +17,7 @@ import {
 import logger from '../utils/logger.js';
 
 /**
- * Busca dados completos do agendamento com tenant
+ * Busca dados completos do agendamento com tenant e múltiplos serviços
  */
 async function buscarAgendamentoCompleto(agendamentoId) {
   const { data, error } = await supabase
@@ -37,7 +37,46 @@ async function buscarAgendamentoCompleto(agendamentoId) {
     return null;
   }
 
+  // Se há múltiplos serviços (servicos_ids), buscar todos
+  if (data?.servicos_ids && Array.isArray(data.servicos_ids) && data.servicos_ids.length > 1) {
+    const { data: servicosMultiplos, error: erroServicos } = await supabase
+      .from('servicos')
+      .select('id, nome, preco, duracao')
+      .in('id', data.servicos_ids);
+
+    if (!erroServicos && servicosMultiplos) {
+      data.servicosMultiplos = servicosMultiplos;
+    }
+  }
+
   return data;
+}
+
+/**
+ * Extrai informações de serviços (único ou múltiplos)
+ */
+function extrairInfoServicos(agendamento) {
+  const { servicos, servicosMultiplos } = agendamento;
+  
+  // Se há múltiplos serviços
+  if (servicosMultiplos && servicosMultiplos.length > 1) {
+    const nomes = servicosMultiplos.map(s => s.nome);
+    const precoTotal = servicosMultiplos.reduce((acc, s) => acc + (s.preco || 0), 0);
+    const duracaoTotal = servicosMultiplos.reduce((acc, s) => acc + (s.duracao || 0), 0);
+    
+    return {
+      nomeServico: nomes,
+      preco: precoTotal,
+      duracaoTotal
+    };
+  }
+  
+  // Serviço único
+  return {
+    nomeServico: servicos?.nome || 'Serviço',
+    preco: servicos?.preco,
+    duracaoTotal: servicos?.duracao || null
+  };
 }
 
 /**
@@ -94,7 +133,10 @@ export async function enviarConfirmacaoAgendamento(agendamentoId) {
       throw new Error('Agendamento não encontrado');
     }
 
-    const { clientes, barbeiros, servicos, tenants } = agendamento;
+    const { clientes, barbeiros, tenants } = agendamento;
+
+    // Extrair informações de serviços (único ou múltiplos)
+    const infoServicos = extrairInfoServicos(agendamento);
 
     // Montar endereço completo
     let endereco = null;
@@ -113,13 +155,14 @@ export async function enviarConfirmacaoAgendamento(agendamentoId) {
         nomeCliente: clientes.nome,
         nomeBarbearia: tenants?.nome || 'Estabelecimento',
         nomeBarbeiro: barbeiros?.nome || 'Profissional',
-        nomeServico: servicos?.nome || 'Serviço',
-        preco: servicos?.preco,
+        nomeServico: infoServicos.nomeServico,
+        preco: infoServicos.preco,
         dataHora: agendamento.data_hora,
         endereco,
         telefone: tenants?.whatsapp || tenants?.telefone,
         slug: tenants?.slug,
-        tipoNegocio
+        tipoNegocio,
+        duracaoTotal: infoServicos.duracaoTotal
       });
 
       const resultadoCliente = await enviarMensagem(clientes.telefone, mensagemCliente);
@@ -144,11 +187,12 @@ export async function enviarConfirmacaoAgendamento(agendamentoId) {
         nomeBarbeiro: barbeiros.nome,
         nomeCliente: clientes?.nome || 'Cliente',
         telefoneCliente: clientes?.telefone,
-        nomeServico: servicos?.nome || 'Serviço',
-        preco: servicos?.preco,
+        nomeServico: infoServicos.nomeServico,
+        preco: infoServicos.preco,
         dataHora: agendamento.data_hora,
         observacoes: agendamento.observacoes,
-        tipoNegocio
+        tipoNegocio,
+        duracaoTotal: infoServicos.duracaoTotal
       });
 
       const resultadoBarbeiro = await enviarMensagem(barbeiros.telefone, mensagemBarbeiro);
@@ -191,11 +235,14 @@ export async function enviarLembreteAgendamento(agendamentoId) {
       throw new Error('Agendamento não encontrado');
     }
 
-    const { clientes, barbeiros, servicos, tenants } = agendamento;
+    const { clientes, barbeiros, tenants } = agendamento;
 
     if (!clientes?.telefone) {
       return { sucesso: false, erro: 'Cliente sem telefone' };
     }
+
+    // Extrair informações de serviços (único ou múltiplos)
+    const infoServicos = extrairInfoServicos(agendamento);
 
     let endereco = null;
     if (tenants?.endereco) {
@@ -210,10 +257,11 @@ export async function enviarLembreteAgendamento(agendamentoId) {
       nomeCliente: clientes.nome,
       nomeBarbearia: tenants?.nome || 'Estabelecimento',
       nomeBarbeiro: barbeiros?.nome || 'Profissional',
-      nomeServico: servicos?.nome || 'Serviço',
+      nomeServico: infoServicos.nomeServico,
       dataHora: agendamento.data_hora,
       endereco,
-      tipoNegocio
+      tipoNegocio,
+      duracaoTotal: infoServicos.duracaoTotal
     });
 
     const resultado = await enviarMensagem(clientes.telefone, mensagem);
@@ -255,11 +303,14 @@ export async function enviarNotificacaoCancelamento(agendamentoId) {
       throw new Error('Agendamento não encontrado');
     }
 
-    const { clientes, barbeiros, servicos, tenants } = agendamento;
+    const { clientes, barbeiros, tenants } = agendamento;
 
     if (!clientes?.telefone) {
       return { sucesso: false, erro: 'Cliente sem telefone' };
     }
+
+    // Extrair informações de serviços (único ou múltiplos)
+    const infoServicos = extrairInfoServicos(agendamento);
 
     const tipoNegocio = tenants?.tipo_negocio || 'barbearia';
     
@@ -267,11 +318,12 @@ export async function enviarNotificacaoCancelamento(agendamentoId) {
       nomeCliente: clientes.nome,
       nomeBarbearia: tenants?.nome || 'Estabelecimento',
       nomeBarbeiro: barbeiros?.nome || 'Profissional',
-      nomeServico: servicos?.nome || 'Serviço',
+      nomeServico: infoServicos.nomeServico,
       dataHora: agendamento.data_hora,
       telefone: tenants?.whatsapp || tenants?.telefone,
       slug: tenants?.slug,
-      tipoNegocio
+      tipoNegocio,
+      duracaoTotal: infoServicos.duracaoTotal
     });
 
     const resultado = await enviarMensagem(clientes.telefone, mensagem);

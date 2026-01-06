@@ -99,7 +99,7 @@ export default function PaginaAgendar() {
   
   const [etapa, setEtapa] = useState(1)
   const [barbeiroSelecionado, setBarbeiroSelecionado] = useState('')
-  const [servicoSelecionado, setServicoSelecionado] = useState('')
+  const [servicosSelecionados, setServicosSelecionados] = useState<string[]>([])
   const [dataSelecionada, setDataSelecionada] = useState('')
   const [horarioSelecionado, setHorarioSelecionado] = useState('')
   const [mesAtual, setMesAtual] = useState(new Date())
@@ -442,8 +442,9 @@ export default function PaginaAgendar() {
     return configuracaoHorario.diasFuncionamento.includes(diaAbreviado)
   })
 
-  const servicoObj = servicos.find(s => s.id === servicoSelecionado)
-  const duracaoServico = servicoObj?.duracao || 30
+  const servicosSelecionadosObj = servicos.filter(s => servicosSelecionados.includes(s.id))
+  const duracaoServico = servicosSelecionadosObj.reduce((acc, s) => acc + s.duracao, 0) || 30
+  const precoTotal = servicosSelecionadosObj.reduce((acc, s) => acc + s.preco, 0)
 
   const normalizarHorario = (horario: string | null): string | null => {
     if (!horario) return null
@@ -541,7 +542,8 @@ export default function PaginaAgendar() {
           tenant_id: tenant.id,
           cliente_id: clienteId,
           barbeiro_id: barbeiroSelecionado,
-          servico_id: servicoSelecionado,
+          servico_id: servicosSelecionados[0],
+          servicos_ids: servicosSelecionados,
           data_hora: dataHora.toISOString(),
           status: 'pendente',
           observacoes: observacoes || null,
@@ -566,7 +568,7 @@ export default function PaginaAgendar() {
   const etapaCompleta = () => {
     switch (etapa) {
       case 1:
-        return barbeiroSelecionado !== '' && servicoSelecionado !== ''
+        return barbeiroSelecionado !== '' && servicosSelecionados.length > 0
       case 2:
         return dataSelecionada !== '' && horarioSelecionado !== ''
       case 3:
@@ -655,7 +657,9 @@ export default function PaginaAgendar() {
 
   if (agendamentoConcluido) {
     const barbeiroInfo = barbeiros.find(b => b.id === barbeiroSelecionado)
-    const servicoInfo = servicos.find(s => s.id === servicoSelecionado)
+    const servicosInfo = servicos.filter(s => servicosSelecionados.includes(s.id))
+    const duracaoTotal = servicosInfo.reduce((acc, s) => acc + s.duracao, 0)
+    const valorTotal = servicosInfo.reduce((acc, s) => acc + s.preco, 0)
 
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: cores.primaria }}>
@@ -711,12 +715,12 @@ export default function PaginaAgendar() {
 
             {/* Detalhes do Agendamento */}
             <div className="px-6 py-6 space-y-4">
-              {/* Serviço e Profissional */}
+              {/* Serviços e Profissional */}
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35 }}
-                className="flex items-center gap-4"
+                className="flex items-start gap-4"
               >
                 <div 
                   className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -725,11 +729,16 @@ export default function PaginaAgendar() {
                   <Scissors className="w-5 h-5" style={{ color: cores.secundaria }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate" style={{ color: cores.secundaria }}>
-                    {servicoInfo?.nome}
-                  </p>
-                  <p className="text-sm" style={{ color: cores.destaque }}>
-                    com {barbeiroInfo?.nome} • {servicoInfo?.duracao} min
+                  <div className="space-y-1">
+                    {servicosInfo.map((servico, idx) => (
+                      <p key={servico.id} className="font-semibold truncate" style={{ color: cores.secundaria }}>
+                        {servico.nome}
+                        {idx < servicosInfo.length - 1 && <span className="text-xs ml-1" style={{ color: cores.destaque }}>+</span>}
+                      </p>
+                    ))}
+                  </div>
+                  <p className="text-sm mt-1" style={{ color: cores.destaque }}>
+                    com {barbeiroInfo?.nome} • {duracaoTotal} min
                   </p>
                 </div>
               </motion.div>
@@ -765,9 +774,11 @@ export default function PaginaAgendar() {
                 className="pt-4 mt-4 border-t flex items-center justify-between"
                 style={{ borderColor: cores.destaque + '15' }}
               >
-                <span className="text-sm" style={{ color: cores.destaque }}>Valor do serviço</span>
+                <span className="text-sm" style={{ color: cores.destaque }}>
+                  {servicosInfo.length > 1 ? 'Valor total' : 'Valor do serviço'}
+                </span>
                 <span className="text-xl font-bold" style={{ color: cores.secundaria }}>
-                  R$ {servicoInfo?.preco.toFixed(2)}
+                  R$ {valorTotal.toFixed(2)}
                 </span>
               </motion.div>
             </div>
@@ -899,52 +910,105 @@ export default function PaginaAgendar() {
               key="etapa1"
               className="space-y-8 animate-in fade-in duration-200"
             >
-              {/* Serviços */}
+              {/* Serviços - Seleção Múltipla */}
               <div>
-                <h2 
-                  className="text-lg font-semibold mb-4 flex items-center gap-2"
-                  style={{ color: cores.secundaria }}
-                >
-                  <Scissors className="w-5 h-5" style={{ color: cores.destaque }} />
-                  Escolha o Serviço
-                </h2>
-                <div className="grid gap-3">
-                  {servicos.map((servico) => (
-                    <button
-                      key={servico.id}
-                      onClick={() => setServicoSelecionado(servico.id)}
-                      className="p-4 rounded-xl border text-left transition-all hover:scale-[1.01]"
-                      style={{
-                        backgroundColor: servicoSelecionado === servico.id 
-                          ? cores.secundaria + '15' 
-                          : cores.destaque + '08',
-                        borderColor: servicoSelecionado === servico.id 
-                          ? cores.secundaria 
-                          : cores.destaque + '20'
-                      }}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 
+                    className="text-lg font-semibold flex items-center gap-2"
+                    style={{ color: cores.secundaria }}
+                  >
+                    <Scissors className="w-5 h-5" style={{ color: cores.destaque }} />
+                    Escolha os Serviços
+                  </h2>
+                  {servicosSelecionados.length > 0 && (
+                    <span 
+                      className="text-xs px-2 py-1 rounded-full font-medium"
+                      style={{ backgroundColor: cores.secundaria + '20', color: cores.secundaria }}
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold" style={{ color: cores.secundaria }}>
-                            {servico.nome}
-                          </h3>
-                          {servico.descricao && (
-                            <p className="text-sm mt-1" style={{ color: cores.destaque }}>
-                              {servico.descricao}
-                            </p>
-                          )}
-                          <p className="text-sm mt-1" style={{ color: cores.destaque }}>
-                            <Clock className="w-3 h-3 inline mr-1" />
-                            {servico.duracao} min
-                          </p>
-                        </div>
-                        <span className="font-bold" style={{ color: cores.secundaria }}>
-                          R$ {servico.preco.toFixed(2)}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                      {servicosSelecionados.length} selecionado{servicosSelecionados.length > 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
+                <div className="grid gap-3">
+                  {servicos.map((servico) => {
+                    const estaSelecionado = servicosSelecionados.includes(servico.id)
+                    
+                    return (
+                      <button
+                        key={servico.id}
+                        onClick={() => {
+                          if (estaSelecionado) {
+                            setServicosSelecionados(prev => prev.filter(id => id !== servico.id))
+                          } else {
+                            setServicosSelecionados(prev => [...prev, servico.id])
+                          }
+                        }}
+                        className="p-4 rounded-xl border text-left transition-all hover:scale-[1.01] relative"
+                        style={{
+                          backgroundColor: estaSelecionado 
+                            ? cores.secundaria + '15' 
+                            : cores.destaque + '08',
+                          borderColor: estaSelecionado 
+                            ? cores.secundaria 
+                            : cores.destaque + '20'
+                        }}
+                      >
+                        {/* Indicador de seleção */}
+                        <div 
+                          className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                            estaSelecionado ? 'scale-100' : 'scale-90'
+                          }`}
+                          style={{ 
+                            borderColor: estaSelecionado ? cores.secundaria : cores.destaque + '50',
+                            backgroundColor: estaSelecionado ? cores.secundaria : 'transparent'
+                          }}
+                        >
+                          {estaSelecionado && (
+                            <Check className="w-3 h-3" style={{ color: cores.primaria }} />
+                          )}
+                        </div>
+                        
+                        <div className="flex justify-between items-start pr-8">
+                          <div>
+                            <h3 className="font-semibold" style={{ color: cores.secundaria }}>
+                              {servico.nome}
+                            </h3>
+                            {servico.descricao && (
+                              <p className="text-sm mt-1" style={{ color: cores.destaque }}>
+                                {servico.descricao}
+                              </p>
+                            )}
+                            <p className="text-sm mt-1" style={{ color: cores.destaque }}>
+                              <Clock className="w-3 h-3 inline mr-1" />
+                              {servico.duracao} min
+                            </p>
+                          </div>
+                          <span className="font-bold" style={{ color: cores.secundaria }}>
+                            R$ {servico.preco.toFixed(2)}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                
+                {/* Resumo dos serviços selecionados */}
+                {servicosSelecionados.length > 1 && (
+                  <div 
+                    className="mt-4 p-3 rounded-xl flex items-center justify-between"
+                    style={{ backgroundColor: cores.secundaria + '10' }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Scissors className="w-4 h-4" style={{ color: cores.secundaria }} />
+                      <span className="text-sm font-medium" style={{ color: cores.secundaria }}>
+                        {servicosSelecionados.length} serviços • {duracaoServico} min
+                      </span>
+                    </div>
+                    <span className="font-bold" style={{ color: cores.secundaria }}>
+                      R$ {precoTotal.toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Barbeiros */}
@@ -1538,13 +1602,22 @@ export default function PaginaAgendar() {
                 }}
               >
                 <div 
-                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pb-3 sm:pb-4 border-b"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 pb-3 sm:pb-4 border-b"
                   style={{ borderColor: cores.destaque + '20' }}
                 >
-                  <span className="text-sm" style={{ color: cores.destaque }}>Serviço</span>
-                  <span className="font-semibold text-right" style={{ color: cores.secundaria }}>
-                    {servicos.find(s => s.id === servicoSelecionado)?.nome}
+                  <span className="text-sm" style={{ color: cores.destaque }}>
+                    {servicosSelecionados.length > 1 ? 'Serviços' : 'Serviço'}
                   </span>
+                  <div className="text-right">
+                    {servicosSelecionadosObj.map((s, idx) => (
+                      <span key={s.id} className="font-semibold block" style={{ color: cores.secundaria }}>
+                        {s.nome}
+                        {idx < servicosSelecionadosObj.length - 1 && (
+                          <span className="text-xs ml-1" style={{ color: cores.destaque }}>+</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 
                 <div 
@@ -1592,9 +1665,16 @@ export default function PaginaAgendar() {
                 </div>
                 
                 <div className="flex justify-between items-center pt-2">
-                  <span className="text-base sm:text-lg" style={{ color: cores.destaque }}>Total</span>
+                  <div>
+                    <span className="text-base sm:text-lg" style={{ color: cores.destaque }}>Total</span>
+                    {servicosSelecionados.length > 1 && (
+                      <span className="text-xs ml-2" style={{ color: cores.destaque }}>
+                        ({servicosSelecionados.length} serviços • {duracaoServico} min)
+                      </span>
+                    )}
+                  </div>
                   <span className="font-bold text-xl sm:text-2xl" style={{ color: cores.secundaria }}>
-                    R$ {servicos.find(s => s.id === servicoSelecionado)?.preco.toFixed(2)}
+                    R$ {precoTotal.toFixed(2)}
                   </span>
                 </div>
               </div>

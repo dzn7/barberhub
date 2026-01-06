@@ -80,6 +80,23 @@ Precisa de ajuda? Responda esta mensagem!
 }
 
 /**
+ * Formata lista de serviços para exibição
+ */
+function formatarServicos(nomeServico, duracaoTotal = null) {
+  if (Array.isArray(nomeServico)) {
+    const listaServicos = nomeServico.join(' + ');
+    if (duracaoTotal) {
+      return `${listaServicos} (${duracaoTotal} min)`;
+    }
+    return listaServicos;
+  }
+  if (duracaoTotal) {
+    return `${nomeServico} (${duracaoTotal} min)`;
+  }
+  return nomeServico;
+}
+
+/**
  * Template de confirmação de agendamento para cliente
  */
 export function templateConfirmacaoCliente({ 
@@ -92,7 +109,8 @@ export function templateConfirmacaoCliente({
   endereco,
   telefone,
   slug,
-  tipoNegocio = 'barbearia'
+  tipoNegocio = 'barbearia',
+  duracaoTotal = null
 }) {
   const dataFormatada = formatarDataHora(dataHora);
   const termo = obterTerminologia(tipoNegocio);
@@ -101,6 +119,8 @@ export function templateConfirmacaoCliente({
   const saudacao = obterSaudacaoFinal(tipoNegocio);
   
   const preposicao = ehNail ? 'no' : 'na';
+  const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
+  const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
   
   let mensagem = `🎉 *Agendamento Confirmado!*
 
@@ -109,7 +129,7 @@ Olá, *${nomeCliente}*!
 Seu agendamento ${preposicao} *${nomeBarbearia}* foi confirmado:
 
 👤 *${termo.profissional.singular}:* ${nomeBarbeiro}
-${emojiServico} *Serviço:* ${nomeServico}
+${emojiServico} *${labelServico}:* ${servicosFormatados}
 💰 *Valor:* R$ ${preco?.toFixed(2) || '0.00'}
 📅 *Data:* ${dataFormatada}`;
 
@@ -156,11 +176,14 @@ export function templateNotificacaoBarbeiro({
   preco,
   dataHora,
   observacoes,
-  tipoNegocio = 'barbearia'
+  tipoNegocio = 'barbearia',
+  duracaoTotal = null
 }) {
   const dataFormatada = formatarDataHora(dataHora);
   const emojiServico = obterEmojiServico(tipoNegocio);
   const emoji = obterEmoji(tipoNegocio);
+  const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
+  const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
   
   let mensagem = `📅 *Novo Agendamento!*
 
@@ -170,7 +193,7 @@ Você tem um novo cliente agendado:
 
 👤 *Cliente:* ${nomeCliente}
 📱 *Telefone:* ${telefoneCliente || 'Não informado'}
-${emojiServico} *Serviço:* ${nomeServico}
+${emojiServico} *${labelServico}:* ${servicosFormatados}
 💰 *Valor:* R$ ${preco?.toFixed(2) || '0.00'}
 📅 *Data:* ${dataFormatada}`;
 
@@ -197,7 +220,8 @@ export function templateLembreteCliente({
   nomeServico, 
   dataHora,
   endereco,
-  tipoNegocio = 'barbearia'
+  tipoNegocio = 'barbearia',
+  duracaoTotal = null
 }) {
   const horaFormatada = formatarDataHora(dataHora, "HH:mm");
   const diaFormatado = formatarDataHora(dataHora, "dd/MM");
@@ -207,6 +231,8 @@ export function templateLembreteCliente({
   const despedida = obterDespedida(tipoNegocio);
   
   const preposicao = ehNail ? 'no' : 'na';
+  const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
+  const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
   
   let mensagem = `⏰ *Lembrete: Seu horário está chegando!*
 
@@ -216,7 +242,7 @@ Seu agendamento ${preposicao} *${nomeBarbearia}* é *HOJE* às *${horaFormatada}
 
 📋 *Detalhes:*
 👤 ${termo.profissional.singular}: ${nomeBarbeiro}
-${emojiServico} Serviço: ${nomeServico}
+${emojiServico} ${labelServico}: ${servicosFormatados}
 📅 Data: ${diaFormatado}
 🕐 Horário: ${horaFormatada}h`;
 
@@ -248,7 +274,8 @@ export function templateCancelamentoCliente({
   dataHora,
   telefone,
   slug,
-  tipoNegocio = 'barbearia'
+  tipoNegocio = 'barbearia',
+  duracaoTotal = null
 }) {
   const dataFormatada = formatarDataHora(dataHora);
   const termo = obterTerminologia(tipoNegocio);
@@ -256,6 +283,8 @@ export function templateCancelamentoCliente({
   const emojiServico = obterEmojiServico(tipoNegocio);
   
   const preposicao = ehNail ? 'no' : 'na';
+  const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
+  const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
   
   let mensagem = `❌ *Agendamento Cancelado*
 
@@ -264,7 +293,7 @@ Olá, *${nomeCliente}*,
 Seu agendamento ${preposicao} *${nomeBarbearia}* foi cancelado:
 
 👤 *${termo.profissional.singular}:* ${nomeBarbeiro}
-${emojiServico} *Serviço:* ${nomeServico}
+${emojiServico} *${labelServico}:* ${servicosFormatados}
 📅 *Data:* ${dataFormatada}`;
 
   if (telefone) {
@@ -302,7 +331,8 @@ export function templateRemarcacaoCliente({
   endereco,
   telefone,
   slug,
-  tipoNegocio = 'barbearia'
+  tipoNegocio = 'barbearia',
+  duracaoTotal = null
 }) {
   const dataAntigaFormatada = formatarDataHora(dataHoraAntiga);
   const dataNovaFormatada = formatarDataHora(dataHoraNova);
@@ -315,6 +345,8 @@ export function templateRemarcacaoCliente({
   const contatoEstabelecimento = ehNail 
     ? `📞 *Contato do ${termo.estabelecimento.singular.toLowerCase()}:*`
     : `📞 *Contato da ${termo.estabelecimento.singular.toLowerCase()}:*`;
+  const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
+  const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
   
   let mensagem = `🔄 *Agendamento Remarcado!*
 
@@ -330,7 +362,7 @@ Seu agendamento ${preposicao} *${nomeBarbearia}* foi remarcado:
 
 ━━━━━━━━━━━━━━━━━━━
 👤 *${termo.profissional.singular}:* ${nomeBarbeiro}
-${emojiServico} *Serviço:* ${nomeServico}
+${emojiServico} *${labelServico}:* ${servicosFormatados}
 💰 *Valor:* R$ ${preco?.toFixed(2) || '0.00'}
 ━━━━━━━━━━━━━━━━━━━`;
 
