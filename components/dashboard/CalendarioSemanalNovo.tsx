@@ -498,36 +498,42 @@ export function CalendarioSemanalNovo() {
 
       {/* Cabeçalho dos Dias - Design System Zinc */}
       <div className="flex-shrink-0 bg-zinc-900 dark:bg-zinc-800">
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${diasExibidos.length}, 1fr)` }}>
-          {diasExibidos.map((dia, idx) => {
-            const ehHoje = isToday(dia);
-            const agDia = agendamentosPorDia[format(dia, 'yyyy-MM-dd')] || [];
-            
-            return (
-              <div
-                key={idx}
-                className={`py-3 px-2 text-center border-l border-zinc-700/50 first:border-l-0 ${
-                  ehHoje ? 'bg-zinc-800 dark:bg-zinc-700' : ''
-                }`}
-              >
-                <div className="text-xs font-medium uppercase text-zinc-400">
-                  {format(dia, 'EEEE', { locale: ptBR })}
-                </div>
-                <div className={`text-2xl font-bold mt-1 ${
-                  ehHoje 
-                    ? 'w-10 h-10 mx-auto rounded-full bg-white text-zinc-900 flex items-center justify-center' 
-                    : 'text-white'
-                }`}>
-                  {format(dia, 'd')}
-                </div>
-                {agDia.length > 0 && (
-                  <div className="inline-flex items-center justify-center mt-1 px-2 py-0.5 bg-zinc-700/50 rounded-full">
-                    <span className="text-[10px] text-zinc-300 font-medium">{agDia.length}</span>
+        <div className="flex">
+          {/* Espaço para alinhar com coluna de horários */}
+          <div className="flex-shrink-0 w-12 sm:w-16 border-r border-zinc-700/50" />
+          
+          {/* Grid de dias */}
+          <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${diasExibidos.length}, 1fr)` }}>
+            {diasExibidos.map((dia, idx) => {
+              const ehHoje = isToday(dia);
+              const agDia = agendamentosPorDia[format(dia, 'yyyy-MM-dd')] || [];
+              
+              return (
+                <div
+                  key={idx}
+                  className={`py-3 px-2 text-center border-l border-zinc-700/50 first:border-l-0 ${
+                    ehHoje ? 'bg-zinc-800 dark:bg-zinc-700' : ''
+                  }`}
+                >
+                  <div className="text-xs font-medium uppercase text-zinc-400">
+                    {format(dia, 'EEEE', { locale: ptBR })}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                  <div className={`text-2xl font-bold mt-1 ${
+                    ehHoje 
+                      ? 'w-10 h-10 mx-auto rounded-full bg-white text-zinc-900 flex items-center justify-center' 
+                      : 'text-white'
+                  }`}>
+                    {format(dia, 'd')}
+                  </div>
+                  {agDia.length > 0 && (
+                    <div className="inline-flex items-center justify-center mt-1 px-2 py-0.5 bg-zinc-700/50 rounded-full">
+                      <span className="text-[10px] text-zinc-300 font-medium">{agDia.length}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
