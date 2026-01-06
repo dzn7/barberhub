@@ -124,28 +124,28 @@ export const PLANOS_CONFIG: Record<string, PlanoConfig> = {
     nome: 'Trial',
     cor: 'text-amber-600',
     bg: 'bg-amber-100 dark:bg-amber-900/30',
-    limite_profissionais: 2,
-    limite_servicos: 10,
-    limite_agendamentos: 100,
+    limite_profissionais: 999,
+    limite_servicos: 999,
+    limite_agendamentos: 999999,
     preco: 0
   },
   basico: {
     nome: 'Básico',
     cor: 'text-blue-600',
     bg: 'bg-blue-100 dark:bg-blue-900/30',
-    limite_profissionais: 3,
-    limite_servicos: 20,
-    limite_agendamentos: 500,
-    preco: 49.90
+    limite_profissionais: 999,
+    limite_servicos: 999,
+    limite_agendamentos: 999999,
+    preco: 39.90
   },
   profissional: {
     nome: 'Profissional',
     cor: 'text-emerald-600',
     bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-    limite_profissionais: 10,
-    limite_servicos: 50,
-    limite_agendamentos: 2000,
-    preco: 99.90
+    limite_profissionais: 999,
+    limite_servicos: 999,
+    limite_agendamentos: 999999,
+    preco: 39.90
   },
   enterprise: {
     nome: 'Enterprise',
@@ -154,6 +154,6 @@ export const PLANOS_CONFIG: Record<string, PlanoConfig> = {
     limite_profissionais: 999,
     limite_servicos: 999,
     limite_agendamentos: 999999,
-    preco: 199.90
+    preco: 39.90
   }
 }

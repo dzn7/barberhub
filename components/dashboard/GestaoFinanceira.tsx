@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button, Select, TextField, TextArea } from "@radix-ui/themes";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { ModalPortal } from "@/components/ui/modal-portal";
 import { startOfMonth, endOfMonth, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,6 +26,7 @@ interface ModalFeedback {
  * Controle completo de receitas e despesas
  */
 export function GestaoFinanceira() {
+  const { tenant } = useAuth();
   const [modalAberto, setModalAberto] = useState(false);
   const [tipoTransacao, setTipoTransacao] = useState<"receita" | "despesa">("despesa");
   const [categoria, setCategoria] = useState("");
@@ -49,8 +51,10 @@ export function GestaoFinanceira() {
   });
 
   useEffect(() => {
-    buscarTransacoes();
-  }, []);
+    if (tenant?.id) {
+      buscarTransacoes();
+    }
+  }, [tenant?.id]);
 
   const categoriasDespesa: { valor: CategoriaDespesa; label: string }[] = [
     { valor: "luz", label: "Luz" },
@@ -74,6 +78,8 @@ export function GestaoFinanceira() {
   ];
 
   const buscarTransacoes = async () => {
+    if (!tenant?.id) return;
+    
     try {
       const inicioMes = startOfMonth(new Date()).toISOString();
       const fimMes = endOfMonth(new Date()).toISOString();
@@ -81,13 +87,13 @@ export function GestaoFinanceira() {
       const { data, error } = await supabase
         .from('transacoes')
         .select('*')
+        .eq('tenant_id', tenant.id)
         .gte('data', inicioMes)
         .lte('data', fimMes)
         .order('data', { ascending: false });
 
       if (error) throw error;
 
-      console.log('Transações carregadas:', data);
       setTransacoes(data || []);
       calcularMetricas(data || []);
     } catch (error) {
@@ -127,11 +133,14 @@ export function GestaoFinanceira() {
   };
 
   const salvarTransacao = async () => {
+    if (!tenant?.id) return;
+    
     setSalvando(true);
     try {
       const { data: novaTransacao, error } = await supabase
         .from('transacoes')
         .insert([{
+          tenant_id: tenant.id,
           tipo: tipoTransacao,
           categoria: tipoTransacao === 'despesa' ? categoria : 'servico',
           descricao,

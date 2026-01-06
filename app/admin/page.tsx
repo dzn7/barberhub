@@ -414,12 +414,13 @@ export default function DashboardCompleto() {
     );
   }
 
-  // Se o trial expirou, mostrar tela de expiração
+  // Se o trial expirou, mostrar tela de expiração com opção de pagamento
   if (trialExpirado && tenant) {
     return (
       <TelaTesteExpirado
         nomeBarbearia={tenant.nome}
         dataExpiracao={tenant.trial_fim}
+        tenantId={tenant.id}
       />
     );
   }

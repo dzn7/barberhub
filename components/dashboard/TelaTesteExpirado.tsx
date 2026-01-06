@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -10,11 +11,15 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
+  QrCode,
+  CreditCard,
 } from "lucide-react";
+import { ModalPagamentoPix } from "@/components/pagamentos";
 
 interface TelaTesteExpiradoProps {
   nomeBarbearia: string;
   dataExpiracao: string;
+  tenantId?: string;
 }
 
 /**
@@ -24,7 +29,10 @@ interface TelaTesteExpiradoProps {
 export function TelaTesteExpirado({
   nomeBarbearia,
   dataExpiracao,
+  tenantId,
 }: TelaTesteExpiradoProps) {
+  const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
+  
   const numeroWhatsApp = "5586998053279";
   const mensagemWhatsApp = encodeURIComponent(
     `Olá! Sou da barbearia "${nomeBarbearia}" e meu período de teste expirou. Gostaria de saber mais sobre os planos disponíveis para continuar usando o BarberHub.`
@@ -137,22 +145,41 @@ export function TelaTesteExpirado({
               ))}
             </ul>
 
-            {/* Botão WhatsApp */}
-            <motion.a
-              href={linkWhatsApp}
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center justify-center gap-3 w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-lg transition-colors"
-            >
-              <MessageCircle className="w-6 h-6" />
-              Falar no WhatsApp
-              <ArrowRight className="w-5 h-5" />
-            </motion.a>
+            {/* Botões de Ação */}
+            <div className="space-y-3">
+              {/* Botão Pagar com PIX - Principal */}
+              {tenantId && (
+                <motion.button
+                  onClick={() => setModalPagamentoAberto(true)}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-center gap-3 w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-lg transition-colors"
+                >
+                  <QrCode className="w-6 h-6" />
+                  Pagar com PIX - R$ 39,90/mês
+                  <ArrowRight className="w-5 h-5" />
+                </motion.button>
+              )}
+
+              {/* Botão WhatsApp - Secundário */}
+              <motion.a
+                href={linkWhatsApp}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center justify-center gap-3 w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition-colors border border-zinc-700"
+              >
+                <MessageCircle className="w-5 h-5" />
+                Falar no WhatsApp
+              </motion.a>
+            </div>
           </motion.div>
 
           {/* Informações de contato alternativas */}
@@ -198,6 +225,20 @@ export function TelaTesteExpirado({
           </p>
         </div>
       </footer>
+
+      {/* Modal de Pagamento PIX */}
+      {tenantId && (
+        <ModalPagamentoPix
+          aberto={modalPagamentoAberto}
+          onFechar={() => setModalPagamentoAberto(false)}
+          tenantId={tenantId}
+          tenantNome={nomeBarbearia}
+          onPagamentoAprovado={() => {
+            setModalPagamentoAberto(false)
+            window.location.reload()
+          }}
+        />
+      )}
     </div>
   );
 }

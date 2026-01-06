@@ -21,12 +21,13 @@ import {
   ModalDetalhesTenant, GestaoUsuariosAuth, SistemaBackup, RelatoriosGlobais,
   PainelBotFly, PLANOS_CONFIG
 } from '@/components/superadmin'
+import { ModalPagamentoPix } from '@/components/pagamentos'
 import { Hand } from 'lucide-react'
 
 const ADMIN_USUARIO = 'dzndev'
 const ADMIN_SENHA = '1503'
 
-type AbaAtiva = 'visao-geral' | 'negocios' | 'usuarios' | 'relatorios' | 'bot' | 'infraestrutura' | 'backup'
+type AbaAtiva = 'visao-geral' | 'negocios' | 'cobrancas' | 'usuarios' | 'relatorios' | 'bot' | 'infraestrutura' | 'backup'
 type FiltroTipoNegocio = 'todos' | 'barbearia' | 'nail_designer'
 
 interface Tenant {
@@ -49,6 +50,12 @@ interface Tenant {
   total_servicos: number
   total_agendamentos: number
   total_clientes: number
+  // Campos de cobrança
+  dia_cobranca: number | null
+  data_ultimo_pagamento: string | null
+  data_proximo_pagamento: string | null
+  pagamento_pendente: boolean
+  notificacao_enviada: boolean
 }
 
 interface Estatisticas {
@@ -106,6 +113,7 @@ export default function PainelSuperAdmin() {
   // Modais
   const [modalExcluir, setModalExcluir] = useState<{ aberto: boolean; tenant: Tenant | null }>({ aberto: false, tenant: null })
   const [modalDetalhes, setModalDetalhes] = useState<{ aberto: boolean; tenant: Tenant | null }>({ aberto: false, tenant: null })
+  const [modalPagamento, setModalPagamento] = useState<{ aberto: boolean; tenant: Tenant | null }>({ aberto: false, tenant: null })
   const [excluindo, setExcluindo] = useState(false)
 
   // Infra
@@ -324,16 +332,64 @@ export default function PainelSuperAdmin() {
       `Olá ${tenant.nome}! 👋\n\n` +
       `Seu período de teste no BarberHub está chegando ao fim.\n\n` +
       `Para continuar usando todas as funcionalidades e não perder seus dados, ` +
-      `escolha um dos nossos planos:\n\n` +
-      `💼 *Básico* - R$ 49,90/mês\n` +
-      `🚀 *Profissional* - R$ 89,90/mês\n\n` +
-      `Responda essa mensagem para ativar seu plano!`
+      `ative sua assinatura:\n\n` +
+      `💳 *Assinatura Mensal* - R$ 39,90/mês\n\n` +
+      `Responda essa mensagem para receber o PIX de pagamento!`
     )
     const numero = tenant.whatsapp?.replace(/\D/g, '') || tenant.telefone?.replace(/\D/g, '')
     if (numero) {
       window.open(`https://wa.me/55${numero}?text=${mensagem}`, '_blank')
     } else {
       alert('Tenant não possui WhatsApp cadastrado')
+    }
+  }
+
+  const gerarPixPagamento = (tenant: Tenant) => {
+    setModalPagamento({ aberto: true, tenant })
+  }
+
+  // Terminar trial imediatamente (força expiração)
+  const terminarTrialAgora = async (tenantId: string) => {
+    try {
+      const ontem = new Date()
+      ontem.setDate(ontem.getDate() - 1)
+      
+      const { error } = await supabase
+        .from('tenants')
+        .update({ 
+          trial_fim: ontem.toISOString(),
+          pagamento_pendente: true,
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', tenantId)
+      
+      if (error) throw error
+      carregarDados()
+    } catch (error) {
+      console.error('Erro ao terminar trial:', error)
+    }
+  }
+
+  // Cobrar agora - termina trial e abre modal de pagamento
+  const cobrarAgora = async (tenant: Tenant) => {
+    try {
+      const ontem = new Date()
+      ontem.setDate(ontem.getDate() - 1)
+      
+      await supabase
+        .from('tenants')
+        .update({ 
+          trial_fim: ontem.toISOString(),
+          pagamento_pendente: true,
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', tenant.id)
+      
+      // Abre modal de pagamento PIX
+      setModalPagamento({ aberto: true, tenant })
+      carregarDados()
+    } catch (error) {
+      console.error('Erro ao cobrar agora:', error)
     }
   }
 
@@ -551,6 +607,7 @@ export default function PainelSuperAdmin() {
             {[
               { id: 'visao-geral', label: 'Visão Geral', labelCurto: 'Geral', icone: BarChart3 },
               { id: 'negocios', label: 'Negócios', labelCurto: 'Neg.', icone: Store },
+              { id: 'cobrancas', label: 'Cobranças', labelCurto: 'Cobr.', icone: CreditCard },
               { id: 'usuarios', label: 'Usuários Auth', labelCurto: 'Users', icone: UserCog },
               { id: 'relatorios', label: 'Relatórios', labelCurto: 'Relat.', icone: FileText },
               { id: 'bot', label: 'Bot WhatsApp', labelCurto: 'Bot', icone: Bot },
@@ -758,6 +815,9 @@ export default function PainelSuperAdmin() {
                       onAlterarTrial={(dias) => alterarTrial(tenant.id, dias)}
                       onRemoverTrial={() => removerTrial(tenant.id)}
                       onSolicitarCobranca={() => solicitarCobranca(tenant)}
+                      onGerarPix={() => gerarPixPagamento(tenant)}
+                      onTerminarTrial={() => terminarTrialAgora(tenant.id)}
+                      onCobrarAgora={() => cobrarAgora(tenant)}
                     />
                   ))}
                 </div>
@@ -768,6 +828,223 @@ export default function PainelSuperAdmin() {
                     <p className="text-zinc-500">Nenhum negócio encontrado</p>
                   </div>
                 )}
+              </motion.div>
+            )}
+
+            {/* Cobranças */}
+            {abaAtiva === 'cobrancas' && (
+              <motion.div key="cobrancas" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                {/* Resumo de Cobranças */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                          {tenants.filter(t => {
+                            const dataProximo = t.data_proximo_pagamento ? new Date(t.data_proximo_pagamento) : null
+                            return dataProximo && dataProximo <= new Date()
+                          }).length}
+                        </p>
+                        <p className="text-xs text-zinc-500">Pagamentos Vencidos</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                          {tenants.filter(t => {
+                            const dataProximo = t.data_proximo_pagamento ? new Date(t.data_proximo_pagamento) : null
+                            const hoje = new Date()
+                            const em7Dias = new Date()
+                            em7Dias.setDate(hoje.getDate() + 7)
+                            return dataProximo && dataProximo > hoje && dataProximo <= em7Dias
+                          }).length}
+                        </p>
+                        <p className="text-xs text-zinc-500">Vencem em 7 dias</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                          {tenants.filter(t => t.data_ultimo_pagamento).length}
+                        </p>
+                        <p className="text-xs text-zinc-500">Já Pagaram</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-zinc-900 dark:bg-white rounded-lg flex items-center justify-center">
+                        <Banknote className="w-5 h-5 text-white dark:text-zinc-900" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-zinc-900 dark:text-white">
+                          R$ {(tenants.filter(t => t.data_ultimo_pagamento).length * 39.90).toFixed(2).replace('.', ',')}
+                        </p>
+                        <p className="text-xs text-zinc-500">Receita Mensal</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de Cobranças Pendentes */}
+                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-zinc-900 dark:text-white">Cobranças Pendentes</h3>
+                      <p className="text-xs text-zinc-500">Tenants com pagamento vencido ou próximo do vencimento</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const pendentes = tenants.filter(t => {
+                          const dataProximo = t.data_proximo_pagamento ? new Date(t.data_proximo_pagamento) : null
+                          return dataProximo && dataProximo <= new Date() && t.whatsapp
+                        })
+                        pendentes.forEach(t => solicitarCobranca(t))
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                    >
+                      <Bell className="w-4 h-4" />
+                      Lembrar Todos
+                    </button>
+                  </div>
+                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800 max-h-[500px] overflow-y-auto">
+                    {tenants
+                      .filter(t => {
+                        const dataProximo = t.data_proximo_pagamento ? new Date(t.data_proximo_pagamento) : (t.trial_fim ? new Date(t.trial_fim) : null)
+                        const hoje = new Date()
+                        const em7Dias = new Date()
+                        em7Dias.setDate(hoje.getDate() + 7)
+                        return dataProximo && dataProximo <= em7Dias
+                      })
+                      .sort((a, b) => {
+                        const dataA = a.data_proximo_pagamento || a.trial_fim || ''
+                        const dataB = b.data_proximo_pagamento || b.trial_fim || ''
+                        return new Date(dataA).getTime() - new Date(dataB).getTime()
+                      })
+                      .map(tenant => {
+                        const dataVencimento = tenant.data_proximo_pagamento || tenant.trial_fim
+                        const vencido = dataVencimento ? new Date(dataVencimento) <= new Date() : false
+                        return (
+                          <div key={tenant.id} className="p-4 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                tenant.tipo_negocio === 'nail_designer' ? 'bg-pink-100 dark:bg-pink-900/30' : 'bg-blue-100 dark:bg-blue-900/30'
+                              }`}>
+                                {tenant.tipo_negocio === 'nail_designer' ? (
+                                  <Hand className="w-5 h-5 text-pink-500" />
+                                ) : (
+                                  <Scissors className="w-5 h-5 text-blue-500" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium text-zinc-900 dark:text-white">{tenant.nome}</p>
+                                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                  <span>{tenant.email}</span>
+                                  {tenant.dia_cobranca && (
+                                    <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded">
+                                      Dia {tenant.dia_cobranca}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className={`text-sm font-medium ${vencido ? 'text-red-500' : 'text-amber-500'}`}>
+                                  {vencido ? 'Vencido' : 'Vence'} {dataVencimento ? format(new Date(dataVencimento), "dd/MM", { locale: ptBR }) : '-'}
+                                </p>
+                                <p className="text-xs text-zinc-500">R$ 39,90</p>
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => gerarPixPagamento(tenant)}
+                                  className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+                                  title="Gerar PIX"
+                                >
+                                  <QrCode className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => solicitarCobranca(tenant)}
+                                  className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                                  title="Lembrar via WhatsApp"
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {tenants.filter(t => {
+                      const dataProximo = t.data_proximo_pagamento ? new Date(t.data_proximo_pagamento) : (t.trial_fim ? new Date(t.trial_fim) : null)
+                      const hoje = new Date()
+                      const em7Dias = new Date()
+                      em7Dias.setDate(hoje.getDate() + 7)
+                      return dataProximo && dataProximo <= em7Dias
+                    }).length === 0 && (
+                      <div className="p-8 text-center">
+                        <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+                        <p className="text-zinc-500">Nenhuma cobrança pendente</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Histórico de Pagamentos */}
+                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+                    <h3 className="font-semibold text-zinc-900 dark:text-white">Últimos Pagamentos Confirmados</h3>
+                    <p className="text-xs text-zinc-500">Tenants que realizaram pagamento</p>
+                  </div>
+                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800 max-h-[300px] overflow-y-auto">
+                    {tenants
+                      .filter(t => t.data_ultimo_pagamento)
+                      .sort((a, b) => new Date(b.data_ultimo_pagamento!).getTime() - new Date(a.data_ultimo_pagamento!).getTime())
+                      .slice(0, 10)
+                      .map(tenant => (
+                        <div key={tenant.id} className="p-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
+                              <CheckCircle className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-zinc-900 dark:text-white text-sm">{tenant.nome}</p>
+                              <p className="text-xs text-zinc-500">
+                                Pago em {format(new Date(tenant.data_ultimo_pagamento!), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-emerald-600">R$ 39,90</p>
+                            {tenant.data_proximo_pagamento && (
+                              <p className="text-xs text-zinc-500">
+                                Próximo: {format(new Date(tenant.data_proximo_pagamento), "dd/MM", { locale: ptBR })}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    {tenants.filter(t => t.data_ultimo_pagamento).length === 0 && (
+                      <div className="p-8 text-center">
+                        <CreditCard className="w-12 h-12 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+                        <p className="text-zinc-500">Nenhum pagamento confirmado ainda</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -970,6 +1247,20 @@ export default function PainelSuperAdmin() {
         aberto={modalDetalhes.aberto}
         onFechar={() => setModalDetalhes({ aberto: false, tenant: null })}
       />
+
+      {/* Modal de Pagamento PIX */}
+      {modalPagamento.tenant && (
+        <ModalPagamentoPix
+          aberto={modalPagamento.aberto}
+          onFechar={() => setModalPagamento({ aberto: false, tenant: null })}
+          tenantId={modalPagamento.tenant.id}
+          tenantNome={modalPagamento.tenant.nome}
+          onPagamentoAprovado={() => {
+            carregarDados()
+            setModalPagamento({ aberto: false, tenant: null })
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -1015,7 +1306,10 @@ function CardTenantItem({
   onVerDetalhes,
   onAlterarTrial,
   onRemoverTrial,
-  onSolicitarCobranca
+  onSolicitarCobranca,
+  onGerarPix,
+  onTerminarTrial,
+  onCobrarAgora
 }: {
   tenant: Tenant
   onExcluir: () => void
@@ -1025,6 +1319,9 @@ function CardTenantItem({
   onAlterarTrial: (dias: number) => void
   onRemoverTrial: () => void
   onSolicitarCobranca: () => void
+  onGerarPix: () => void
+  onTerminarTrial: () => void
+  onCobrarAgora: () => void
 }) {
   const [menuAberto, setMenuAberto] = useState(false)
   const [copiado, setCopiado] = useState(false)
@@ -1329,13 +1626,41 @@ function CardTenantItem({
                     </div>
                     
                     <button 
-                      onClick={() => { onSolicitarCobranca(); setMenuAberto(false) }} 
+                      onClick={() => { onGerarPix(); setMenuAberto(false) }} 
                       className="flex items-center gap-2.5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 w-full text-left transition-colors"
                       role="menuitem"
                     >
+                      <QrCode className="w-4 h-4" /> 
+                      <span>Gerar PIX (R$ 39,90)</span>
+                      <span className="ml-auto text-xs bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">Mercado Pago</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => { onSolicitarCobranca(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 w-full text-left transition-colors"
+                      role="menuitem"
+                    >
+                      <MessageSquare className="w-4 h-4 text-zinc-400" /> 
+                      <span>Lembrar via WhatsApp</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => { onCobrarAgora(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 w-full text-left transition-colors"
+                      role="menuitem"
+                    >
                       <Banknote className="w-4 h-4" /> 
-                      <span>Solicitar Pagamento</span>
-                      <span className="ml-auto text-xs bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">WhatsApp</span>
+                      <span>Cobrar Agora</span>
+                      <span className="ml-auto text-xs bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">Termina trial + PIX</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => { onTerminarTrial(); setMenuAberto(false) }} 
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full text-left transition-colors"
+                      role="menuitem"
+                    >
+                      <Clock className="w-4 h-4" /> 
+                      <span>Terminar Trial Agora</span>
                     </button>
                     
                     <hr className="my-1.5 border-zinc-200 dark:border-zinc-700" />

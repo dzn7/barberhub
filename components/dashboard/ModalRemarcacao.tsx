@@ -10,8 +10,10 @@ import { ptBR } from "date-fns/locale";
 import { gerarTodosHorarios } from "@/lib/horarios";
 import { obterEmojiPrincipal, obterTerminologia } from "@/lib/configuracoes-negocio";
 import { TipoNegocio } from "@/lib/tipos-negocio";
+import { useAuth } from "@/contexts/AuthContext";
+import { buscarConfiguracaoHorarios, ConfiguracaoHorarios, HORARIOS_PADRAO } from "@/lib/horarios-funcionamento";
 
-const BOT_URL = 'https://bot-barberhub.fly.dev';
+const BOT_URL = process.env.NEXT_PUBLIC_BOT_URL || 'https://bot-barberhub.fly.dev';
 
 interface Agendamento {
   id: string;
@@ -55,6 +57,7 @@ interface ModalRemarcacaoProps {
  * Mostra disponibilidade de horários em tempo real
  */
 export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipoNegocio = 'barbearia', nomeEstabelecimento }: ModalRemarcacaoProps) {
+  const { tenant } = useAuth();
   const terminologia = obterTerminologia(tipoNegocio);
   const emoji = obterEmojiPrincipal(tipoNegocio);
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date());
@@ -63,6 +66,18 @@ export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipo
   const [motivo, setMotivo] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [configHorarios, setConfigHorarios] = useState<ConfiguracaoHorarios>(HORARIOS_PADRAO);
+
+  // Buscar configuração de horários do tenant
+  useEffect(() => {
+    const carregarConfiguracao = async () => {
+      if (tenant?.id) {
+        const config = await buscarConfiguracaoHorarios(tenant.id, supabase);
+        setConfigHorarios(config);
+      }
+    };
+    carregarConfiguracao();
+  }, [tenant?.id]);
 
   // Gerar próximos 14 dias
   const proximosDias = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
@@ -182,12 +197,14 @@ export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipo
 
       console.log("🔴 Horários ocupados:", horariosOcupados);
 
-      // Gerar todos os horários com intervalo de 20 minutos
+      // Gerar todos os horários usando configuração do tenant
       const duracaoServico = agendamento.servicos.duracao;
+      const horaInicioFormatada = `${configHorarios.horaInicio.toString().padStart(2, '0')}:00`;
+      const horaFimFormatada = `${configHorarios.horaFim.toString().padStart(2, '0')}:00`;
       const todosHorarios = gerarTodosHorarios(duracaoServico, horariosOcupados, {
-        inicio: "08:00",
-        fim: "18:00",
-        intervaloHorarios: 20 // 20 minutos
+        inicio: horaInicioFormatada,
+        fim: horaFimFormatada,
+        intervaloHorarios: configHorarios.intervalo || 20
       });
 
       console.log("📋 Total de horários gerados:", todosHorarios.length);

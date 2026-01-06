@@ -22,9 +22,10 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { obterEmojiPrincipal, obterTerminologia } from "@/lib/configuracoes-negocio";
 import { TipoNegocio } from "@/lib/tipos-negocio";
+import { buscarConfiguracaoHorarios, gerarArrayHoras, ConfiguracaoHorarios, HORARIOS_PADRAO } from "@/lib/horarios-funcionamento";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
-const BOT_URL = 'https://bot-barberhub.fly.dev';
+const BOT_URL = process.env.NEXT_PUBLIC_BOT_URL || 'https://bot-barberhub.fly.dev';
 
 interface Agendamento {
   id: string;
@@ -40,7 +41,7 @@ interface Agendamento {
 type TipoVisualizacao = 'dia' | '3dias' | 'semana';
 type TamanhoHora = 'compacto' | 'normal' | 'expandido';
 
-const HORAS_DIA = Array.from({ length: 14 }, (_, i) => i + 7); // 7h às 20h
+// HORAS_DIA removido - agora usa configuração dinâmica do tenant via gerarArrayHoras()
 
 const TAMANHOS_HORA: Record<TamanhoHora, number> = {
   compacto: 48,
@@ -80,6 +81,7 @@ export function CalendarioSemanalNovo() {
   const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
   const [processandoExclusao, setProcessandoExclusao] = useState(false);
   const [diasFuncionamento, setDiasFuncionamento] = useState<string[]>(['seg', 'ter', 'qua', 'qui', 'sex', 'sab']);
+  const [configHorarios, setConfigHorarios] = useState<ConfiguracaoHorarios>(HORARIOS_PADRAO);
   
   // Configurações de visualização
   const [visualizacao, setVisualizacao] = useState<TipoVisualizacao>('semana');
@@ -90,21 +92,21 @@ export function CalendarioSemanalNovo() {
   const subscriptionRef = useRef<any>(null);
 
   const alturaHora = TAMANHOS_HORA[tamanhoHora];
+  
+  // Gerar array de horas dinamicamente baseado na configuração do tenant
+  const horasDia = useMemo(() => {
+    return gerarArrayHoras(configHorarios.horaInicio, configHorarios.horaFim);
+  }, [configHorarios]);
 
-  // Buscar configuração da barbearia para dias de funcionamento
+  // Buscar configuração da barbearia para dias de funcionamento e horários
   useEffect(() => {
     const buscarConfiguracao = async () => {
       if (!tenant?.id) return;
       
-      const { data, error } = await supabase
-        .from('configuracoes_barbearia')
-        .select('dias_funcionamento')
-        .eq('tenant_id', tenant.id)
-        .single();
-      
-      if (!error && data?.dias_funcionamento) {
-        setDiasFuncionamento(data.dias_funcionamento);
-      }
+      // Buscar configuração completa de horários
+      const config = await buscarConfiguracaoHorarios(tenant.id, supabase);
+      setConfigHorarios(config);
+      setDiasFuncionamento(config.diasFuncionamento);
     };
     
     buscarConfiguracao();
