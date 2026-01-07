@@ -1,0 +1,1 @@
+export { ModalRemarcacao } from './ModalRemarcacao';

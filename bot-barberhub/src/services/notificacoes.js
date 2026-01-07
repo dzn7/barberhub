@@ -181,6 +181,14 @@ export async function enviarConfirmacaoAgendamento(agendamentoId) {
       }
     }
 
+    // IMPORTANTE: Aguardar antes de enviar para o barbeiro
+    // Evita problema de "aguardando mensagem" causado por rate limiting
+    // Delay aumentado para 5s para garantir que a primeira mensagem seja totalmente processada
+    if (clientes?.telefone && barbeiros?.telefone) {
+      logger.info('⏳ Aguardando 5s antes de enviar para o profissional...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+
     // 2. Enviar para profissional
     if (barbeiros?.telefone) {
       const mensagemBarbeiro = templateNotificacaoBarbeiro({

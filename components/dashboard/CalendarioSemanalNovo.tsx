@@ -52,10 +52,13 @@ type TamanhoHora = 'compacto' | 'normal' | 'expandido';
 
 // HORAS_DIA removido - agora usa configuração dinâmica do tenant via gerarArrayHoras()
 
+// Altura fixa de 170px como no arquivo de análise
+const ALTURA_HORA = 170;
+
 const TAMANHOS_HORA: Record<TamanhoHora, number> = {
-  compacto: 48,
-  normal: 64,
-  expandido: 80
+  compacto: 170,
+  normal: 170,
+  expandido: 170
 };
 
 const STATUS_CORES = {
@@ -63,6 +66,34 @@ const STATUS_CORES = {
   confirmado: { bg: 'bg-emerald-500', border: 'border-emerald-600', text: 'text-white', light: 'bg-emerald-100 text-emerald-800' },
   concluido: { bg: 'bg-blue-500', border: 'border-blue-600', text: 'text-white', light: 'bg-blue-100 text-blue-800' },
   cancelado: { bg: 'bg-zinc-300', border: 'border-zinc-400', text: 'text-zinc-600', light: 'bg-zinc-100 text-zinc-600' }
+};
+
+// Estilos refinados para cards de agendamento (design do arquivo de análise)
+const ESTILOS_STATUS = {
+  pendente: {
+    borda: 'border-amber-400',
+    fundo: 'bg-amber-50 dark:bg-amber-950/35',
+    texto: 'text-amber-950 dark:text-amber-100',
+    ponto: 'bg-amber-400',
+  },
+  confirmado: {
+    borda: 'border-teal-400',
+    fundo: 'bg-teal-50 dark:bg-teal-950/35',
+    texto: 'text-teal-950 dark:text-teal-100',
+    ponto: 'bg-teal-400',
+  },
+  concluido: {
+    borda: 'border-emerald-400',
+    fundo: 'bg-emerald-50 dark:bg-emerald-950/35',
+    texto: 'text-emerald-950 dark:text-emerald-100',
+    ponto: 'bg-emerald-400',
+  },
+  cancelado: {
+    borda: 'border-rose-400',
+    fundo: 'bg-rose-50 dark:bg-rose-950/35',
+    texto: 'text-rose-950 dark:text-rose-100',
+    ponto: 'bg-rose-400',
+  },
 };
 
 type ModoVisualizacao = 'timeline' | 'lista';
@@ -467,29 +498,52 @@ export function CalendarioSemanalNovo() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-200px)] min-h-[500px] bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-      {/* Header */}
+      {/* Header - Navegação de Semana */}
       <div className="flex-shrink-0 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Navegação e Título */}
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4">
+          {/* Botão Semana Anterior */}
+          <button
+            onClick={navegarAnterior}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Semana Anterior</span>
+          </button>
+          
+          {/* Centro: Data picker + Hoje + Título */}
+          <div className="flex items-center gap-3">
+            <input
+              type="date"
+              value={format(dataBase, 'yyyy-MM-dd')}
+              onChange={(e) => {
+                if (!e.target.value) return;
+                setDataBase(new Date(`${e.target.value}T12:00:00`));
+              }}
+              className="hidden sm:block px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+            />
             <button
               onClick={() => setDataBase(new Date())}
-              className="px-3 py-1.5 text-sm font-medium bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+              className="px-6 py-2 text-sm font-bold bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
             >
-              Hoje
+              HOJE
             </button>
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-              <button onClick={navegarAnterior} className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-l-lg transition-colors">
-                <ChevronLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-              </button>
-              <button onClick={navegarProximo} className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-r-lg transition-colors">
-                <ChevronRight className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-              </button>
-            </div>
-            <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-white capitalize ml-2">
-              {tituloPeriodo}
-            </h2>
           </div>
+          
+          {/* Botão Próxima Semana */}
+          <button
+            onClick={navegarProximo}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+          >
+            <span className="hidden sm:inline">Próxima Semana</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        
+        {/* Segunda linha: Controles de visualização */}
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+          <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-white capitalize">
+            {tituloPeriodo}
+          </h2>
 
           {/* Controles */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -548,41 +602,57 @@ export function CalendarioSemanalNovo() {
         </div>
       </div>
 
-      {/* Cabeçalho dos Dias - Design System Zinc */}
-      <div className="flex-shrink-0 bg-zinc-900 dark:bg-zinc-800">
+      {/* Cabeçalho dos Dias - Design refinado com seleção invertida */}
+      <div className="flex-shrink-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex">
           {/* Espaço para alinhar com coluna de horários */}
-          <div className="flex-shrink-0 w-12 sm:w-16 border-r border-zinc-700/50" />
+          <div className="flex-shrink-0 w-12 sm:w-16 border-r border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95" />
           
           {/* Grid de dias */}
-          <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${diasExibidos.length}, 1fr)` }}>
+          <div className="flex-1 flex">
             {diasExibidos.map((dia, idx) => {
               const ehHoje = isToday(dia);
+              const isSelecionado = format(dia, 'yyyy-MM-dd') === format(dataBase, 'yyyy-MM-dd');
               const agDia = agendamentosPorDia[format(dia, 'yyyy-MM-dd')] || [];
               
               return (
-                <div
+                <button
                   key={idx}
-                  className={`py-3 px-2 text-center border-l border-zinc-700/50 first:border-l-0 ${
-                    ehHoje ? 'bg-zinc-800 dark:bg-zinc-700' : ''
+                  onClick={() => setDataBase(dia)}
+                  className={`flex-1 min-w-[120px] px-3 py-3 text-left border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 transition-colors ${
+                    isSelecionado
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-900 dark:text-white'
                   }`}
                 >
-                  <div className="text-xs font-medium uppercase text-zinc-400">
-                    {format(dia, 'EEEE', { locale: ptBR })}
-                  </div>
-                  <div className={`text-2xl font-bold mt-1 ${
-                    ehHoje 
-                      ? 'w-10 h-10 mx-auto rounded-full bg-white text-zinc-900 flex items-center justify-center' 
-                      : 'text-white'
+                  <div className={`text-xs font-semibold uppercase ${
+                    isSelecionado ? 'text-white/90 dark:text-zinc-700' : 'text-zinc-500 dark:text-zinc-400'
                   }`}>
-                    {format(dia, 'd')}
+                    {format(dia, 'EEE', { locale: ptBR })}.
                   </div>
-                  {agDia.length > 0 && (
-                    <div className="inline-flex items-center justify-center mt-1 px-2 py-0.5 bg-zinc-700/50 rounded-full">
-                      <span className="text-[10px] text-zinc-300 font-medium">{agDia.length}</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className={`text-lg font-bold leading-none ${
+                      isSelecionado ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'
+                    }`}>
+                      {format(dia, 'd')}
                     </div>
-                  )}
-                </div>
+                    <div className={`text-sm font-medium ${
+                      isSelecionado ? 'text-white/80 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-300'
+                    }`}>
+                      {format(dia, 'MMM', { locale: ptBR })}
+                    </div>
+                    {ehHoje && !isSelecionado && (
+                      <div className="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+                        Hoje
+                      </div>
+                    )}
+                    {agDia.length > 0 && isSelecionado && (
+                      <div className="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/20 dark:bg-zinc-900/20">
+                        {agDia.length}
+                      </div>
+                    )}
+                  </div>
+                </button>
               );
             })}
           </div>
@@ -642,52 +712,72 @@ export function CalendarioSemanalNovo() {
 
                     {/* Agendamentos posicionados */}
                     {agDia.map((ag) => {
-                      const status = STATUS_CORES[ag.status as keyof typeof STATUS_CORES] || STATUS_CORES.pendente;
+                      const estilo = ESTILOS_STATUS[ag.status as keyof typeof ESTILOS_STATUS] || ESTILOS_STATUS.pendente;
                       const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
                       const infoServicos = obterInfoServicos(ag);
                       const pos = calcularPosicao(ag.data_hora, infoServicos.duracao);
+                      const horaInicio = format(dataBrasilia, 'HH:mm');
+                      const duracaoMs = infoServicos.duracao * 60000;
+                      const dataFimBrasilia = new Date(dataBrasilia.getTime() + duracaoMs);
+                      const horaFim = format(dataFimBrasilia, 'HH:mm');
 
                       return (
-                        <motion.div
+                        <motion.button
                           key={ag.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.18 }}
+                          type="button"
                           onClick={() => {
                             setAgendamentoSelecionado(ag);
                             setModalDetalhesAberto(true);
                           }}
-                          className={`absolute left-1 right-1 ${status.bg} rounded-lg cursor-pointer hover:shadow-lg hover:z-20 transition-all overflow-hidden border-l-4 ${status.border}`}
+                          className={`absolute rounded-xl border border-zinc-200/70 dark:border-zinc-700/70 shadow-sm hover:shadow-md transition-all text-left overflow-hidden ${estilo.fundo} ${estilo.borda} border-l-4`}
                           style={{ 
                             top: pos.top, 
-                            height: Math.max(pos.height, 36),
-                            minHeight: 36
+                            left: 8,
+                            right: 8,
+                            height: Math.max(pos.height, 110),
+                            minHeight: 110
                           }}
                         >
-                          <div className={`h-full p-1.5 sm:p-2 ${status.text}`}>
-                            {/* Horário e duração */}
-                            <div className="text-[10px] sm:text-xs font-bold opacity-90 flex items-center gap-1">
-                              {format(dataBrasilia, 'HH:mm')}
-                              <span className="opacity-70">({infoServicos.duracao}min)</span>
+                          <div className="h-full p-2.5 flex flex-col gap-1">
+                            {/* Horário com ponto de status */}
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${estilo.ponto}`} />
+                              <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                                {horaInicio}–{horaFim}
+                              </span>
+                              {ag.observacoes && (
+                                <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-white/70 dark:bg-black/20 text-zinc-700 dark:text-zinc-200">
+                                  Obs.
+                                </span>
+                              )}
                             </div>
-                            
+
                             {/* Nome do Cliente */}
-                            <div className="font-semibold text-xs sm:text-sm truncate leading-tight">
-                              {ag.clientes?.nome || 'Cliente'}
-                            </div>
-                            
-                            {/* Serviço(s) - só mostra se tiver espaço */}
-                            {pos.height >= 50 && (
-                              <div className="text-[10px] sm:text-xs opacity-70 truncate flex items-center gap-1">
+                            <div className="min-w-0">
+                              <div className={`text-sm font-bold leading-snug truncate ${estilo.texto}`} title={ag.clientes?.nome || 'Cliente não informado'}>
+                                {ag.clientes?.nome || 'Cliente não informado'}
+                              </div>
+                              <div className="text-xs font-medium text-zinc-600 dark:text-zinc-300 truncate" title={infoServicos.nome}>
                                 {infoServicos.nomesCurtos}
                                 {infoServicos.quantidade > 1 && (
-                                  <span className="bg-white/20 px-1 rounded text-[8px]">
-                                    {infoServicos.quantidade}
+                                  <span className="ml-1 text-[10px] bg-white/50 dark:bg-black/20 px-1 rounded">
+                                    +{infoServicos.quantidade - 1}
                                   </span>
                                 )}
                               </div>
+                            </div>
+
+                            {/* Barbeiro */}
+                            {ag.barbeiros?.nome && (
+                              <div className="mt-auto pt-1.5 border-t border-zinc-900/10 dark:border-white/10 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 truncate" title={ag.barbeiros.nome}>
+                                {ag.barbeiros.nome}
+                              </div>
                             )}
                           </div>
-                        </motion.div>
+                        </motion.button>
                       );
                     })}
 
