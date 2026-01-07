@@ -716,6 +716,9 @@ export function CalendarioSemanalNovo() {
                       const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
                       const infoServicos = obterInfoServicos(ag);
                       const pos = calcularPosicao(ag.data_hora, infoServicos.duracao);
+                      const espacoVerticalEntreCards = 6;
+                      const alturaMinimaCard = 110;
+                      const alturaCalculada = Math.max(pos.height, alturaMinimaCard);
                       const horaInicio = format(dataBrasilia, 'HH:mm');
                       const duracaoMs = infoServicos.duracao * 60000;
                       const dataFimBrasilia = new Date(dataBrasilia.getTime() + duracaoMs);
@@ -734,11 +737,11 @@ export function CalendarioSemanalNovo() {
                           }}
                           className={`absolute rounded-xl border border-zinc-200/70 dark:border-zinc-700/70 shadow-sm hover:shadow-md transition-all text-left overflow-hidden ${estilo.fundo} ${estilo.borda} border-l-4`}
                           style={{ 
-                            top: pos.top, 
+                            top: pos.top + espacoVerticalEntreCards,
                             left: 8,
                             right: 8,
-                            height: Math.max(pos.height, 110),
-                            minHeight: 110
+                            height: Math.max(1, alturaCalculada - (espacoVerticalEntreCards * 2)),
+                            minHeight: alturaMinimaCard
                           }}
                         >
                           <div className="h-full p-2.5 flex flex-col gap-1">
