@@ -8,6 +8,28 @@ import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { obterCores, TemaType } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
+
+function converterHexParaRgba(corHex: string, opacidade: number): string {
+  const valor = corHex.replace('#', '').trim();
+  const alpha = Math.max(0, Math.min(1, opacidade));
+
+  if (valor.length === 3) {
+    const r = parseInt(valor[0] + valor[0], 16);
+    const g = parseInt(valor[1] + valor[1], 16);
+    const b = parseInt(valor[2] + valor[2], 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  if (valor.length === 6) {
+    const r = parseInt(valor.slice(0, 2), 16);
+    const g = parseInt(valor.slice(2, 4), 16);
+    const b = parseInt(valor.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  return corHex;
+}
 
 interface Tendencia {
   valor: number;
@@ -30,10 +52,18 @@ export function CardMetrica({
   icone,
   tendencia,
   carregando = false,
-  tema = 'escuro',
+  tema,
   corIcone,
 }: CardMetricaProps) {
-  const cores = obterCores(tema);
+  const { tema: temaContexto, cores: coresContexto } = useTema();
+  const temaFinal = tema || temaContexto;
+  const cores = tema ? obterCores(tema) : coresContexto;
+  const ehEscuro = temaFinal === 'escuro';
+
+  const corBaseIcone = corIcone || cores.texto.secundario;
+  const fundoIcone = ehEscuro
+    ? converterHexParaRgba(corBaseIcone, 0.2)
+    : converterHexParaRgba(corBaseIcone, 0.12);
 
   return (
     <View
@@ -43,6 +73,11 @@ export function CardMetrica({
         padding: 16,
         borderWidth: 1,
         borderColor: cores.borda.sutil,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
         minWidth: 140,
       }}
     >
@@ -52,7 +87,7 @@ export function CardMetrica({
           width: 40,
           height: 40,
           borderRadius: 12,
-          backgroundColor: tema === 'escuro' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+          backgroundColor: fundoIcone,
           alignItems: 'center',
           justifyContent: 'center',
           marginBottom: 12,
@@ -61,7 +96,7 @@ export function CardMetrica({
         <Ionicons
           name={icone}
           size={20}
-          color={corIcone || cores.texto.secundario}
+          color={corBaseIcone}
         />
       </View>
 

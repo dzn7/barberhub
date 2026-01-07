@@ -6,7 +6,7 @@
 import React from 'react';
 import { View, Text, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { CORES } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 
 type TamanhoAvatar = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -51,6 +51,7 @@ export function Avatar({
   style,
   corFundo,
 }: PropsAvatar) {
+  const { cores, ehEscuro } = useTema();
   const dimensao = dimensoes[tamanho];
   const tamanhoFonte = tamanhosFonte[tamanho];
   const iniciais = obterIniciais(nome);
@@ -59,7 +60,9 @@ export function Avatar({
     width: dimensao,
     height: dimensao,
     borderRadius: dimensao / 2,
-    backgroundColor: corFundo || CORES.primaria.DEFAULT,
+    backgroundColor: corFundo || (ehEscuro ? cores.fundo.terciario : cores.fundo.secundario),
+    borderWidth: 1,
+    borderColor: cores.borda.sutil,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -85,7 +88,7 @@ export function Avatar({
         style={{
           fontSize: tamanhoFonte,
           fontWeight: '600',
-          color: CORES.texto.invertido,
+          color: cores.texto.primario,
         }}
       >
         {iniciais}

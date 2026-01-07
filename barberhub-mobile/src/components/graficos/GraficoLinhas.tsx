@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { obterCores, TemaType } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 
 const { width: LARGURA_TELA } = Dimensions.get('window');
 
@@ -45,7 +46,7 @@ export function GraficoLinhas({
   subtitulo,
   altura = 220,
   largura = LARGURA_TELA - 40,
-  tema = 'escuro',
+  tema,
   corLinha,
   preenchido = true,
   mostrarPontos = true,
@@ -54,7 +55,8 @@ export function GraficoLinhas({
   sufixo = '',
   prefixo = '',
 }: GraficoLinhasProps) {
-  const cores = obterCores(tema);
+  const { cores: coresContexto } = useTema();
+  const cores = tema ? obterCores(tema) : coresContexto;
 
   const dadosFormatados = useMemo(() => {
     if (series && series.length > 0) {

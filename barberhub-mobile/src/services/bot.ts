@@ -15,56 +15,32 @@ interface RespostaBot {
 
 /**
  * Envia notificação de confirmação de agendamento
+ * Nota: Desativado temporariamente - bot WhatsApp não configurado
  */
 export async function enviarConfirmacaoAgendamento(agendamentoId: string): Promise<RespostaBot> {
-  try {
-    const resposta = await fetch(`${BOT_URL}/api/notificar/confirmacao/${agendamentoId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const dados = await resposta.json();
-    return { sucesso: resposta.ok, ...dados };
-  } catch (erro) {
-    console.error('Erro ao enviar confirmação:', erro);
-    return { sucesso: false, erro: 'Falha na comunicação com o bot' };
-  }
+  // Bot WhatsApp desativado - retorna sucesso sem fazer requisição
+  console.log('[Bot] Notificação de confirmação desativada para:', agendamentoId);
+  return { sucesso: true, mensagem: 'Notificação desativada' };
 }
 
 /**
  * Envia notificação de cancelamento de agendamento
+ * Nota: Desativado temporariamente - bot WhatsApp não configurado
  */
 export async function enviarCancelamentoAgendamento(agendamentoId: string): Promise<RespostaBot> {
-  try {
-    const resposta = await fetch(`${BOT_URL}/api/notificar/cancelamento/${agendamentoId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const dados = await resposta.json();
-    return { sucesso: resposta.ok, ...dados };
-  } catch (erro) {
-    console.error('Erro ao enviar cancelamento:', erro);
-    return { sucesso: false, erro: 'Falha na comunicação com o bot' };
-  }
+  // Bot WhatsApp desativado - retorna sucesso sem fazer requisição
+  console.log('[Bot] Notificação de cancelamento desativada para:', agendamentoId);
+  return { sucesso: true, mensagem: 'Notificação desativada' };
 }
 
 /**
  * Envia notificação de remarcação de agendamento
+ * Nota: Desativado temporariamente - bot WhatsApp não configurado
  */
 export async function enviarRemarcacaoAgendamento(agendamentoId: string): Promise<RespostaBot> {
-  try {
-    const resposta = await fetch(`${BOT_URL}/api/notificar/remarcacao/${agendamentoId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    const dados = await resposta.json();
-    return { sucesso: resposta.ok, ...dados };
-  } catch (erro) {
-    console.error('Erro ao enviar remarcação:', erro);
-    return { sucesso: false, erro: 'Falha na comunicação com o bot' };
-  }
+  // Bot WhatsApp desativado - retorna sucesso sem fazer requisição
+  console.log('[Bot] Notificação de remarcação desativada para:', agendamentoId);
+  return { sucesso: true, mensagem: 'Notificação desativada' };
 }
 
 /**

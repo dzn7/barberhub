@@ -1,6 +1,10 @@
 /**
  * Componente Modal reutilizável
- * Design consistente com o painel admin web
+ * Design idêntico ao PortalModal.tsx do web
+ * - Backdrop com blur (bg-black/60)
+ * - Container central com rounded-2xl
+ * - Border sutil e shadow-2xl
+ * - Header com título e botão fechar
  */
 
 import React from 'react';
@@ -14,11 +18,12 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-
-const { height: ALTURA_TELA } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTema } from '../../contexts/TemaContext';
 import { obterCores, TemaType } from '../../constants/cores';
+
+const { height: ALTURA_TELA } = Dimensions.get('window');
 
 interface ModalProps {
   visivel: boolean;
@@ -38,13 +43,15 @@ export function Modal({
   titulo,
   subtitulo,
   children,
-  tema = 'escuro',
+  tema,
   tamanho = 'medio',
   mostrarFechar = true,
-  animationType = 'slide',
+  animationType = 'fade',
 }: ModalProps) {
   const insets = useSafeAreaInsets();
-  const cores = obterCores(tema);
+  const { tema: temaContexto, cores: coresContexto, ehEscuro } = useTema();
+  const temaFinal = tema || temaContexto;
+  const cores = tema ? obterCores(tema) : coresContexto;
 
   const porcentagemAltura = {
     pequeno: 0.4,
@@ -69,7 +76,7 @@ export function Modal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        {/* Overlay */}
+        {/* Overlay - estilo web (bg-black/60) */}
         {!ehTelaCheia && (
           <Pressable
             onPress={onFechar}
@@ -90,9 +97,16 @@ export function Modal({
             flex: ehTelaCheia ? 1 : undefined,
             maxHeight: ehTelaCheia ? undefined : alturaMaxima as number,
             marginTop: ehTelaCheia ? 0 : 'auto',
-            backgroundColor: cores.fundo.primario,
+            backgroundColor: ehTelaCheia ? cores.fundo.primario : cores.fundo.card,
             borderTopLeftRadius: ehTelaCheia ? 0 : 24,
             borderTopRightRadius: ehTelaCheia ? 0 : 24,
+            borderWidth: ehTelaCheia ? 0 : 1,
+            borderColor: ehTelaCheia ? 'transparent' : cores.borda.sutil,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -6 },
+            shadowOpacity: 0.25,
+            shadowRadius: 18,
+            elevation: 12,
             paddingTop: ehTelaCheia ? insets.top : 8,
             paddingBottom: insets.bottom || 20,
           }}
@@ -156,13 +170,13 @@ export function Modal({
                   style={{
                     width: 36,
                     height: 36,
-                    borderRadius: 18,
-                    backgroundColor: tema === 'escuro' ? cores.fundo.terciario : cores.fundo.secundario,
+                    borderRadius: 12,
+                    backgroundColor: ehEscuro ? cores.fundo.terciario : cores.fundo.secundario,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Ionicons name="close" size={20} color={cores.texto.secundario} />
+                  <Ionicons name="close" size={20} color={cores.texto.terciario} />
                 </Pressable>
               )}
             </View>
@@ -212,9 +226,11 @@ export function ModalConfirmacao({
   textoConfirmar = 'Confirmar',
   tipo = 'info',
   carregando = false,
-  tema = 'escuro',
+  tema,
 }: ModalConfirmacaoProps) {
-  const cores = obterCores(tema);
+  const { tema: temaContexto, cores: coresContexto, ehEscuro } = useTema();
+  const temaFinal = tema || temaContexto;
+  const cores = tema ? obterCores(tema) : coresContexto;
 
   const corBotaoConfirmar = {
     perigo: '#ef4444',
@@ -248,12 +264,12 @@ export function ModalConfirmacao({
           style={{
             width: 56,
             height: 56,
-            borderRadius: 28,
+            borderRadius: 16,
             backgroundColor: tipo === 'perigo' 
-              ? 'rgba(239,68,68,0.1)' 
+              ? 'rgba(239,68,68,0.15)' 
               : tipo === 'aviso' 
-                ? 'rgba(245,158,11,0.1)'
-                : tema === 'escuro' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                ? 'rgba(245,158,11,0.15)'
+                : ehEscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 16,

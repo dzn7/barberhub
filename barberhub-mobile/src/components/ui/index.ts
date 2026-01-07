@@ -4,7 +4,7 @@
 
 export { Avatar } from './Avatar';
 export { Botao } from './Botao';
-export { Card } from './Card';
+export { Card, CabecalhoCard, TituloCard, DescricaoCard, ConteudoCard, RodapeCard } from './Card';
 export { CardMetrica } from './CardMetrica';
 export { Input } from './Input';
 export { Modal, ModalConfirmacao } from './Modal';

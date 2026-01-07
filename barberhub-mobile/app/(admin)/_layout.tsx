@@ -85,6 +85,7 @@ export default function LayoutAdmin() {
       <Tabs.Screen name="personalizacao" options={{ href: null }} />
       <Tabs.Screen name="profissionais" options={{ href: null }} />
       <Tabs.Screen name="relatorios" options={{ href: null }} />
+      <Tabs.Screen name="comissoes" options={{ href: null }} />
     </Tabs>
   );
 }

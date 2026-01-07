@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { InstalarPWA, RegistrarServiceWorker } from '@/components/pwa'
+import { CarregadorFontes, obterClasseFonte } from '@/components/fontes/CarregadorFontes'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -73,15 +74,23 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
     notFound()
   }
 
+  const classeFontePrincipal = obterClasseFonte(tenant.fonte_principal || 'Inter')
+  const classeFonteTitulos = obterClasseFonte(tenant.fonte_titulos || 'Inter')
+
   return (
     <div 
-      className="min-h-screen bg-zinc-900"
+      className={`min-h-screen bg-zinc-900 ${classeFontePrincipal}`}
       style={{
         '--cor-primaria': tenant.cor_primaria || '#18181b',
         '--cor-secundaria': tenant.cor_secundaria || '#f4f4f5',
         '--cor-destaque': tenant.cor_destaque || '#a1a1aa',
+        '--classe-fonte-titulos': classeFonteTitulos,
       } as React.CSSProperties}
     >
+      <CarregadorFontes 
+        fontePrincipal={tenant.fonte_principal || 'Inter'} 
+        fonteTitulos={tenant.fonte_titulos || 'Inter'} 
+      />
       <RegistrarServiceWorker />
       {children}
       <InstalarPWA 

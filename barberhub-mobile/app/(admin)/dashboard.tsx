@@ -134,7 +134,7 @@ export default function TelaDashboard() {
         .lte('data_hora', periodo.dataFim.toISOString())
         .eq('status', 'concluido');
 
-      // Receitas do período
+      // Receitas do período - primeiro tenta transações, depois calcula de agendamentos
       const { data: receitasPeriodo } = await supabase
         .from('transacoes')
         .select('valor, data')
@@ -143,7 +143,22 @@ export default function TelaDashboard() {
         .gte('data', format(periodo.dataInicio, 'yyyy-MM-dd'))
         .lte('data', format(periodo.dataFim, 'yyyy-MM-dd'));
 
-      const receitaPeriodo = receitasPeriodo?.reduce((acc, t) => acc + Number(t.valor), 0) || 0;
+      let receitaPeriodo = receitasPeriodo?.reduce((acc, t) => acc + Number(t.valor), 0) || 0;
+
+      // Se não houver transações, calcular a partir de agendamentos concluídos
+      if (receitaPeriodo === 0) {
+        const { data: agendamentosConcluidos } = await supabase
+          .from('agendamentos')
+          .select('servicos (preco)')
+          .eq('tenant_id', tenant.id)
+          .gte('data_hora', periodo.dataInicio.toISOString())
+          .lte('data_hora', periodo.dataFim.toISOString())
+          .eq('status', 'concluido');
+
+        receitaPeriodo = agendamentosConcluidos?.reduce((acc, ag: any) => {
+          return acc + (Number(ag.servicos?.preco) || 0);
+        }, 0) || 0;
+      }
 
       // Despesas do período
       const { data: despesasPeriodo } = await supabase
@@ -177,14 +192,32 @@ export default function TelaDashboard() {
 
       const dadosReceita: DadosGrafico[] = await Promise.all(
         ultimos7Dias.map(async (dia) => {
-          const { data } = await supabase
+          // Primeiro tenta transações
+          const { data: transacoes } = await supabase
             .from('transacoes')
             .select('valor')
             .eq('tenant_id', tenant.id)
             .eq('tipo', 'receita')
             .eq('data', format(dia, 'yyyy-MM-dd'));
 
-          const total = data?.reduce((acc, t) => acc + Number(t.valor), 0) || 0;
+          let total = transacoes?.reduce((acc, t) => acc + Number(t.valor), 0) || 0;
+
+          // Se não houver transações, calcula de agendamentos concluídos
+          if (total === 0) {
+            const inicioDia = startOfDay(dia);
+            const fimDia = endOfDay(dia);
+            
+            const { data: agendamentos } = await supabase
+              .from('agendamentos')
+              .select('servicos (preco)')
+              .eq('tenant_id', tenant.id)
+              .gte('data_hora', inicioDia.toISOString())
+              .lte('data_hora', fimDia.toISOString())
+              .eq('status', 'concluido');
+
+            total = agendamentos?.reduce((acc, ag: any) => acc + (Number(ag.servicos?.preco) || 0), 0) || 0;
+          }
+
           return {
             rotulo: format(dia, 'EEE', { locale: ptBR }).charAt(0).toUpperCase() + format(dia, 'EEE', { locale: ptBR }).slice(1, 3),
             valor: total,
@@ -290,6 +323,18 @@ export default function TelaDashboard() {
   const formatarMoeda = (valor: number) => {
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
+
+  // Loading state
+  if (carregando) {
+    return (
+      <View style={{ flex: 1, backgroundColor: cores.fundo.primario, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={cores.primaria.DEFAULT} />
+        <Text style={{ color: cores.texto.secundario, marginTop: 12, fontSize: 14 }}>
+          Carregando dados...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: cores.fundo.primario }}>

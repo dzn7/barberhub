@@ -9,6 +9,7 @@ import {
   Text,
   ActivityIndicator,
   type PressableProps,
+  type GestureResponderEvent,
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
@@ -18,7 +19,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { CORES } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -38,62 +39,87 @@ interface PropsBotao extends Omit<PressableProps, 'style'> {
   style?: ViewStyle;
 }
 
-const estilosVariante: Record<VarianteBotao, { container: ViewStyle; texto: TextStyle }> = {
-  primario: {
+function obterEstilosVariante(variante: VarianteBotao, cores: any): { container: ViewStyle; texto: TextStyle } {
+  if (variante === 'primario') {
+    return {
+      container: {
+        backgroundColor: cores.botao.fundo,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 14,
+        elevation: 6,
+      },
+      texto: {
+        color: cores.botao.texto,
+        fontWeight: '700',
+      },
+    };
+  }
+
+  if (variante === 'secundario') {
+    return {
+      container: {
+        backgroundColor: cores.fundo.terciario,
+        borderWidth: 1,
+        borderColor: cores.borda.sutil,
+      },
+      texto: {
+        color: cores.texto.primario,
+        fontWeight: '600',
+      },
+    };
+  }
+
+  if (variante === 'outline') {
+    return {
+      container: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: cores.borda.media,
+      },
+      texto: {
+        color: cores.texto.primario,
+        fontWeight: '600',
+      },
+    };
+  }
+
+  if (variante === 'ghost') {
+    return {
+      container: {
+        backgroundColor: 'transparent',
+      },
+      texto: {
+        color: cores.texto.primario,
+        fontWeight: '600',
+      },
+    };
+  }
+
+  return {
     container: {
-      backgroundColor: CORES.primaria.DEFAULT,
+      backgroundColor: cores.erro,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.18,
+      shadowRadius: 14,
+      elevation: 6,
     },
     texto: {
-      color: CORES.texto.invertido,
-      fontWeight: '600',
+      color: '#ffffff',
+      fontWeight: '700',
     },
-  },
-  secundario: {
-    container: {
-      backgroundColor: CORES.secundaria.DEFAULT,
-    },
-    texto: {
-      color: CORES.texto.primario,
-      fontWeight: '600',
-    },
-  },
-  outline: {
-    container: {
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: CORES.primaria.DEFAULT,
-    },
-    texto: {
-      color: CORES.primaria.DEFAULT,
-      fontWeight: '600',
-    },
-  },
-  ghost: {
-    container: {
-      backgroundColor: 'transparent',
-    },
-    texto: {
-      color: CORES.primaria.DEFAULT,
-      fontWeight: '500',
-    },
-  },
-  perigo: {
-    container: {
-      backgroundColor: CORES.erro,
-    },
-    texto: {
-      color: CORES.texto.primario,
-      fontWeight: '600',
-    },
-  },
-};
+  };
+}
 
 const estilosTamanho: Record<TamanhoBotao, { container: ViewStyle; texto: TextStyle }> = {
   sm: {
     container: {
       paddingHorizontal: 12,
       paddingVertical: 8,
-      borderRadius: 8,
+      borderRadius: 12,
+      minHeight: 36,
     },
     texto: {
       fontSize: 14,
@@ -103,7 +129,8 @@ const estilosTamanho: Record<TamanhoBotao, { container: ViewStyle; texto: TextSt
     container: {
       paddingHorizontal: 16,
       paddingVertical: 12,
-      borderRadius: 10,
+      borderRadius: 14,
+      minHeight: 44,
     },
     texto: {
       fontSize: 16,
@@ -111,9 +138,10 @@ const estilosTamanho: Record<TamanhoBotao, { container: ViewStyle; texto: TextSt
   },
   lg: {
     container: {
-      paddingHorizontal: 24,
-      paddingVertical: 16,
-      borderRadius: 12,
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      borderRadius: 16,
+      minHeight: 52,
     },
     texto: {
       fontSize: 18,
@@ -135,6 +163,7 @@ export function Botao({
   onPress,
   ...props
 }: PropsBotao) {
+  const { cores } = useTema();
   const escala = useSharedValue(1);
 
   const estiloAnimado = useAnimatedStyle(() => ({
@@ -149,14 +178,14 @@ export function Botao({
     escala.value = withSpring(1, { damping: 15, stiffness: 300 });
   };
 
-  const handlePress = async (event: any) => {
+  const handlePress = async (event: GestureResponderEvent) => {
     if (haptico && !desabilitado && !carregando) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     onPress?.(event);
   };
 
-  const estiloVarianteAtual = estilosVariante[variante];
+  const estiloVarianteAtual = obterEstilosVariante(variante, cores);
   const estiloTamanhoAtual = estilosTamanho[tamanho];
   const estaDesabilitado = desabilitado || carregando;
 

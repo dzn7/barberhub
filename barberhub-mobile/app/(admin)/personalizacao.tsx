@@ -1,9 +1,10 @@
 /**
  * Tela de Personalização da Barbearia
- * Configuração de cores, logo e aparência
+ * Configuração completa de cores, logo, fontes e aparência
+ * Design idêntico ao web admin
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,66 +14,72 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Card, Botao, Input, Modal } from '../../src/components/ui';
 import { useAutenticacao } from '../../src/stores/autenticacao';
 import { useTerminologia } from '../../src/hooks/useTerminologia';
 import { supabase } from '../../src/services/supabase';
 import { useTema } from '../../src/contexts/TemaContext';
+import { obterPaletas, FONTES_DISPONIVEIS, obterFamiliaFonte, type Paleta, type Fonte } from '../../src/components/personalizacao';
+import type { TipoNegocio } from '../../src/types';
 
-const CORES_PREDEFINIDAS = [
-  { nome: 'Azul', cor: '#3b82f6' },
-  { nome: 'Verde', cor: '#10b981' },
-  { nome: 'Roxo', cor: '#8b5cf6' },
-  { nome: 'Rosa', cor: '#ec4899' },
-  { nome: 'Laranja', cor: '#f97316' },
-  { nome: 'Vermelho', cor: '#ef4444' },
-  { nome: 'Amarelo', cor: '#eab308' },
-  { nome: 'Teal', cor: '#14b8a6' },
-  { nome: 'Indigo', cor: '#6366f1' },
-  { nome: 'Zinc', cor: '#71717a' },
-];
+const { width: LARGURA_TELA } = Dimensions.get('window');
 
-interface DadosBarbearia {
+interface DadosPersonalizacao {
   nome: string;
-  descricao: string;
   logo_url: string | null;
   cor_primaria: string;
   cor_secundaria: string;
+  cor_destaque: string;
+  cor_texto: string;
+  fonte_principal: string;
+  fonte_titulos: string;
   endereco: string;
   telefone: string;
   whatsapp: string;
   instagram: string;
 }
 
+type AbaAtiva = 'paletas' | 'cores' | 'fontes' | 'dados';
+type TipoCor = 'primaria' | 'secundaria' | 'destaque';
+
 export default function TelaPersonalizacao() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { tenant, atualizarTenant } = useAutenticacao();
-  const { estabelecimento } = useTerminologia();
+  const { estabelecimento, ehNailDesigner } = useTerminologia();
   
   const { cores, tema } = useTema();
 
+  const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
+  const paletas = useMemo(() => obterPaletas(tipoNegocio), [tipoNegocio]);
+
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [dados, setDados] = useState<DadosBarbearia>({
+  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('paletas');
+  const [dados, setDados] = useState<DadosPersonalizacao>({
     nome: '',
-    descricao: '',
     logo_url: null,
-    cor_primaria: '#3b82f6',
-    cor_secundaria: '#1e3a5f',
+    cor_primaria: '#18181b',
+    cor_secundaria: '#f4f4f5',
+    cor_destaque: '#a1a1aa',
+    cor_texto: '#fafafa',
+    fonte_principal: 'Inter',
+    fonte_titulos: 'Inter',
     endereco: '',
     telefone: '',
     whatsapp: '',
     instagram: '',
   });
   const [modalCoresAberto, setModalCoresAberto] = useState(false);
-  const [tipoCor, setTipoCor] = useState<'primaria' | 'secundaria'>('primaria');
+  const [tipoCor, setTipoCor] = useState<TipoCor>('primaria');
   const [corCustomizada, setCorCustomizada] = useState('');
 
   const carregarDados = useCallback(async () => {
@@ -89,10 +96,13 @@ export default function TelaPersonalizacao() {
 
       setDados({
         nome: data.nome || '',
-        descricao: data.descricao || '',
         logo_url: data.logo_url || null,
-        cor_primaria: data.cor_primaria || '#3b82f6',
-        cor_secundaria: data.cor_secundaria || '#1e3a5f',
+        cor_primaria: data.cor_primaria || '#18181b',
+        cor_secundaria: data.cor_secundaria || '#f4f4f5',
+        cor_destaque: data.cor_destaque || '#a1a1aa',
+        cor_texto: data.cor_texto || '#fafafa',
+        fonte_principal: data.fonte_principal || 'Inter',
+        fonte_titulos: data.fonte_titulos || 'Inter',
         endereco: data.endereco || '',
         telefone: data.telefone || '',
         whatsapp: data.whatsapp || '',
@@ -154,7 +164,7 @@ export default function TelaPersonalizacao() {
 
       const novaUrl = `${resultado.url}?t=${Date.now()}`;
       
-      setDados(prev => ({ ...prev, logo_url: novaUrl }));
+      setDados((prev: DadosPersonalizacao) => ({ ...prev, logo_url: novaUrl }));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (erro: any) {
       console.error('Erro ao fazer upload:', erro);
@@ -173,10 +183,13 @@ export default function TelaPersonalizacao() {
         .from('tenants')
         .update({
           nome: dados.nome.trim(),
-          descricao: dados.descricao.trim(),
           logo_url: dados.logo_url,
           cor_primaria: dados.cor_primaria,
           cor_secundaria: dados.cor_secundaria,
+          cor_destaque: dados.cor_destaque,
+          cor_texto: dados.cor_texto,
+          fonte_principal: dados.fonte_principal,
+          fonte_titulos: dados.fonte_titulos,
           endereco: dados.endereco.trim(),
           telefone: dados.telefone.trim(),
           whatsapp: dados.whatsapp.trim(),
@@ -192,6 +205,8 @@ export default function TelaPersonalizacao() {
           nome: dados.nome.trim(),
           logo_url: dados.logo_url,
           cor_primaria: dados.cor_primaria,
+          cor_secundaria: dados.cor_secundaria,
+          cor_destaque: dados.cor_destaque,
         });
       }
 
@@ -205,20 +220,50 @@ export default function TelaPersonalizacao() {
     }
   };
 
-  const abrirSeletorCor = (tipo: 'primaria' | 'secundaria') => {
+  const abrirSeletorCor = (tipo: TipoCor) => {
     setTipoCor(tipo);
-    setCorCustomizada(tipo === 'primaria' ? dados.cor_primaria : dados.cor_secundaria);
+    const corAtual = tipo === 'primaria' ? dados.cor_primaria 
+      : tipo === 'secundaria' ? dados.cor_secundaria 
+      : dados.cor_destaque;
+    setCorCustomizada(corAtual);
     setModalCoresAberto(true);
+  };
+
+  const aplicarPaleta = (paleta: Paleta) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setDados((prev: DadosPersonalizacao) => ({
+      ...prev,
+      cor_primaria: paleta.primaria,
+      cor_secundaria: paleta.secundaria,
+      cor_destaque: paleta.destaque,
+    }));
   };
 
   const selecionarCor = (cor: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (tipoCor === 'primaria') {
-      setDados(prev => ({ ...prev, cor_primaria: cor }));
+      setDados((prev: DadosPersonalizacao) => ({ ...prev, cor_primaria: cor }));
+    } else if (tipoCor === 'secundaria') {
+      setDados((prev: DadosPersonalizacao) => ({ ...prev, cor_secundaria: cor }));
     } else {
-      setDados(prev => ({ ...prev, cor_secundaria: cor }));
+      setDados((prev: DadosPersonalizacao) => ({ ...prev, cor_destaque: cor }));
     }
     setModalCoresAberto(false);
+  };
+
+  const selecionarFonte = (tipo: 'principal' | 'titulos', fonte: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (tipo === 'principal') {
+      setDados((prev: DadosPersonalizacao) => ({ ...prev, fonte_principal: fonte }));
+    } else {
+      setDados((prev: DadosPersonalizacao) => ({ ...prev, fonte_titulos: fonte }));
+    }
+  };
+
+  const obterCorAtual = (tipo: TipoCor) => {
+    return tipo === 'primaria' ? dados.cor_primaria 
+      : tipo === 'secundaria' ? dados.cor_secundaria 
+      : dados.cor_destaque;
   };
 
   const aplicarCorCustomizada = () => {
@@ -237,6 +282,19 @@ export default function TelaPersonalizacao() {
     );
   }
 
+  const abas: { id: AbaAtiva; titulo: string; icone: keyof typeof Ionicons.glyphMap }[] = [
+    { id: 'paletas', titulo: 'Paletas', icone: 'color-palette-outline' },
+    { id: 'cores', titulo: 'Cores', icone: 'color-fill-outline' },
+    { id: 'fontes', titulo: 'Fontes', icone: 'text-outline' },
+    { id: 'dados', titulo: 'Dados', icone: 'information-circle-outline' },
+  ];
+
+  const ehPaletaSelecionada = (paleta: Paleta) => {
+    return dados.cor_primaria === paleta.primaria &&
+      dados.cor_secundaria === paleta.secundaria &&
+      dados.cor_destaque === paleta.destaque;
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: cores.fundo.primario }}>
       {/* Header */}
@@ -244,159 +302,69 @@ export default function TelaPersonalizacao() {
         style={{
           paddingTop: insets.top + 16,
           paddingHorizontal: 20,
-          paddingBottom: 16,
+          paddingBottom: 12,
           backgroundColor: cores.fundo.secundario,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
         }}
       >
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={cores.texto.primario} />
-        </Pressable>
-        <Text style={{ color: cores.texto.primario, fontSize: 18, fontWeight: '700' }}>
-          Personalização
-        </Text>
-        <View style={{ width: 24 }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={cores.texto.primario} />
+          </Pressable>
+          <Text style={{ color: cores.texto.primario, fontSize: 18, fontWeight: '700' }}>
+            Personalização
+          </Text>
+          <View style={{ width: 24 }} />
+        </View>
+
+        {/* Abas */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {abas.map((aba) => (
+            <Pressable
+              key={aba.id}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setAbaAtiva(aba.id);
+              }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderRadius: 20,
+                backgroundColor: abaAtiva === aba.id ? cores.primaria.DEFAULT : cores.fundo.terciario,
+                borderWidth: 1,
+                borderColor: abaAtiva === aba.id ? cores.primaria.DEFAULT : cores.borda.sutil,
+              }}
+            >
+              <Ionicons
+                name={aba.icone}
+                size={16}
+                color={abaAtiva === aba.id ? cores.botao.texto : cores.texto.secundario}
+              />
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: '600',
+                  color: abaAtiva === aba.id ? cores.botao.texto : cores.texto.secundario,
+                }}
+              >
+                {aba.titulo}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo */}
-        <Card style={{ alignItems: 'center', padding: 24 }}>
-          <Pressable onPress={selecionarImagem} disabled={salvando}>
-            <View
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 60,
-                backgroundColor: cores.fundo.terciario,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderWidth: 3,
-                borderColor: dados.cor_primaria,
-                overflow: 'hidden',
-              }}
-            >
-              {dados.logo_url ? (
-                <Image
-                  source={{ uri: dados.logo_url }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Ionicons name="camera" size={40} color={cores.texto.terciario} />
-              )}
-            </View>
-            <View
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: dados.cor_primaria,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="pencil" size={18} color="#fff" />
-            </View>
-          </Pressable>
-          <Text style={{ color: cores.texto.secundario, fontSize: 14, marginTop: 12 }}>
-            Toque para alterar a logo
-          </Text>
-        </Card>
-
-        {/* Cores */}
-        <Text style={{ color: cores.texto.primario, fontSize: 16, fontWeight: '600', marginTop: 24, marginBottom: 12 }}>
-          Cores do {estabelecimento()}
-        </Text>
-        <Card>
-          <View style={{ gap: 16 }}>
-            <View>
-              <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 8 }}>
-                Cor Primária
-              </Text>
-              <Pressable
-                onPress={() => abrirSeletorCor('primaria')}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: 12,
-                  backgroundColor: cores.fundo.terciario,
-                  borderRadius: 12,
-                }}
-              >
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: dados.cor_primaria,
-                  }}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '500' }}>
-                    {dados.cor_primaria.toUpperCase()}
-                  </Text>
-                  <Text style={{ color: cores.texto.terciario, fontSize: 12 }}>
-                    Usada em botões e destaques
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={cores.texto.terciario} />
-              </Pressable>
-            </View>
-
-            <View>
-              <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 8 }}>
-                Cor Secundária
-              </Text>
-              <Pressable
-                onPress={() => abrirSeletorCor('secundaria')}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: 12,
-                  backgroundColor: cores.fundo.terciario,
-                  borderRadius: 12,
-                }}
-              >
-                <View
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: dados.cor_secundaria,
-                  }}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '500' }}>
-                    {dados.cor_secundaria.toUpperCase()}
-                  </Text>
-                  <Text style={{ color: cores.texto.terciario, fontSize: 12 }}>
-                    Usada em fundos e elementos secundários
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={cores.texto.terciario} />
-              </Pressable>
-            </View>
-          </View>
-        </Card>
-
-        {/* Preview */}
-        <Text style={{ color: cores.texto.primario, fontSize: 16, fontWeight: '600', marginTop: 24, marginBottom: 12 }}>
-          Prévia
-        </Text>
-        <Card style={{ overflow: 'hidden' }}>
+        {/* Preview Card - Sempre Visível */}
+        <Card style={{ overflow: 'hidden', marginBottom: 20 }}>
           <View
             style={{
-              backgroundColor: dados.cor_secundaria,
+              backgroundColor: dados.cor_primaria,
               padding: 20,
               alignItems: 'center',
               marginHorizontal: -16,
@@ -405,10 +373,10 @@ export default function TelaPersonalizacao() {
           >
             <View
               style={{
-                width: 60,
-                height: 60,
-                borderRadius: 30,
-                backgroundColor: '#fff',
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                backgroundColor: dados.cor_secundaria,
                 alignItems: 'center',
                 justifyContent: 'center',
                 overflow: 'hidden',
@@ -421,76 +389,307 @@ export default function TelaPersonalizacao() {
                   resizeMode="cover"
                 />
               ) : (
-                <Ionicons name="storefront" size={28} color={dados.cor_primaria} />
+                <Ionicons name="storefront" size={24} color={dados.cor_primaria} />
               )}
             </View>
-            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginTop: 12 }}>
+            <Text style={{ color: dados.cor_texto, fontSize: 16, fontWeight: '700', marginTop: 10 }}>
               {dados.nome || 'Nome do Estabelecimento'}
             </Text>
           </View>
-          <View style={{ padding: 16, alignItems: 'center' }}>
-            <Pressable
-              style={{
-                backgroundColor: dados.cor_primaria,
-                paddingHorizontal: 24,
-                paddingVertical: 12,
-                borderRadius: 8,
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '600' }}>Agendar Horário</Text>
-            </Pressable>
+          <View style={{ padding: 16, backgroundColor: dados.cor_secundaria }}>
+            <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center' }}>
+              <View style={{ backgroundColor: dados.cor_primaria, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6 }}>
+                <Text style={{ color: dados.cor_texto, fontSize: 12, fontWeight: '600' }}>Serviço 1</Text>
+              </View>
+              <View style={{ backgroundColor: dados.cor_destaque, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6 }}>
+                <Text style={{ color: dados.cor_primaria, fontSize: 12, fontWeight: '600' }}>Agendar</Text>
+              </View>
+            </View>
           </View>
         </Card>
 
-        {/* Dados do Estabelecimento */}
-        <Text style={{ color: cores.texto.primario, fontSize: 16, fontWeight: '600', marginTop: 24, marginBottom: 12 }}>
-          Dados do {estabelecimento()}
-        </Text>
-        <Card style={{ gap: 16 }}>
-          <Input
-            rotulo="Nome"
-            placeholder={`Nome do ${estabelecimento()}`}
-            value={dados.nome}
-            onChangeText={(v) => setDados(prev => ({ ...prev, nome: v }))}
-          />
-          <Input
-            rotulo="Descrição"
-            placeholder="Uma breve descrição"
-            value={dados.descricao}
-            onChangeText={(v) => setDados(prev => ({ ...prev, descricao: v }))}
-            multiline
-            numberOfLines={3}
-          />
-          <Input
-            rotulo="Endereço"
-            placeholder="Rua, número, bairro"
-            value={dados.endereco}
-            onChangeText={(v) => setDados(prev => ({ ...prev, endereco: v }))}
-          />
-          <Input
-            rotulo="Telefone"
-            placeholder="(00) 0000-0000"
-            value={dados.telefone}
-            onChangeText={(v) => setDados(prev => ({ ...prev, telefone: v }))}
-            keyboardType="phone-pad"
-          />
-          <Input
-            rotulo="WhatsApp"
-            placeholder="(00) 00000-0000"
-            value={dados.whatsapp}
-            onChangeText={(v) => setDados(prev => ({ ...prev, whatsapp: v }))}
-            keyboardType="phone-pad"
-          />
-          <Input
-            rotulo="Instagram"
-            placeholder="@seuperfil"
-            value={dados.instagram}
-            onChangeText={(v) => setDados(prev => ({ ...prev, instagram: v }))}
-          />
-        </Card>
+        {/* Conteúdo da Aba - Paletas */}
+        {abaAtiva === 'paletas' && (
+          <Animated.View entering={FadeIn.duration(200)}>
+            <Text style={{ color: cores.texto.primario, fontSize: 16, fontWeight: '600', marginBottom: 4 }}>
+              Paletas de Cores
+            </Text>
+            <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 16 }}>
+              {tipoNegocio === 'nail_designer' 
+                ? 'Paletas elegantes para seu estúdio de nail design'
+                : 'Paletas profissionais para sua barbearia'}
+            </Text>
+
+            <View style={{ gap: 12 }}>
+              {paletas.map((paleta) => {
+                const selecionada = ehPaletaSelecionada(paleta);
+                return (
+                  <Pressable
+                    key={paleta.nome}
+                    onPress={() => aplicarPaleta(paleta)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 14,
+                      borderRadius: 14,
+                      backgroundColor: selecionada ? cores.primaria.DEFAULT + '15' : cores.fundo.card,
+                      borderWidth: 2,
+                      borderColor: selecionada ? cores.primaria.DEFAULT : cores.borda.sutil,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', gap: 6, marginRight: 14 }}>
+                      <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: paleta.primaria, borderWidth: 1, borderColor: cores.borda.sutil }} />
+                      <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: paleta.secundaria, borderWidth: 1, borderColor: cores.borda.sutil }} />
+                      <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: paleta.destaque, borderWidth: 1, borderColor: cores.borda.sutil }} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '600' }}>
+                        {paleta.nome}
+                      </Text>
+                      <Text style={{ color: cores.texto.terciario, fontSize: 12 }}>
+                        {paleta.descricao}
+                      </Text>
+                    </View>
+                    {selecionada && (
+                      <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: cores.primaria.DEFAULT, alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="checkmark" size={16} color="#fff" />
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Conteúdo da Aba - Cores Individuais */}
+        {abaAtiva === 'cores' && (
+          <Animated.View entering={FadeIn.duration(200)}>
+            <Text style={{ color: cores.texto.primario, fontSize: 16, fontWeight: '600', marginBottom: 4 }}>
+              Cores Personalizadas
+            </Text>
+            <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 16 }}>
+              Ajuste cada cor individualmente
+            </Text>
+
+            <View style={{ gap: 12 }}>
+              {/* Cor Primária */}
+              <Pressable
+                onPress={() => abrirSeletorCor('primaria')}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: cores.fundo.card, borderRadius: 12, borderWidth: 1, borderColor: cores.borda.sutil }}
+              >
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: dados.cor_primaria }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '500' }}>Cor Primária</Text>
+                  <Text style={{ color: cores.texto.terciario, fontSize: 12 }}>{dados.cor_primaria.toUpperCase()} • Fundo principal</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={cores.texto.terciario} />
+              </Pressable>
+
+              {/* Cor Secundária */}
+              <Pressable
+                onPress={() => abrirSeletorCor('secundaria')}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: cores.fundo.card, borderRadius: 12, borderWidth: 1, borderColor: cores.borda.sutil }}
+              >
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: dados.cor_secundaria }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '500' }}>Cor Secundária</Text>
+                  <Text style={{ color: cores.texto.terciario, fontSize: 12 }}>{dados.cor_secundaria.toUpperCase()} • Cards e áreas</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={cores.texto.terciario} />
+              </Pressable>
+
+              {/* Cor de Destaque */}
+              <Pressable
+                onPress={() => abrirSeletorCor('destaque')}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: cores.fundo.card, borderRadius: 12, borderWidth: 1, borderColor: cores.borda.sutil }}
+              >
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: dados.cor_destaque }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '500' }}>Cor de Destaque</Text>
+                  <Text style={{ color: cores.texto.terciario, fontSize: 12 }}>{dados.cor_destaque.toUpperCase()} • Botões de ação</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={cores.texto.terciario} />
+              </Pressable>
+            </View>
+
+            {/* Logo */}
+            <Text style={{ color: cores.texto.primario, fontSize: 16, fontWeight: '600', marginTop: 24, marginBottom: 12 }}>
+              Logo
+            </Text>
+            <Pressable onPress={selecionarImagem} disabled={salvando}>
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                <View
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: cores.fundo.terciario,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 2,
+                    borderColor: dados.cor_primaria,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {dados.logo_url ? (
+                    <Image source={{ uri: dados.logo_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  ) : (
+                    <Ionicons name="camera" size={28} color={cores.texto.terciario} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '500' }}>Alterar Logo</Text>
+                  <Text style={{ color: cores.texto.terciario, fontSize: 12 }}>Toque para selecionar uma imagem</Text>
+                </View>
+                <Ionicons name="image-outline" size={24} color={cores.primaria.DEFAULT} />
+              </Card>
+            </Pressable>
+          </Animated.View>
+        )}
+
+        {/* Conteúdo da Aba - Fontes */}
+        {abaAtiva === 'fontes' && (
+          <Animated.View entering={FadeIn.duration(200)}>
+            <Text style={{ color: cores.texto.primario, fontSize: 16, fontWeight: '600', marginBottom: 4 }}>
+              Tipografia
+            </Text>
+            <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 16 }}>
+              Escolha as fontes do seu site
+            </Text>
+
+            {/* Fonte Principal */}
+            <Text style={{ color: cores.texto.secundario, fontSize: 13, fontWeight: '500', marginBottom: 10 }}>
+              Fonte Principal (Textos)
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
+              {FONTES_DISPONIVEIS.map((fonte) => {
+                const selecionada = dados.fonte_principal === fonte.nome;
+                return (
+                  <Pressable
+                    key={fonte.nome}
+                    onPress={() => selecionarFonte('principal', fonte.nome)}
+                    style={{
+                      width: (LARGURA_TELA - 60) / 2,
+                      paddingHorizontal: 14,
+                      paddingVertical: 12,
+                      borderRadius: 12,
+                      backgroundColor: selecionada ? '#18181b' : cores.fundo.card,
+                      borderWidth: selecionada ? 2 : 1,
+                      borderColor: selecionada ? '#ffffff' : cores.borda.sutil,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: '500',
+                        fontFamily: fonte.familia,
+                        color: selecionada ? '#ffffff' : cores.texto.primario,
+                      }}
+                    >
+                      {fonte.nome}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        marginTop: 2,
+                        color: selecionada ? 'rgba(255,255,255,0.7)' : cores.texto.terciario,
+                      }}
+                    >
+                      {fonte.descricao}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Fonte dos Títulos */}
+            <Text style={{ color: cores.texto.secundario, fontSize: 13, fontWeight: '500', marginBottom: 10 }}>
+              Fonte de Títulos (Destaques)
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              {FONTES_DISPONIVEIS.slice(0, 6).map((fonte) => {
+                const selecionada = dados.fonte_titulos === fonte.nome;
+                return (
+                  <Pressable
+                    key={fonte.nome}
+                    onPress={() => selecionarFonte('titulos', fonte.nome)}
+                    style={{
+                      width: (LARGURA_TELA - 60) / 2,
+                      paddingHorizontal: 14,
+                      paddingVertical: 12,
+                      borderRadius: 12,
+                      backgroundColor: selecionada ? '#18181b' : cores.fundo.card,
+                      borderWidth: selecionada ? 2 : 1,
+                      borderColor: selecionada ? '#ffffff' : cores.borda.sutil,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: '700',
+                        fontFamily: fonte.familia,
+                        color: selecionada ? '#ffffff' : cores.texto.primario,
+                      }}
+                    >
+                      {fonte.nome}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Conteúdo da Aba - Dados */}
+        {abaAtiva === 'dados' && (
+          <Animated.View entering={FadeIn.duration(200)}>
+            <Text style={{ color: cores.texto.primario, fontSize: 16, fontWeight: '600', marginBottom: 4 }}>
+              Dados do {estabelecimento()}
+            </Text>
+            <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 16 }}>
+              Informações de contato e localização
+            </Text>
+
+            <Card style={{ gap: 16 }}>
+              <Input
+                rotulo="Nome"
+                placeholder={`Nome do ${estabelecimento()}`}
+                value={dados.nome}
+                onChangeText={(v: string) => setDados((prev: DadosPersonalizacao) => ({ ...prev, nome: v }))}
+              />
+              <Input
+                rotulo="Endereço"
+                placeholder="Rua, número, bairro"
+                value={dados.endereco}
+                onChangeText={(v: string) => setDados((prev: DadosPersonalizacao) => ({ ...prev, endereco: v }))}
+              />
+              <Input
+                rotulo="Telefone"
+                placeholder="(00) 0000-0000"
+                value={dados.telefone}
+                onChangeText={(v: string) => setDados((prev: DadosPersonalizacao) => ({ ...prev, telefone: v }))}
+                keyboardType="phone-pad"
+              />
+              <Input
+                rotulo="WhatsApp"
+                placeholder="(00) 00000-0000"
+                value={dados.whatsapp}
+                onChangeText={(v: string) => setDados((prev: DadosPersonalizacao) => ({ ...prev, whatsapp: v }))}
+                keyboardType="phone-pad"
+              />
+              <Input
+                rotulo="Instagram"
+                placeholder="@seuperfil"
+                value={dados.instagram}
+                onChangeText={(v: string) => setDados((prev: DadosPersonalizacao) => ({ ...prev, instagram: v }))}
+              />
+            </Card>
+          </Animated.View>
+        )}
       </ScrollView>
 
-      {/* Botão Salvar */}
+      {/* Botão Salvar Fixo */}
       <View
         style={{
           position: 'absolute',
@@ -516,39 +715,43 @@ export default function TelaPersonalizacao() {
       <Modal
         visivel={modalCoresAberto}
         onFechar={() => setModalCoresAberto(false)}
-        titulo={`Cor ${tipoCor === 'primaria' ? 'Primária' : 'Secundária'}`}
+        titulo={`Cor ${tipoCor === 'primaria' ? 'Primária' : tipoCor === 'secundaria' ? 'Secundária' : 'de Destaque'}`}
         tamanho="grande"
         tema={tema}
       >
         <View style={{ gap: 20 }}>
-          {/* Cores Predefinidas */}
+          {/* Cores das Paletas */}
           <View>
             <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 12 }}>
-              Cores Sugeridas
+              Cores das Paletas
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-              {CORES_PREDEFINIDAS.map((item) => (
-                <Pressable
-                  key={item.cor}
-                  onPress={() => selecionarCor(item.cor)}
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 25,
-                    backgroundColor: item.cor,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderWidth: 3,
-                    borderColor: (tipoCor === 'primaria' ? dados.cor_primaria : dados.cor_secundaria) === item.cor
-                      ? '#fff'
-                      : 'transparent',
-                  }}
-                >
-                  {(tipoCor === 'primaria' ? dados.cor_primaria : dados.cor_secundaria) === item.cor && (
-                    <Ionicons name="checkmark" size={24} color="#fff" />
-                  )}
-                </Pressable>
-              ))}
+              {paletas.map((paleta) => {
+                const corPaleta = tipoCor === 'primaria' ? paleta.primaria 
+                  : tipoCor === 'secundaria' ? paleta.secundaria 
+                  : paleta.destaque;
+                const corAtual = obterCorAtual(tipoCor);
+                return (
+                  <Pressable
+                    key={paleta.nome + tipoCor}
+                    onPress={() => selecionarCor(corPaleta)}
+                    style={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 25,
+                      backgroundColor: corPaleta,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: 3,
+                      borderColor: corAtual === corPaleta ? '#fff' : 'transparent',
+                    }}
+                  >
+                    {corAtual === corPaleta && (
+                      <Ionicons name="checkmark" size={24} color="#fff" />
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -597,7 +800,7 @@ export default function TelaPersonalizacao() {
                   justifyContent: 'center',
                 }}
               >
-                <Text style={{ color: cores.botao.texto, fontWeight: '600' }}>Aplicar</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>Aplicar</Text>
               </Pressable>
             </View>
           </View>

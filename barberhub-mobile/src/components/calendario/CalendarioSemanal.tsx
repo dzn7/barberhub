@@ -27,6 +27,7 @@ import {
 import { ptBR } from 'date-fns/locale';
 import * as Haptics from 'expo-haptics';
 import { obterCores, TemaType } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 import { DIAS_SEMANA_ABREV, HORARIOS_PADRAO } from '../../services/horariosFuncionamento';
 import type { Agendamento as AgendamentoTipo } from '../../types';
 
@@ -76,7 +77,7 @@ export function CalendarioSemanal({
   onMudarData,
   onSelecionarAgendamento,
   carregando = false,
-  tema = 'escuro',
+  tema,
   horaInicio = HORARIOS_PADRAO.horaInicio,
   horaFim = HORARIOS_PADRAO.horaFim,
   diasFuncionamento = HORARIOS_PADRAO.diasFuncionamento,
@@ -84,7 +85,8 @@ export function CalendarioSemanal({
   onMudarVisualizacao,
   tamanhoHora = 'normal',
 }: CalendarioSemanalProps) {
-  const cores = obterCores(tema);
+  const { cores: coresContexto } = useTema();
+  const cores = tema ? obterCores(tema) : coresContexto;
   const scrollRef = useRef<ScrollView>(null);
   const [visualizacaoInterna, setVisualizacaoInterna] = useState<TipoVisualizacao>(visualizacaoProp || 'semana');
 

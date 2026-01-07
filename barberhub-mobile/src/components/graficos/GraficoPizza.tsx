@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { obterCores, TemaType } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 
 const { width: LARGURA_TELA } = Dimensions.get('window');
 
@@ -37,7 +38,7 @@ export function GraficoPizza({
   subtitulo,
   altura = 200,
   largura = LARGURA_TELA - 40,
-  tema = 'escuro',
+  tema,
   tipoRosca = true,
   mostrarLegenda = true,
   mostrarPorcentagem = true,
@@ -45,7 +46,8 @@ export function GraficoPizza({
   valorCentral,
   labelCentral,
 }: GraficoPizzaProps) {
-  const cores = obterCores(tema);
+  const { cores: coresContexto } = useTema();
+  const cores = tema ? obterCores(tema) : coresContexto;
 
   const total = useMemo(() => dados.reduce((acc, d) => acc + d.valor, 0), [dados]);
 

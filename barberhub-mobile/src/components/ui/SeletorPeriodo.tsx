@@ -33,6 +33,7 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { obterCores, TemaType } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 import * as Haptics from 'expo-haptics';
 
 export type OpcaoPeriodo = 'hoje' | 'ontem' | 'semana' | 'mes' | 'ano' | 'geral' | 'personalizado';
@@ -125,10 +126,12 @@ function obterPeriodo(tipo: OpcaoPeriodo, dataPersonalizadaInicio?: Date, dataPe
 export function SeletorPeriodo({
   periodo,
   onChange,
-  tema = 'escuro',
+  tema,
   opcoes = ['hoje', 'semana', 'mes', 'ano', 'geral'],
 }: SeletorPeriodoProps) {
-  const cores = obterCores(tema);
+  const { tema: temaContexto, cores: coresContexto } = useTema();
+  const temaFinal = tema || temaContexto;
+  const cores = tema ? obterCores(tema) : coresContexto;
   const insets = useSafeAreaInsets();
   const [modalAberto, setModalAberto] = useState(false);
   const [modalCalendarioAberto, setModalCalendarioAberto] = useState(false);

@@ -38,7 +38,7 @@ const pink = {
 export const CORES_ESCURO = {
   // Fundos
   fundo: {
-    primario: '#000000',
+    primario: zinc[950],
     secundario: zinc[900],
     terciario: zinc[800],
     card: zinc[900],
@@ -143,7 +143,7 @@ export const CORES = {
   
   // Aliases para compatibilidade
   primaria: {
-    DEFAULT: zinc[900],
+    DEFAULT: '#ffffff',
   },
   secundaria: {
     DEFAULT: zinc[800],
@@ -165,7 +165,7 @@ export function obterCores(tema: TemaType = 'escuro') {
     ...CORES_COMPARTILHADAS,
     // Aliases para compatibilidade
     primaria: {
-      DEFAULT: tema === 'claro' ? zinc[900] : zinc[900],
+      DEFAULT: tema === 'escuro' ? '#ffffff' : zinc[900],
     },
     secundaria: {
       DEFAULT: zinc[800],

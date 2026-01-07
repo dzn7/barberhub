@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { Card, Input, Modal } from '../ui';
 import { supabase } from '../../services/supabase';
 import { obterCores, TemaType } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 
 type FormaPagamento = 'dinheiro' | 'pix' | 'debito' | 'credito' | 'transferencia';
 
@@ -56,8 +57,9 @@ const FORMAS_PAGAMENTO: { id: FormaPagamento; label: string; icone: keyof typeof
   { id: 'transferencia', label: 'Transferência', icone: 'swap-horizontal' },
 ];
 
-export function AbaAtendimentosPresenciais({ tenantId, tema = 'escuro' }: AbaAtendimentosPresenciaisProps) {
-  const cores = obterCores(tema);
+export function AbaAtendimentosPresenciais({ tenantId, tema }: AbaAtendimentosPresenciaisProps) {
+  const { cores: coresContexto } = useTema();
+  const cores = tema ? obterCores(tema) : coresContexto;
 
   const [carregando, setCarregando] = useState(true);
   const [atualizando, setAtualizando] = useState(false);

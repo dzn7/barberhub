@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { Card } from '../ui';
 import { supabase } from '../../services/supabase';
 import { obterCores, TemaType } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 import type { Agendamento } from '../../types';
 
 type AgendamentoComRelacoes = Agendamento & {
@@ -28,8 +29,9 @@ interface AbaRemarcacaoProps {
   onSelecionarAgendamento: (agendamento: AgendamentoComRelacoes) => void;
 }
 
-export function AbaRemarcacao({ tenantId, tema = 'escuro', onSelecionarAgendamento }: AbaRemarcacaoProps) {
-  const cores = obterCores(tema);
+export function AbaRemarcacao({ tenantId, tema, onSelecionarAgendamento }: AbaRemarcacaoProps) {
+  const { cores: coresContexto } = useTema();
+  const cores = tema ? obterCores(tema) : coresContexto;
 
   const [carregando, setCarregando] = useState(true);
   const [atualizando, setAtualizando] = useState(false);

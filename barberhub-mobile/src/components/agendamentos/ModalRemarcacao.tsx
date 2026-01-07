@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { Modal } from '../ui';
 import { supabase } from '../../services/supabase';
 import { obterCores, TemaType } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 import { buscarConfiguracaoHorarios, DIAS_SEMANA_ABREV } from '../../services/horariosFuncionamento';
 import { gerarTodosHorarios } from '../../services/horarios';
 import { enviarRemarcacaoAgendamento } from '../../services/bot';
@@ -43,9 +44,10 @@ export function ModalRemarcacao({
   onFechar,
   agendamento,
   onSucesso,
-  tema = 'escuro',
+  tema,
 }: ModalRemarcacaoProps) {
-  const cores = obterCores(tema);
+  const { cores: coresContexto } = useTema();
+  const cores = tema ? obterCores(tema) : coresContexto;
 
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date());
   const [horarioSelecionado, setHorarioSelecionado] = useState<string>('');

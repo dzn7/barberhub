@@ -18,7 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { CORES } from '../../constants/cores';
+import { useTema } from '../../contexts/TemaContext';
 
 interface PropsInput extends Omit<TextInputProps, 'style'> {
   rotulo?: string;
@@ -42,17 +42,21 @@ export function Input({
   onBlur,
   ...props
 }: PropsInput) {
+  const { cores, ehEscuro } = useTema();
   const [focado, setFocado] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const bordaAnimada = useSharedValue(0);
 
+  const corBordaPadrao = ehEscuro ? cores.borda.media : cores.borda.sutil;
+  const corFundoCampo = ehEscuro ? cores.fundo.terciario : cores.fundo.secundario;
+
   const estiloAnimado = useAnimatedStyle(() => ({
     borderColor: withTiming(
       bordaAnimada.value === 1
-        ? CORES.primaria.DEFAULT
+        ? cores.primaria.DEFAULT
         : erro
-        ? CORES.erro
-        : CORES.borda.sutil,
+        ? cores.erro
+        : corBordaPadrao,
       { duration: 200 }
     ),
   }));
@@ -86,7 +90,7 @@ export function Input({
           style={{
             fontSize: 14,
             fontWeight: '500',
-            color: CORES.texto.secundario,
+            color: ehEscuro ? cores.zinc[300] : cores.zinc[700],
           }}
         >
           {rotulo}
@@ -98,10 +102,10 @@ export function Input({
           {
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: CORES.fundo.card,
+            backgroundColor: corFundoCampo,
             borderRadius: 12,
             borderWidth: 1,
-            paddingHorizontal: 14,
+            paddingHorizontal: 16,
             height: 52,
             gap: 10,
           },
@@ -112,7 +116,7 @@ export function Input({
           <Ionicons
             name={iconeEsquerda}
             size={20}
-            color={focado ? CORES.primaria.DEFAULT : CORES.texto.terciario}
+            color={focado ? cores.primaria.DEFAULT : cores.texto.terciario}
           />
         )}
 
@@ -120,9 +124,9 @@ export function Input({
           style={{
             flex: 1,
             fontSize: 16,
-            color: CORES.texto.primario,
+            color: cores.texto.primario,
           }}
-          placeholderTextColor={CORES.texto.terciario}
+          placeholderTextColor={cores.texto.terciario}
           secureTextEntry={senha && !mostrarSenha}
           onFocus={handleFocus}
           onBlur={handleBlur}
@@ -134,7 +138,7 @@ export function Input({
             <Ionicons
               name={iconeAtual}
               size={20}
-              color={CORES.texto.terciario}
+              color={cores.texto.terciario}
             />
           </Pressable>
         )}
@@ -144,7 +148,7 @@ export function Input({
         <Text
           style={{
             fontSize: 12,
-            color: CORES.erro,
+            color: cores.erro,
             marginTop: 2,
           }}
         >
