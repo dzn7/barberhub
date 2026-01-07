@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { InstalarPWA, RegistrarServiceWorker } from '@/components/pwa'
-import { CarregadorFontes, obterClasseFonte } from '@/components/fontes/CarregadorFontes'
+import { obterClasseFonte, gerarUrlFontes } from '@/lib/fontes'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -74,29 +74,38 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
     notFound()
   }
 
-  const classeFontePrincipal = obterClasseFonte(tenant.fonte_principal || 'Inter')
-  const classeFonteTitulos = obterClasseFonte(tenant.fonte_titulos || 'Inter')
+  const fontePrincipal = tenant.fonte_principal || 'Inter'
+  const fonteTitulos = tenant.fonte_titulos || 'Inter'
+  const classeFontePrincipal = obterClasseFonte(fontePrincipal)
+  const classeFonteTitulos = obterClasseFonte(fonteTitulos)
+  const urlFontes = gerarUrlFontes(fontePrincipal, fonteTitulos)
 
   return (
-    <div 
-      className={`min-h-screen bg-zinc-900 ${classeFontePrincipal}`}
-      style={{
-        '--cor-primaria': tenant.cor_primaria || '#18181b',
-        '--cor-secundaria': tenant.cor_secundaria || '#f4f4f5',
-        '--cor-destaque': tenant.cor_destaque || '#a1a1aa',
-        '--classe-fonte-titulos': classeFonteTitulos,
-      } as React.CSSProperties}
-    >
-      <CarregadorFontes 
-        fontePrincipal={tenant.fonte_principal || 'Inter'} 
-        fonteTitulos={tenant.fonte_titulos || 'Inter'} 
-      />
-      <RegistrarServiceWorker />
-      {children}
-      <InstalarPWA 
-        nomeBarbearia={tenant.nome} 
-        corPrimaria={tenant.cor_primaria || '#18181b'} 
-      />
-    </div>
+    <>
+      {/* Carregamento de fontes do Google Fonts */}
+      {urlFontes && (
+        <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link rel="stylesheet" href={urlFontes} />
+        </>
+      )}
+      <div 
+        className={`min-h-screen bg-zinc-900 ${classeFontePrincipal}`}
+        style={{
+          '--cor-primaria': tenant.cor_primaria || '#18181b',
+          '--cor-secundaria': tenant.cor_secundaria || '#f4f4f5',
+          '--cor-destaque': tenant.cor_destaque || '#a1a1aa',
+          '--classe-fonte-titulos': classeFonteTitulos,
+        } as React.CSSProperties}
+      >
+        <RegistrarServiceWorker />
+        {children}
+        <InstalarPWA 
+          nomeBarbearia={tenant.nome} 
+          corPrimaria={tenant.cor_primaria || '#18181b'} 
+        />
+      </div>
+    </>
   )
 }
