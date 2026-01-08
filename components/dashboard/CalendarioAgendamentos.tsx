@@ -37,12 +37,20 @@ const TIMEZONE_BRASILIA = "America/Sao_Paulo";
 
 const BOT_URL = 'https://bot-barberhub.fly.dev';
 
+interface Servico {
+  id?: string;
+  nome: string;
+  preco: number;
+  duracao: number;
+}
+
 interface Agendamento {
   id: string;
   data_hora: string;
   status: string;
   observacoes?: string;
   barbeiro_id: string;
+  servicos_ids?: string[];
   clientes: {
     nome: string;
     telefone: string;
@@ -51,10 +59,34 @@ interface Agendamento {
     id: string;
     nome: string;
   };
-  servicos: {
-    nome: string;
-    preco: number;
-    duracao: number;
+  servicos: Servico;
+  servicosMultiplos?: Servico[];
+}
+
+// Função auxiliar para obter informações de serviços
+function obterInfoServicos(agendamento: Agendamento) {
+  const { servicos, servicosMultiplos } = agendamento;
+  
+  if (servicosMultiplos && servicosMultiplos.length > 1) {
+    const nomes = servicosMultiplos.map(s => s.nome);
+    const precoTotal = servicosMultiplos.reduce((acc, s) => acc + (s.preco || 0), 0);
+    const duracaoTotal = servicosMultiplos.reduce((acc, s) => acc + (s.duracao || 0), 0);
+    
+    return {
+      nome: nomes.join(' + '),
+      nomesCurtos: nomes.length > 2 ? `${nomes[0]} +${nomes.length - 1}` : nomes.join(' + '),
+      preco: precoTotal,
+      duracao: duracaoTotal,
+      quantidade: servicosMultiplos.length
+    };
+  }
+  
+  return {
+    nome: servicos?.nome || 'Serviço',
+    nomesCurtos: servicos?.nome || 'Serviço',
+    preco: servicos?.preco || 0,
+    duracao: servicos?.duracao || 30,
+    quantidade: 1
   };
 }
 
@@ -128,7 +160,7 @@ export function CalendarioAgendamentos() {
           *,
           clientes (nome, telefone),
           barbeiros (id, nome),
-          servicos (nome, preco, duracao)
+          servicos (id, nome, preco, duracao)
         `)
         .eq('tenant_id', tenant.id)
         .gte('data_hora', inicio.toISOString())
@@ -136,7 +168,23 @@ export function CalendarioAgendamentos() {
         .order('data_hora', { ascending: true });
 
       if (error) throw error;
-      setAgendamentos(data || []);
+      
+      // Processar múltiplos serviços se existirem
+      const agendamentosProcessados = await Promise.all((data || []).map(async (ag) => {
+        if (ag.servicos_ids && Array.isArray(ag.servicos_ids) && ag.servicos_ids.length > 1) {
+          const { data: servicosMultiplos } = await supabase
+            .from('servicos')
+            .select('id, nome, preco, duracao')
+            .in('id', ag.servicos_ids);
+          
+          if (servicosMultiplos) {
+            return { ...ag, servicosMultiplos };
+          }
+        }
+        return ag;
+      }));
+      
+      setAgendamentos(agendamentosProcessados);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
     } finally {
@@ -183,7 +231,7 @@ export function CalendarioAgendamentos() {
     const pendentes = agendamentosFiltrados.filter(a => a.status === 'pendente').length;
     const receita = agendamentosFiltrados
       .filter(a => a.status === 'confirmado' || a.status === 'concluido')
-      .reduce((sum, a) => sum + (a.servicos?.preco || 0), 0);
+      .reduce((sum, a) => sum + obterInfoServicos(a).preco, 0);
     
     return { total, confirmados, pendentes, receita };
   }, [agendamentosFiltrados]);
@@ -230,7 +278,8 @@ export function CalendarioAgendamentos() {
     if (!tenant) return;
 
     try {
-      const valorServico = agendamento.servicos?.preco || 0;
+      const infoServicos = obterInfoServicos(agendamento);
+      const valorServico = infoServicos.preco;
       const barbeiroId = agendamento.barbeiros?.id || agendamento.barbeiro_id;
       const dataBrasilia = toZonedTime(parseISO(agendamento.data_hora), TIMEZONE_BRASILIA);
       const dataFormatada = format(dataBrasilia, 'yyyy-MM-dd');
@@ -254,7 +303,7 @@ export function CalendarioAgendamentos() {
           tenant_id: tenant.id,
           tipo: 'receita',
           categoria: 'servico',
-          descricao: `${agendamento.servicos?.nome} - ${agendamento.clientes?.nome}`,
+          descricao: `${infoServicos.nome} - ${agendamento.clientes?.nome}`,
           valor: valorServico,
           data: dataFormatada,
           forma_pagamento: 'dinheiro',
@@ -296,7 +345,8 @@ export function CalendarioAgendamentos() {
       const emoji = obterEmojiPrincipal(tipoNegocio);
       const terminologia = obterTerminologia(tipoNegocio);
       
-      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes?.nome}!\n\nSeu agendamento foi cancelado:\n\n📅 *Data:* ${dataFormatada}\n${emoji} *Serviço:* ${agendamento.servicos?.nome}\n👤 *${terminologia.profissional.singular}:* ${agendamento.barbeiros?.nome}\n\nSe desejar reagendar, entre em contato ou acesse nosso site.\n\n_${tenant?.nome || 'BarberHub'}_`;
+      const infoServicos = obterInfoServicos(agendamento);
+      const mensagem = `❌ *Agendamento Cancelado*\n\nOlá ${agendamento.clientes?.nome}!\n\nSeu agendamento foi cancelado:\n\n📅 *Data:* ${dataFormatada}\n${emoji} *Serviço:* ${infoServicos.nome}\n👤 *${terminologia.profissional.singular}:* ${agendamento.barbeiros?.nome}\n\nSe desejar reagendar, entre em contato ou acesse nosso site.\n\n_${tenant?.nome || 'BarberHub'}_`;
 
       let telefone = agendamento.clientes?.telefone?.replace(/\D/g, '') || '';
       if (!telefone.startsWith('55')) {
@@ -663,12 +713,22 @@ export function CalendarioAgendamentos() {
                             </div>
 
                             <div className="flex flex-wrap gap-4 text-sm">
-                              <div className="flex items-center gap-2">
-                                <Scissors className="w-4 h-4 text-zinc-500" />
-                                <span className="text-zinc-700 dark:text-zinc-300 font-medium">
-                                  {agendamento.servicos?.nome}
-                                </span>
-                              </div>
+                              {(() => {
+                                const info = obterInfoServicos(agendamento);
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <Scissors className="w-4 h-4 text-zinc-500" />
+                                    <span className="text-zinc-700 dark:text-zinc-300 font-medium">
+                                      {info.nome}
+                                    </span>
+                                    {info.quantidade > 1 && (
+                                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                                        {info.quantidade} serviços
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                               
                               <div className="flex items-center gap-2">
                                 <User className="w-4 h-4 text-zinc-500" />
@@ -677,19 +737,26 @@ export function CalendarioAgendamentos() {
                                 </span>
                               </div>
 
-                              <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-zinc-500" />
-                                <span className="text-zinc-600 dark:text-zinc-400">
-                                  {agendamento.servicos?.duracao}min
-                                </span>
-                              </div>
+                              {(() => {
+                                const info = obterInfoServicos(agendamento);
+                                return (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-4 h-4 text-zinc-500" />
+                                      <span className="text-zinc-600 dark:text-zinc-400">
+                                        {info.duracao}min
+                                      </span>
+                                    </div>
 
-                              <div className="flex items-center gap-2">
-                                <DollarSign className="w-4 h-4 text-zinc-500" />
-                                <span className="text-zinc-700 dark:text-zinc-300 font-semibold">
-                                  R$ {agendamento.servicos?.preco.toFixed(2)}
-                                </span>
-                              </div>
+                                    <div className="flex items-center gap-2">
+                                      <DollarSign className="w-4 h-4 text-zinc-500" />
+                                      <span className="text-zinc-700 dark:text-zinc-300 font-semibold">
+                                        R$ {info.preco.toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
 
                             {agendamento.observacoes && (
@@ -857,18 +924,30 @@ export function CalendarioAgendamentos() {
                 <div className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center">
                   <Scissors className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-zinc-500 mb-0.5">Serviço</p>
-                  <p className="font-semibold text-zinc-900 dark:text-white truncate">
-                    {agendamentoSelecionado.servicos?.nome}
-                  </p>
-                  <p className="text-sm text-zinc-500">
-                    com {agendamentoSelecionado.barbeiros?.nome} • {agendamentoSelecionado.servicos?.duracao}min
-                  </p>
-                </div>
-                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                  R$ {agendamentoSelecionado.servicos?.preco.toFixed(2)}
-                </span>
+                {(() => {
+                  const info = obterInfoServicos(agendamentoSelecionado);
+                  return (
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-zinc-500 mb-0.5">
+                          Serviço{info.quantidade > 1 ? 's' : ''}
+                          {info.quantidade > 1 && (
+                            <span className="ml-1 text-emerald-600">({info.quantidade})</span>
+                          )}
+                        </p>
+                        <p className="font-semibold text-zinc-900 dark:text-white truncate">
+                          {info.nome}
+                        </p>
+                        <p className="text-sm text-zinc-500">
+                          com {agendamentoSelecionado.barbeiros?.nome} • {info.duracao}min
+                        </p>
+                      </div>
+                      <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        R$ {info.preco.toFixed(2)}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
 
               {agendamentoSelecionado.observacoes && (

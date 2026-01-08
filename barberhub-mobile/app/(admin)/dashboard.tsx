@@ -92,14 +92,14 @@ export default function TelaDashboard() {
       const inicioHoje = startOfDay(hoje);
       const fimHoje = endOfDay(hoje);
 
-      // Agendamentos de hoje
+      // Agendamentos de hoje (incluir concluídos para mostrar total do dia)
       const { count: countHoje } = await supabase
         .from('agendamentos')
         .select('*', { count: 'exact' })
         .eq('tenant_id', tenant.id)
         .gte('data_hora', inicioHoje.toISOString())
         .lte('data_hora', fimHoje.toISOString())
-        .in('status', ['pendente', 'confirmado']);
+        .in('status', ['pendente', 'confirmado', 'concluido']);
 
       // Próximos agendamentos
       const { data: proximos } = await supabase

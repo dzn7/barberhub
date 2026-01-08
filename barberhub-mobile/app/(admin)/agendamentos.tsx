@@ -34,7 +34,6 @@ import {
 import { ptBR } from 'date-fns/locale';
 import * as Haptics from 'expo-haptics';
 import { Card, Modal } from '../../src/components/ui';
-import { AbaAtendimentosPresenciais } from '../../src/components/agendamentos/AbaAtendimentosPresenciais';
 import { AbaRemarcacao } from '../../src/components/agendamentos/AbaRemarcacao';
 import { ModalRemarcacao } from '../../src/components/agendamentos/ModalRemarcacao';
 import { CalendarioSemanal } from '../../src/components/calendario';
@@ -52,16 +51,14 @@ import { useTema } from '../../src/contexts/TemaContext';
 import type { Agendamento, StatusAgendamento } from '../../src/types';
 
 // Tipos
-type SubTabAgendamento = 'agenda' | 'presenciais' | 'remarcacao';
+type SubTabAgendamento = 'agenda' | 'remarcacao';
 type ModoVisualizacao = 'lista' | 'semanal';
 type TipoVisualizacao = 'dia' | '3dias' | 'semana';
 
 // Subtabs como no web
 const SUBTABS: { id: SubTabAgendamento; label: string; icone: keyof typeof Ionicons.glyphMap }[] = [
   { id: 'agenda', label: 'Agenda', icone: 'calendar-outline' },
-  { id: 'presenciais', label: 'Atendimentos Presenciais', icone: 'people-outline' },
-  { id: 'remarcacao', label: 'Remarcação', icone: 'time-outline' },
-];
+  { id: 'remarcacao', label: 'Remarcação', icone: 'time-outline' },];
 
 // Cores por status
 const STATUS_CORES: Record<string, { bg: string; text: string }> = {
@@ -504,12 +501,45 @@ export default function TelaAgendamentos() {
   // Alterar status
   const alterarStatus = async (agendamentoId: string, novoStatus: StatusAgendamento) => {
     try {
+      // Preparar dados de atualização
+      const dadosAtualizacao: Record<string, unknown> = { status: novoStatus };
+
+      // Se estiver concluindo, adicionar valor_pago e concluido_em para trigger de comissão
+      if (novoStatus === 'concluido') {
+        // Buscar o agendamento atual com o preço do serviço
+        const agendamento = agendamentos.find(a => a.id === agendamentoId);
+        if (agendamento?.servicos?.preco) {
+          dadosAtualizacao.valor_pago = agendamento.servicos.preco;
+        }
+        dadosAtualizacao.concluido_em = new Date().toISOString();
+      }
+
+      // Se estiver confirmando, adicionar confirmado_em
+      if (novoStatus === 'confirmado') {
+        dadosAtualizacao.confirmado_em = new Date().toISOString();
+      }
+
+      // Se estiver cancelando, adicionar cancelado_em
+      if (novoStatus === 'cancelado') {
+        dadosAtualizacao.cancelado_em = new Date().toISOString();
+      }
+
       const { error } = await supabase
         .from('agendamentos')
-        .update({ status: novoStatus })
+        .update(dadosAtualizacao)
         .eq('id', agendamentoId);
 
       if (error) throw error;
+
+      // Se concluiu, incrementar total_atendimentos do barbeiro
+      if (novoStatus === 'concluido') {
+        const agendamento = agendamentos.find(a => a.id === agendamentoId);
+        if (agendamento?.barbeiro_id) {
+          await supabase.rpc('incrementar_atendimentos_barbeiro', {
+            p_barbeiro_id: agendamento.barbeiro_id
+          });
+        }
+      }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setModalDetalhesAberto(false);
@@ -608,21 +638,21 @@ export default function TelaAgendamentos() {
       <View
         style={{
           paddingTop: insets.top,
-          backgroundColor: '#18181b',
+          backgroundColor: cores.fundo.secundario,
           borderBottomWidth: 1,
-          borderBottomColor: '#27272a',
+          borderBottomColor: cores.borda.sutil,
         }}
       >
         {/* Título e Descrição */}
         <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Ionicons name="calendar" size={24} color="#a1a1aa" />
+            <Ionicons name="calendar" size={24} color={cores.texto.secundario} />
             <View>
-              <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: '700' }}>
+              <Text style={{ color: cores.texto.primario, fontSize: 20, fontWeight: '700' }}>
                 Gestão de Agendamentos
               </Text>
-              <Text style={{ color: '#71717a', fontSize: 13 }}>
-                Agendamentos online, atendimentos presenciais e remarcações
+              <Text style={{ color: cores.texto.terciario, fontSize: 13 }}>
+                Agendamentos online e remarcações
               </Text>
             </View>
           </View>
@@ -648,19 +678,19 @@ export default function TelaAgendamentos() {
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 borderRadius: 8,
-                backgroundColor: subTabAtiva === tab.id ? '#ffffff' : '#27272a',
+                backgroundColor: subTabAtiva === tab.id ? cores.botao.fundo : cores.fundo.terciario,
                 borderWidth: 1,
-                borderColor: subTabAtiva === tab.id ? '#ffffff' : '#3f3f46',
+                borderColor: subTabAtiva === tab.id ? cores.botao.fundo : cores.borda.media,
               }}
             >
               <Ionicons
                 name={tab.icone}
                 size={16}
-                color={subTabAtiva === tab.id ? '#18181b' : '#a1a1aa'}
+                color={subTabAtiva === tab.id ? cores.botao.texto : cores.texto.secundario}
               />
               <Text
                 style={{
-                  color: subTabAtiva === tab.id ? '#18181b' : '#d4d4d8',
+                  color: subTabAtiva === tab.id ? cores.botao.texto : cores.texto.secundario,
                   fontSize: 13,
                   fontWeight: '500',
                 }}
@@ -675,22 +705,22 @@ export default function TelaAgendamentos() {
       {subTabAtiva === 'agenda' && (
         <>
           {/* Cards de Estatísticas - Compactos */}
-          <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8, backgroundColor: '#09090b' }}>
-            <View style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 8, padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: '#71717a', fontSize: 10 }}>Total</Text>
-              <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700' }}>{estatisticas.total}</Text>
+          <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8, backgroundColor: cores.fundo.primario }}>
+            <View style={{ flex: 1, backgroundColor: cores.fundo.secundario, borderRadius: 8, padding: 10, alignItems: 'center' }}>
+              <Text style={{ color: cores.texto.terciario, fontSize: 10 }}>Total</Text>
+              <Text style={{ color: cores.texto.primario, fontSize: 18, fontWeight: '700' }}>{estatisticas.total}</Text>
             </View>
-            <View style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 8, padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: '#71717a', fontSize: 10 }}>Pendentes</Text>
-              <Text style={{ color: '#fbbf24', fontSize: 18, fontWeight: '700' }}>{estatisticas.pendentes}</Text>
+            <View style={{ flex: 1, backgroundColor: cores.fundo.secundario, borderRadius: 8, padding: 10, alignItems: 'center' }}>
+              <Text style={{ color: cores.texto.terciario, fontSize: 10 }}>Pendentes</Text>
+              <Text style={{ color: cores.aviso, fontSize: 18, fontWeight: '700' }}>{estatisticas.pendentes}</Text>
             </View>
-            <View style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 8, padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: '#71717a', fontSize: 10 }}>Confirmados</Text>
-              <Text style={{ color: '#10b981', fontSize: 18, fontWeight: '700' }}>{estatisticas.confirmados}</Text>
+            <View style={{ flex: 1, backgroundColor: cores.fundo.secundario, borderRadius: 8, padding: 10, alignItems: 'center' }}>
+              <Text style={{ color: cores.texto.terciario, fontSize: 10 }}>Confirmados</Text>
+              <Text style={{ color: cores.sucesso, fontSize: 18, fontWeight: '700' }}>{estatisticas.confirmados}</Text>
             </View>
-            <View style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 8, padding: 10, alignItems: 'center' }}>
-              <Text style={{ color: '#71717a', fontSize: 10 }}>Receita</Text>
-              <Text style={{ color: '#3b82f6', fontSize: 14, fontWeight: '700' }}>R${estatisticas.receita.toFixed(0)}</Text>
+            <View style={{ flex: 1, backgroundColor: cores.fundo.secundario, borderRadius: 8, padding: 10, alignItems: 'center' }}>
+              <Text style={{ color: cores.texto.terciario, fontSize: 10 }}>Receita</Text>
+              <Text style={{ color: cores.info, fontSize: 14, fontWeight: '700' }}>R${estatisticas.receita.toFixed(0)}</Text>
             </View>
           </View>
 
@@ -702,9 +732,9 @@ export default function TelaAgendamentos() {
               justifyContent: modoVisualizacao === 'semanal' ? 'flex-end' : 'space-between',
               paddingHorizontal: 16,
               paddingVertical: 12,
-              backgroundColor: '#09090b',
+              backgroundColor: cores.fundo.primario,
               borderBottomWidth: 1,
-              borderBottomColor: '#27272a',
+              borderBottomColor: cores.borda.sutil,
             }}
           >
             {modoVisualizacao === 'lista' && (
@@ -716,23 +746,23 @@ export default function TelaAgendamentos() {
                     style={{
                       paddingHorizontal: 12,
                       paddingVertical: 6,
-                      backgroundColor: '#27272a',
+                      backgroundColor: cores.fundo.terciario,
                       borderRadius: 8,
                     }}
                   >
-                    <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '500' }}>Hoje</Text>
+                    <Text style={{ color: cores.texto.primario, fontSize: 13, fontWeight: '500' }}>Hoje</Text>
                   </Pressable>
 
-                  <View style={{ flexDirection: 'row', backgroundColor: '#27272a', borderRadius: 8 }}>
+                  <View style={{ flexDirection: 'row', backgroundColor: cores.fundo.terciario, borderRadius: 8 }}>
                     <Pressable onPress={navegarAnterior} style={{ padding: 6 }}>
-                      <Ionicons name="chevron-back" size={20} color="#a1a1aa" />
+                      <Ionicons name="chevron-back" size={20} color={cores.texto.secundario} />
                     </Pressable>
                     <Pressable onPress={navegarProximo} style={{ padding: 6 }}>
-                      <Ionicons name="chevron-forward" size={20} color="#a1a1aa" />
+                      <Ionicons name="chevron-forward" size={20} color={cores.texto.secundario} />
                     </Pressable>
                   </View>
 
-                  <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600', marginLeft: 8, textTransform: 'capitalize' }}>
+                  <Text style={{ color: cores.texto.primario, fontSize: 14, fontWeight: '600', marginLeft: 8, textTransform: 'capitalize' }}>
                     {tituloPeriodo}
                   </Text>
                 </View>
@@ -749,34 +779,34 @@ export default function TelaAgendamentos() {
                   gap: 4,
                   paddingHorizontal: 12,
                   paddingVertical: 6,
-                  backgroundColor: '#ffffff',
+                  backgroundColor: cores.botao.fundo,
                   borderRadius: 8,
                 }}
               >
-                <Ionicons name="add" size={16} color="#18181b" />
-                <Text style={{ color: '#18181b', fontSize: 13, fontWeight: '600' }}>Novo</Text>
+                <Ionicons name="add" size={16} color={cores.botao.texto} />
+                <Text style={{ color: cores.botao.texto, fontSize: 13, fontWeight: '600' }}>Novo</Text>
               </Pressable>
               
-              <View style={{ flexDirection: 'row', backgroundColor: '#27272a', borderRadius: 8, padding: 2 }}>
+              <View style={{ flexDirection: 'row', backgroundColor: cores.fundo.terciario, borderRadius: 8, padding: 2 }}>
               <Pressable
                 onPress={() => setModoVisualizacao('lista')}
                 style={{
                   padding: 6,
                   borderRadius: 6,
-                  backgroundColor: modoVisualizacao === 'lista' ? '#3f3f46' : 'transparent',
+                  backgroundColor: modoVisualizacao === 'lista' ? cores.borda.media : 'transparent',
                 }}
               >
-                <Ionicons name="list" size={18} color={modoVisualizacao === 'lista' ? '#ffffff' : '#71717a'} />
+                <Ionicons name="list" size={18} color={modoVisualizacao === 'lista' ? cores.texto.primario : cores.texto.terciario} />
               </Pressable>
               <Pressable
                 onPress={() => setModoVisualizacao('semanal')}
                 style={{
                   padding: 6,
                   borderRadius: 6,
-                  backgroundColor: modoVisualizacao === 'semanal' ? '#3f3f46' : 'transparent',
+                  backgroundColor: modoVisualizacao === 'semanal' ? cores.borda.media : 'transparent',
                 }}
               >
-                <Ionicons name="grid" size={18} color={modoVisualizacao === 'semanal' ? '#ffffff' : '#71717a'} />
+                <Ionicons name="grid" size={18} color={modoVisualizacao === 'semanal' ? cores.texto.primario : cores.texto.terciario} />
               </Pressable>
               </View>
             </View>
@@ -791,7 +821,7 @@ export default function TelaAgendamentos() {
                   paddingHorizontal: 16,
                   paddingVertical: 8,
                   gap: 8,
-                  backgroundColor: '#09090b',
+                  backgroundColor: cores.fundo.primario,
                 }}
               >
                 {(['dia', '3dias', 'semana'] as TipoVisualizacao[]).map(tipo => (
@@ -805,15 +835,15 @@ export default function TelaAgendamentos() {
                       flex: 1,
                       paddingVertical: 10,
                       borderRadius: 8,
-                      backgroundColor: tipoVisualizacao === tipo ? '#27272a' : 'transparent',
+                      backgroundColor: tipoVisualizacao === tipo ? cores.fundo.terciario : 'transparent',
                       borderWidth: 1,
-                      borderColor: tipoVisualizacao === tipo ? '#3f3f46' : '#27272a',
+                      borderColor: tipoVisualizacao === tipo ? cores.borda.media : cores.borda.sutil,
                       alignItems: 'center',
                     }}
                   >
                     <Text
                       style={{
-                        color: tipoVisualizacao === tipo ? '#ffffff' : '#71717a',
+                        color: tipoVisualizacao === tipo ? cores.texto.primario : cores.texto.terciario,
                         fontSize: 13,
                         fontWeight: '500',
                       }}
@@ -847,8 +877,8 @@ export default function TelaAgendamentos() {
               }
               ListEmptyComponent={
                 <View style={{ alignItems: 'center', paddingTop: 60 }}>
-                  <Ionicons name="calendar-outline" size={64} color="#71717a" />
-                  <Text style={{ color: '#a1a1aa', fontSize: 16, marginTop: 16 }}>
+                  <Ionicons name="calendar-outline" size={64} color={cores.texto.terciario} />
+                  <Text style={{ color: cores.texto.secundario, fontSize: 16, marginTop: 16 }}>
                     Nenhum agendamento
                   </Text>
                 </View>
@@ -856,19 +886,6 @@ export default function TelaAgendamentos() {
             />
           )}
         </>
-      )}
-
-      {subTabAtiva === 'presenciais' && (
-        tenant?.id ? (
-          <AbaAtendimentosPresenciais tenantId={tenant.id} tema={tema} />
-        ) : (
-          <View style={{ alignItems: 'center', paddingTop: 60 }}>
-            <Ionicons name="alert-circle-outline" size={64} color="#71717a" />
-            <Text style={{ color: '#a1a1aa', fontSize: 16, marginTop: 16 }}>
-              Tenant não identificado
-            </Text>
-          </View>
-        )
       )}
 
       {subTabAtiva === 'remarcacao' && (
@@ -881,8 +898,8 @@ export default function TelaAgendamentos() {
           />
         ) : (
           <View style={{ alignItems: 'center', paddingTop: 60 }}>
-            <Ionicons name="alert-circle-outline" size={64} color="#71717a" />
-            <Text style={{ color: '#a1a1aa', fontSize: 16, marginTop: 16 }}>
+            <Ionicons name="alert-circle-outline" size={64} color={cores.texto.terciario} />
+            <Text style={{ color: cores.texto.secundario, fontSize: 16, marginTop: 16 }}>
               Tenant não identificado
             </Text>
           </View>
@@ -909,18 +926,18 @@ export default function TelaAgendamentos() {
                   width: 56,
                   height: 56,
                   borderRadius: 28,
-                  backgroundColor: '#27272a',
+                  backgroundColor: cores.fundo.terciario,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Ionicons name="person" size={28} color="#a1a1aa" />
+                <Ionicons name="person" size={28} color={cores.texto.secundario} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700' }}>
+                <Text style={{ color: cores.texto.primario, fontSize: 18, fontWeight: '700' }}>
                   {agendamentoSelecionado.clientes?.nome || 'Cliente'}
                 </Text>
-                <Text style={{ color: '#a1a1aa', fontSize: 14 }}>
+                <Text style={{ color: cores.texto.secundario, fontSize: 14 }}>
                   {agendamentoSelecionado.clientes?.telefone || 'Sem telefone'}
                 </Text>
               </View>
@@ -942,22 +959,22 @@ export default function TelaAgendamentos() {
             </View>
 
             {/* Info */}
-            <View style={{ backgroundColor: '#27272a', borderRadius: 12, padding: 16 }}>
+            <View style={{ backgroundColor: cores.fundo.terciario, borderRadius: 12, padding: 16 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text style={{ color: '#71717a', fontSize: 13 }}>Serviço</Text>
-                <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>
+                <Text style={{ color: cores.texto.terciario, fontSize: 13 }}>Serviço</Text>
+                <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '600' }}>
                   {agendamentoSelecionado.servicos?.nome || 'Serviço'}
                 </Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text style={{ color: '#71717a', fontSize: 13 }}>Data e Hora</Text>
-                <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>
+                <Text style={{ color: cores.texto.terciario, fontSize: 13 }}>Data e Hora</Text>
+                <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '600' }}>
                   {format(parseISO(agendamentoSelecionado.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#71717a', fontSize: 13 }}>Valor</Text>
-                <Text style={{ color: '#10b981', fontSize: 18, fontWeight: '700' }}>
+                <Text style={{ color: cores.texto.terciario, fontSize: 13 }}>Valor</Text>
+                <Text style={{ color: cores.sucesso, fontSize: 18, fontWeight: '700' }}>
                   R$ {(agendamentoSelecionado.servicos?.preco || 0).toFixed(2)}
                 </Text>
               </View>
@@ -974,7 +991,7 @@ export default function TelaAgendamentos() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
-                    backgroundColor: '#10b981',
+                    backgroundColor: cores.sucesso,
                     paddingVertical: 14,
                     borderRadius: 12,
                   }}
@@ -990,7 +1007,7 @@ export default function TelaAgendamentos() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
-                    backgroundColor: '#ef4444',
+                    backgroundColor: cores.erro,
                     paddingVertical: 14,
                     borderRadius: 12,
                   }}
@@ -1012,13 +1029,13 @@ export default function TelaAgendamentos() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  backgroundColor: '#ffffff',
+                  backgroundColor: cores.botao.fundo,
                   paddingVertical: 14,
                   borderRadius: 12,
                 }}
               >
-                <Ionicons name="refresh" size={20} color="#18181b" />
-                <Text style={{ color: '#18181b', fontSize: 15, fontWeight: '700' }}>Remarcar</Text>
+                <Ionicons name="refresh" size={20} color={cores.botao.texto} />
+                <Text style={{ color: cores.botao.texto, fontSize: 15, fontWeight: '700' }}>Remarcar</Text>
               </Pressable>
             )}
 
@@ -1030,7 +1047,7 @@ export default function TelaAgendamentos() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  backgroundColor: '#3b82f6',
+                  backgroundColor: cores.info,
                   paddingVertical: 14,
                   borderRadius: 12,
                 }}
@@ -1080,38 +1097,38 @@ export default function TelaAgendamentos() {
 
                 {/* Nome do Cliente */}
                 <View>
-                  <Text style={{ color: '#a1a1aa', fontSize: 13, marginBottom: 8 }}>Nome do Cliente</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272a', borderRadius: 12, borderWidth: 1, borderColor: '#3f3f46' }}>
-                    <Ionicons name="person-outline" size={18} color="#71717a" style={{ marginLeft: 14 }} />
+                  <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 8 }}>Nome do Cliente</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: cores.fundo.terciario, borderRadius: 12, borderWidth: 1, borderColor: cores.borda.media }}>
+                    <Ionicons name="person-outline" size={18} color={cores.texto.terciario} style={{ marginLeft: 14 }} />
                     <TextInput
                       value={formNovo.clienteNome}
                       onChangeText={(text) => setFormNovo(prev => ({ ...prev, clienteNome: text }))}
                       placeholder="Digite o nome"
-                      placeholderTextColor="#71717a"
-                      style={{ flex: 1, color: '#ffffff', fontSize: 15, paddingVertical: 14, paddingHorizontal: 10 }}
+                      placeholderTextColor={cores.texto.terciario}
+                      style={{ flex: 1, color: cores.texto.primario, fontSize: 15, paddingVertical: 14, paddingHorizontal: 10 }}
                     />
                   </View>
                 </View>
 
                 {/* Telefone */}
                 <View>
-                  <Text style={{ color: '#a1a1aa', fontSize: 13, marginBottom: 8 }}>Telefone (WhatsApp)</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272a', borderRadius: 12, borderWidth: 1, borderColor: '#3f3f46' }}>
-                    <Ionicons name="call-outline" size={18} color="#71717a" style={{ marginLeft: 14 }} />
+                  <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 8 }}>Telefone (WhatsApp)</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: cores.fundo.terciario, borderRadius: 12, borderWidth: 1, borderColor: cores.borda.media }}>
+                    <Ionicons name="call-outline" size={18} color={cores.texto.terciario} style={{ marginLeft: 14 }} />
                     <TextInput
                       value={formNovo.clienteTelefone}
                       onChangeText={(text) => setFormNovo(prev => ({ ...prev, clienteTelefone: formatarTelefone(text) }))}
                       placeholder="(00) 00000-0000"
-                      placeholderTextColor="#71717a"
+                      placeholderTextColor={cores.texto.terciario}
                       keyboardType="phone-pad"
-                      style={{ flex: 1, color: '#ffffff', fontSize: 15, paddingVertical: 14, paddingHorizontal: 10 }}
+                      style={{ flex: 1, color: cores.texto.primario, fontSize: 15, paddingVertical: 14, paddingHorizontal: 10 }}
                     />
                   </View>
                 </View>
 
                 {/* Profissional */}
                 <View>
-                  <Text style={{ color: '#a1a1aa', fontSize: 13, marginBottom: 8 }}>{profissional(false)}</Text>
+                  <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 8 }}>{profissional(false)}</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                     {barbeiros.map(b => (
                       <Pressable
@@ -1121,13 +1138,13 @@ export default function TelaAgendamentos() {
                           paddingHorizontal: 16,
                           paddingVertical: 10,
                           borderRadius: 12,
-                          backgroundColor: formNovo.barbeiro_id === b.id ? '#ffffff' : '#27272a',
+                          backgroundColor: formNovo.barbeiro_id === b.id ? cores.botao.fundo : cores.fundo.terciario,
                           borderWidth: 2,
-                          borderColor: formNovo.barbeiro_id === b.id ? '#ffffff' : '#3f3f46',
+                          borderColor: formNovo.barbeiro_id === b.id ? cores.botao.fundo : cores.borda.media,
                         }}
                       >
                         <Text style={{ 
-                          color: formNovo.barbeiro_id === b.id ? '#18181b' : '#ffffff',
+                          color: formNovo.barbeiro_id === b.id ? cores.botao.texto : cores.texto.primario,
                           fontSize: 14,
                           fontWeight: '600',
                         }}>
@@ -1140,7 +1157,7 @@ export default function TelaAgendamentos() {
 
                 {/* Serviço */}
                 <View>
-                  <Text style={{ color: '#a1a1aa', fontSize: 13, marginBottom: 8 }}>Serviço</Text>
+                  <Text style={{ color: cores.texto.secundario, fontSize: 13, marginBottom: 8 }}>Serviço</Text>
                   <View style={{ gap: 8, maxHeight: 150 }}>
                     <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
                       {servicos.map(s => (
@@ -1155,16 +1172,16 @@ export default function TelaAgendamentos() {
                             paddingVertical: 12,
                             borderRadius: 12,
                             marginBottom: 8,
-                            backgroundColor: formNovo.servico_id === s.id ? 'rgba(255,255,255,0.1)' : 'transparent',
+                            backgroundColor: formNovo.servico_id === s.id ? cores.transparente.branco10 : 'transparent',
                             borderWidth: 2,
-                            borderColor: formNovo.servico_id === s.id ? '#ffffff' : '#3f3f46',
+                            borderColor: formNovo.servico_id === s.id ? cores.botao.fundo : cores.borda.media,
                           }}
                         >
                           <View>
-                            <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>{s.nome}</Text>
-                            <Text style={{ color: '#71717a', fontSize: 12 }}>{s.duracao} min</Text>
+                            <Text style={{ color: cores.texto.primario, fontSize: 14, fontWeight: '600' }}>{s.nome}</Text>
+                            <Text style={{ color: cores.texto.terciario, fontSize: 12 }}>{s.duracao} min</Text>
                           </View>
-                          <Text style={{ color: '#10b981', fontSize: 16, fontWeight: '700' }}>
+                          <Text style={{ color: cores.sucesso, fontSize: 16, fontWeight: '700' }}>
                             R$ {s.preco.toFixed(2)}
                           </Text>
                         </Pressable>
@@ -1183,14 +1200,14 @@ export default function TelaAgendamentos() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                backgroundColor: '#ffffff',
+                backgroundColor: cores.botao.fundo,
                 paddingVertical: 14,
                 borderRadius: 12,
                 marginTop: 16,
               }}
             >
-              <Text style={{ color: '#18181b', fontSize: 15, fontWeight: '700' }}>Escolher Horário</Text>
-              <Ionicons name="time-outline" size={18} color="#18181b" />
+              <Text style={{ color: cores.botao.texto, fontSize: 15, fontWeight: '700' }}>Escolher Horário</Text>
+              <Ionicons name="time-outline" size={18} color={cores.botao.texto} />
             </Pressable>
           </>
         ) : (
@@ -1207,8 +1224,8 @@ export default function TelaAgendamentos() {
                 {/* Seletor de Data */}
                 <View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={{ color: '#a1a1aa', fontSize: 13 }}>Selecione a Data</Text>
-                    <Text style={{ color: '#71717a', fontSize: 11 }}>
+                    <Text style={{ color: cores.texto.secundario, fontSize: 13 }}>Selecione a Data</Text>
+                    <Text style={{ color: cores.texto.terciario, fontSize: 11 }}>
                       {format(parseISO(formNovo.data), "EEEE, d 'de' MMMM", { locale: ptBR })}
                     </Text>
                   </View>
@@ -1231,16 +1248,16 @@ export default function TelaAgendamentos() {
                               paddingVertical: 10,
                               paddingHorizontal: 8,
                               borderRadius: 12,
-                              backgroundColor: selecionado ? '#ffffff' : '#27272a',
+                              backgroundColor: selecionado ? cores.botao.fundo : cores.fundo.terciario,
                             }}
                           >
-                            <Text style={{ color: selecionado ? '#18181b' : '#71717a', fontSize: 10, textTransform: 'uppercase', fontWeight: '500' }}>
+                            <Text style={{ color: selecionado ? cores.botao.texto : cores.texto.terciario, fontSize: 10, textTransform: 'uppercase', fontWeight: '500' }}>
                               {format(dia, 'EEE', { locale: ptBR })}
                             </Text>
-                            <Text style={{ color: selecionado ? '#18181b' : (ehHoje ? '#3b82f6' : '#ffffff'), fontSize: 18, fontWeight: '700', marginTop: 2 }}>
+                            <Text style={{ color: selecionado ? cores.botao.texto : (ehHoje ? cores.info : cores.texto.primario), fontSize: 18, fontWeight: '700', marginTop: 2 }}>
                               {format(dia, 'd')}
                             </Text>
-                            {ehHoje && <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: selecionado ? '#18181b' : '#3b82f6', marginTop: 4 }} />}
+                            {ehHoje && <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: selecionado ? cores.botao.texto : cores.info, marginTop: 4 }} />}
                           </Pressable>
                         );
                       })}
@@ -1251,11 +1268,11 @@ export default function TelaAgendamentos() {
                 {/* Grid de Horários */}
                 <View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <Text style={{ color: '#a1a1aa', fontSize: 13 }}>Horários Disponíveis</Text>
+                    <Text style={{ color: cores.texto.secundario, fontSize: 13 }}>Horários Disponíveis</Text>
                     {carregandoHorarios ? (
-                      <ActivityIndicator size="small" color="#71717a" />
+                      <ActivityIndicator size="small" color={cores.texto.terciario} />
                     ) : (
-                      <Text style={{ color: '#71717a', fontSize: 11 }}>
+                      <Text style={{ color: cores.texto.terciario, fontSize: 11 }}>
                         {horariosDisponiveis.filter(h => h.disponivel).length} disponíveis
                       </Text>
                     )}
@@ -1263,13 +1280,13 @@ export default function TelaAgendamentos() {
                   
                   {carregandoHorarios ? (
                     <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-                      <ActivityIndicator size="large" color="#71717a" />
+                      <ActivityIndicator size="large" color={cores.texto.terciario} />
                     </View>
                   ) : horariosDisponiveis.filter(h => h.disponivel).length === 0 ? (
-                    <View style={{ alignItems: 'center', paddingVertical: 30, backgroundColor: '#27272a', borderRadius: 12 }}>
-                      <Ionicons name="alert-circle-outline" size={40} color="#fbbf24" />
-                      <Text style={{ color: '#a1a1aa', fontSize: 14, marginTop: 8 }}>Todos os horários ocupados</Text>
-                      <Text style={{ color: '#71717a', fontSize: 12, marginTop: 2 }}>Tente outra data</Text>
+                    <View style={{ alignItems: 'center', paddingVertical: 30, backgroundColor: cores.fundo.terciario, borderRadius: 12 }}>
+                      <Ionicons name="alert-circle-outline" size={40} color={cores.aviso} />
+                      <Text style={{ color: cores.texto.secundario, fontSize: 14, marginTop: 8 }}>Todos os horários ocupados</Text>
+                      <Text style={{ color: cores.texto.terciario, fontSize: 12, marginTop: 2 }}>Tente outra data</Text>
                     </View>
                   ) : (
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -1283,12 +1300,12 @@ export default function TelaAgendamentos() {
                             paddingVertical: 12,
                             borderRadius: 10,
                             alignItems: 'center',
-                            backgroundColor: !item.disponivel ? '#1f1f23' : (formNovo.hora === item.horario ? '#ffffff' : '#27272a'),
+                            backgroundColor: !item.disponivel ? cores.fundo.primario : (formNovo.hora === item.horario ? cores.botao.fundo : cores.fundo.terciario),
                             opacity: item.disponivel ? 1 : 0.4,
                           }}
                         >
                           <Text style={{ 
-                            color: !item.disponivel ? '#52525b' : (formNovo.hora === item.horario ? '#18181b' : '#ffffff'),
+                            color: !item.disponivel ? cores.texto.terciario : (formNovo.hora === item.horario ? cores.botao.texto : cores.texto.primario),
                             fontSize: 13,
                             fontWeight: '600',
                             textDecorationLine: item.disponivel ? 'none' : 'line-through',
@@ -1296,7 +1313,7 @@ export default function TelaAgendamentos() {
                             {item.horario}
                           </Text>
                           {formNovo.hora === item.horario && item.disponivel && (
-                            <View style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9, backgroundColor: '#10b981', alignItems: 'center', justifyContent: 'center' }}>
+                            <View style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9, backgroundColor: cores.sucesso, alignItems: 'center', justifyContent: 'center' }}>
                               <Ionicons name="checkmark" size={12} color="#ffffff" />
                             </View>
                           )}
@@ -1319,10 +1336,10 @@ export default function TelaAgendamentos() {
                   justifyContent: 'center',
                   paddingVertical: 14,
                   borderRadius: 12,
-                  backgroundColor: '#27272a',
+                  backgroundColor: cores.fundo.terciario,
                 }}
               >
-                <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>Voltar</Text>
+                <Text style={{ color: cores.texto.primario, fontSize: 15, fontWeight: '600' }}>Voltar</Text>
               </Pressable>
               <Pressable
                 onPress={salvarNovoAgendamento}
@@ -1335,16 +1352,16 @@ export default function TelaAgendamentos() {
                   gap: 6,
                   paddingVertical: 14,
                   borderRadius: 12,
-                  backgroundColor: !formNovo.hora ? '#3f3f46' : '#ffffff',
+                  backgroundColor: !formNovo.hora ? cores.borda.media : cores.botao.fundo,
                   opacity: salvandoNovo ? 0.7 : 1,
                 }}
               >
                 {salvandoNovo ? (
-                  <ActivityIndicator size="small" color="#18181b" />
+                  <ActivityIndicator size="small" color={cores.botao.texto} />
                 ) : (
                   <>
-                    <Ionicons name="add" size={18} color="#18181b" />
-                    <Text style={{ color: '#18181b', fontSize: 15, fontWeight: '700' }}>Criar</Text>
+                    <Ionicons name="add" size={18} color={cores.botao.texto} />
+                    <Text style={{ color: cores.botao.texto, fontSize: 15, fontWeight: '700' }}>Criar</Text>
                   </>
                 )}
               </Pressable>

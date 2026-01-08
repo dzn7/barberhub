@@ -24,8 +24,8 @@ export default function LayoutAdmin() {
           paddingBottom: 10,
           paddingTop: 10,
         },
-        tabBarActiveTintColor: ehEscuro ? '#ffffff' : '#18181b',
-        tabBarInactiveTintColor: '#71717a',
+        tabBarActiveTintColor: cores.texto.primario,
+        tabBarInactiveTintColor: cores.texto.terciario,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '500',

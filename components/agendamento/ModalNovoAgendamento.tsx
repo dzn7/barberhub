@@ -71,7 +71,7 @@ export function ModalNovoAgendamento({
     clienteNome: '',
     clienteTelefone: '',
     barbeiroId: '',
-    servicoId: '',
+    servicosSelecionados: [] as string[],
     data: dataPadrao || format(new Date(), 'yyyy-MM-dd'),
     hora: horaPadrao
   })
@@ -118,6 +118,7 @@ export function ModalNovoAgendamento({
         ...prev,
         clienteNome: '',
         clienteTelefone: '',
+        servicosSelecionados: [],
         data: dataPadrao || format(new Date(), 'yyyy-MM-dd'),
         hora: horaPadrao
       }))
@@ -139,9 +140,6 @@ export function ModalNovoAgendamento({
       }
       if (servicosRes.data) {
         setServicos(servicosRes.data)
-        if (servicosRes.data.length > 0 && !form.servicoId) {
-          setForm(prev => ({ ...prev, servicoId: servicosRes.data[0].id }))
-        }
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -168,8 +166,8 @@ export function ModalNovoAgendamento({
       setErro('Selecione um barbeiro')
       return false
     }
-    if (!form.servicoId) {
-      setErro('Selecione um serviço')
+    if (form.servicosSelecionados.length === 0) {
+      setErro('Selecione pelo menos um serviço')
       return false
     }
     setErro('')
@@ -231,14 +229,15 @@ export function ModalNovoAgendamento({
       const dataHoraLocal = `${form.data}T${form.hora}:00`
       const dataHoraUTC = fromZonedTime(dataHoraLocal, TIMEZONE_BRASILIA)
 
-      // Criar agendamento
+      // Criar agendamento com múltiplos serviços
       const { error: erroAgendamento } = await supabase
         .from('agendamentos')
         .insert([{
           tenant_id: tenantId,
           cliente_id: clienteId,
           barbeiro_id: form.barbeiroId,
-          servico_id: form.servicoId,
+          servico_id: form.servicosSelecionados[0],
+          servicos_ids: form.servicosSelecionados,
           data_hora: dataHoraUTC.toISOString(),
           status: 'pendente'
         }])
@@ -255,7 +254,10 @@ export function ModalNovoAgendamento({
     }
   }
 
-  const servicoSelecionado = servicos.find(s => s.id === form.servicoId)
+  // Calcular informações dos serviços selecionados
+  const servicosSelecionadosObj = servicos.filter(s => form.servicosSelecionados.includes(s.id))
+  const duracaoTotal = servicosSelecionadosObj.reduce((acc, s) => acc + s.duracao, 0) || 30
+  const precoTotal = servicosSelecionadosObj.reduce((acc, s) => acc + s.preco, 0)
 
   // Não renderizar no servidor
   if (typeof window === 'undefined') return null
@@ -375,32 +377,79 @@ export function ModalNovoAgendamento({
                     </div>
                   </div>
 
-                  {/* Serviço */}
+                  {/* Serviços - Seleção Múltipla */}
                   <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Serviço
-                    </label>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {servicos.map((servico) => (
-                        <button
-                          key={servico.id}
-                          onClick={() => setForm({ ...form, servicoId: servico.id })}
-                          className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
-                            form.servicoId === servico.id
-                              ? 'border-white bg-white/10'
-                              : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-white">{servico.nome}</span>
-                            <span className="text-emerald-400 font-bold">
-                              R$ {servico.preco.toFixed(2)}
-                            </span>
-                          </div>
-                          <span className="text-xs text-zinc-500">{servico.duracao} min</span>
-                        </button>
-                      ))}
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-zinc-300">
+                        Serviços
+                      </label>
+                      {form.servicosSelecionados.length > 0 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
+                          {form.servicosSelecionados.length} selecionado{form.servicosSelecionados.length > 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {servicos.map((servico) => {
+                        const estaSelecionado = form.servicosSelecionados.includes(servico.id)
+                        return (
+                          <button
+                            key={servico.id}
+                            onClick={() => {
+                              if (estaSelecionado) {
+                                setForm(prev => ({
+                                  ...prev,
+                                  servicosSelecionados: prev.servicosSelecionados.filter(id => id !== servico.id)
+                                }))
+                              } else {
+                                setForm(prev => ({
+                                  ...prev,
+                                  servicosSelecionados: [...prev.servicosSelecionados, servico.id]
+                                }))
+                              }
+                            }}
+                            className={`w-full p-3 rounded-xl border-2 text-left transition-all relative ${
+                              estaSelecionado
+                                ? 'border-white bg-white/10'
+                                : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
+                            }`}
+                          >
+                            {/* Checkbox visual */}
+                            <div className={`absolute top-3 right-3 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                              estaSelecionado ? 'bg-white border-white' : 'border-zinc-600'
+                            }`}>
+                              {estaSelecionado && <Check className="w-3 h-3 text-zinc-900" />}
+                            </div>
+                            
+                            <div className="flex items-center justify-between pr-8">
+                              <span className="font-medium text-white">{servico.nome}</span>
+                              <span className="text-emerald-400 font-bold">
+                                R$ {servico.preco.toFixed(2)}
+                              </span>
+                            </div>
+                            <span className="text-xs text-zinc-500">
+                              <Clock className="w-3 h-3 inline mr-1" />
+                              {servico.duracao} min
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    
+                    {/* Resumo quando múltiplos serviços */}
+                    {form.servicosSelecionados.length > 1 && (
+                      <div className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-zinc-300">
+                            <Clock className="w-4 h-4 inline mr-1" />
+                            Duração total: <span className="font-semibold text-white">{duracaoTotal} min</span>
+                          </span>
+                          <span className="text-emerald-400 font-bold">
+                            Total: R$ {precoTotal.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ) : (
@@ -424,7 +473,7 @@ export function ModalNovoAgendamento({
                     horarioSelecionado={form.hora}
                     onDataChange={(data) => setForm({ ...form, data })}
                     onHorarioChange={(hora) => setForm({ ...form, hora })}
-                    servicoDuracao={servicoSelecionado?.duracao || 30}
+                    servicoDuracao={duracaoTotal}
                     mostrarCalendario={true}
                   />
                 </motion.div>

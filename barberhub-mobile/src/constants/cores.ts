@@ -70,23 +70,24 @@ export const CORES_ESCURO = {
 
 /**
  * Tema Claro
+ * Fundo zinc-50, cards brancos para melhor contraste
  */
 export const CORES_CLARO = {
   // Fundos
   fundo: {
-    primario: '#ffffff',
-    secundario: zinc[50],
-    terciario: zinc[100],
-    card: '#ffffff',
+    primario: zinc[50],      // Fundo geral levemente cinza
+    secundario: '#ffffff',   // Cards e superfícies elevadas
+    terciario: zinc[100],    // Áreas de destaque sutil
+    card: '#ffffff',         // Cards brancos
     cardHover: zinc[50],
   },
 
   // Textos
   texto: {
-    primario: zinc[900],
-    secundario: zinc[500],
-    terciario: zinc[400],
-    invertido: '#ffffff',
+    primario: zinc[900],     // Texto principal escuro
+    secundario: zinc[600],   // Texto secundário mais legível
+    terciario: zinc[500],    // Texto terciário
+    invertido: '#ffffff',    // Texto sobre fundos escuros
   },
 
   // Bordas

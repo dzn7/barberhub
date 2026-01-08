@@ -6,7 +6,7 @@
 
 import express from 'express';
 import dotenv from 'dotenv';
-import { iniciarWhatsApp, registrarCallbackQR } from './services/whatsapp.js';
+import { iniciarWhatsApp, registrarCallbackQR, limparMensagensAntigas } from './services/whatsapp.js';
 import { iniciarRealtimeListeners } from './services/realtime.js';
 import { iniciarLembretes } from './services/lembretes.js';
 import healthRoutes from './routes/health.js';
@@ -62,6 +62,17 @@ app.listen(PORT, '0.0.0.0', () => {
       // 3. Iniciar sistema de lembretes
       logger.info('⏰ Iniciando sistema de lembretes...');
       iniciarLembretes();
+      
+      // 4. Agendar limpeza de mensagens antigas (a cada 6 horas)
+      logger.info('🧹 Agendando limpeza de mensagens antigas...');
+      setInterval(() => {
+        limparMensagensAntigas().catch(err => {
+          logger.warn('⚠️ Erro na limpeza automática:', err.message);
+        });
+      }, 6 * 60 * 60 * 1000); // 6 horas
+      
+      // Executar limpeza inicial após 1 minuto
+      setTimeout(() => limparMensagensAntigas(), 60000);
       
       logger.info('');
       logger.info('✅ Sistema inicializado com sucesso!');

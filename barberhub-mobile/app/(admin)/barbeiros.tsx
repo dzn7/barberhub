@@ -1,6 +1,6 @@
 /**
  * Tela de Barbeiros/Profissionais
- * Gestão da equipe da barbearia
+ * Gestão da equipe da barbearia com abas: Profissionais e Comissões
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -15,17 +15,26 @@ import {
   ActivityIndicator,
   Switch,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Botao, Input, Card, Avatar } from '../../src/components/ui';
+import { AbaComissoes } from '../../src/components/equipe';
 import { useAutenticacao } from '../../src/stores/autenticacao';
 import { useTerminologia } from '../../src/hooks/useTerminologia';
 import { supabase } from '../../src/services/supabase';
 import { useTema } from '../../src/contexts/TemaContext';
 import type { Barbeiro } from '../../src/types';
+
+type SubTabEquipe = 'profissionais' | 'comissoes';
+
+const SUBTABS: { id: SubTabEquipe; label: string; icone: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'profissionais', label: 'Profissionais', icone: 'people-outline' },
+  { id: 'comissoes', label: 'Comissões', icone: 'cash-outline' },
+];
 
 function gerarToken(): string {
   const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -43,6 +52,7 @@ export default function TelaBarbeiros() {
   
   const { cores: CORES } = useTema();
 
+  const [subTabAtiva, setSubTabAtiva] = useState<SubTabEquipe>('profissionais');
   const [carregando, setCarregando] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
@@ -368,80 +378,141 @@ export default function TelaBarbeiros() {
       {/* Header */}
       <View
         style={{
-          paddingTop: insets.top + 16,
-          paddingHorizontal: 20,
-          paddingBottom: 16,
+          paddingTop: insets.top,
           backgroundColor: CORES.fundo.secundario,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          borderBottomWidth: 1,
+          borderBottomColor: CORES.borda.sutil,
         }}
       >
-        <Text
+        {/* Título e Botão */}
+        <View
           style={{
-            color: CORES.texto.primario,
-            fontSize: 24,
-            fontWeight: '700',
-          }}
-        >
-          Equipe
-        </Text>
-
-        <Pressable
-          onPress={() => abrirModal()}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: '#ffffff',
+            paddingHorizontal: 20,
+            paddingTop: 16,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
-          <Ionicons name="person-add" size={22} color="#18181b" />
-        </Pressable>
-      </View>
+          <Text
+            style={{
+              color: CORES.texto.primario,
+              fontSize: 24,
+              fontWeight: '700',
+            }}
+          >
+            Equipe
+          </Text>
 
-      {/* Lista */}
-      {carregando ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color={CORES.primaria.DEFAULT} />
+          {subTabAtiva === 'profissionais' && (
+            <Pressable
+              onPress={() => abrirModal()}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: CORES.botao.fundo,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="person-add" size={22} color={CORES.botao.texto} />
+            </Pressable>
+          )}
         </View>
-      ) : (
-        <FlatList
-          data={barbeiros}
-          keyExtractor={(item) => item.id}
-          renderItem={renderBarbeiro}
-          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={atualizando}
-              onRefresh={onRefresh}
-              tintColor={CORES.primaria.DEFAULT}
-            />
-          }
-          ListEmptyComponent={
-            <View style={{ alignItems: 'center', paddingTop: 60 }}>
-              <Ionicons name="people-outline" size={64} color={CORES.texto.terciario} />
+
+        {/* Subtabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, gap: 8 }}
+        >
+          {SUBTABS.map(tab => (
+            <Pressable
+              key={tab.id}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setSubTabAtiva(tab.id);
+              }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 8,
+                backgroundColor: subTabAtiva === tab.id ? CORES.botao.fundo : CORES.fundo.terciario,
+                borderWidth: 1,
+                borderColor: subTabAtiva === tab.id ? CORES.botao.fundo : CORES.borda.media,
+              }}
+            >
+              <Ionicons
+                name={tab.icone}
+                size={16}
+                color={subTabAtiva === tab.id ? CORES.botao.texto : CORES.texto.secundario}
+              />
               <Text
                 style={{
-                  color: CORES.texto.secundario,
-                  fontSize: 16,
-                  marginTop: 16,
-                  textAlign: 'center',
+                  color: subTabAtiva === tab.id ? CORES.botao.texto : CORES.texto.secundario,
+                  fontSize: 13,
+                  fontWeight: '500',
                 }}
               >
-                Nenhum profissional cadastrado
+                {tab.label}
               </Text>
-              <Botao
-                titulo="Adicionar Profissional"
-                variante="primario"
-                onPress={() => abrirModal()}
-                style={{ marginTop: 20 }}
-              />
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Conteúdo baseado na aba */}
+      {subTabAtiva === 'profissionais' && (
+        <>
+          {carregando ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color={CORES.primaria.DEFAULT} />
             </View>
-          }
-        />
+          ) : (
+            <FlatList
+              data={barbeiros}
+              keyExtractor={(item) => item.id}
+              renderItem={renderBarbeiro}
+              contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+              refreshControl={
+                <RefreshControl
+                  refreshing={atualizando}
+                  onRefresh={onRefresh}
+                  tintColor={CORES.primaria.DEFAULT}
+                />
+              }
+              ListEmptyComponent={
+                <View style={{ alignItems: 'center', paddingTop: 60 }}>
+                  <Ionicons name="people-outline" size={64} color={CORES.texto.terciario} />
+                  <Text
+                    style={{
+                      color: CORES.texto.secundario,
+                      fontSize: 16,
+                      marginTop: 16,
+                      textAlign: 'center',
+                    }}
+                  >
+                    Nenhum profissional cadastrado
+                  </Text>
+                  <Botao
+                    titulo="Adicionar Profissional"
+                    variante="primario"
+                    onPress={() => abrirModal()}
+                    style={{ marginTop: 20 }}
+                  />
+                </View>
+              }
+            />
+          )}
+        </>
+      )}
+
+      {subTabAtiva === 'comissoes' && tenant?.id && (
+        <AbaComissoes tenantId={tenant.id} />
       )}
 
       {/* Modal */}

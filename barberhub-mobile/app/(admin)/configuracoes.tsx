@@ -214,7 +214,7 @@ export default function TelaConfiguracoes() {
           width: 40,
           height: 40,
           borderRadius: 10,
-          backgroundColor: (item.corIcone || '#ffffff') + '20',
+          backgroundColor: (item.corIcone || cores.texto.primario) + '20',
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -222,7 +222,7 @@ export default function TelaConfiguracoes() {
         <Ionicons
           name={item.icone}
           size={22}
-          color={item.corIcone || '#ffffff'}
+          color={item.corIcone || cores.texto.primario}
         />
       </View>
 
