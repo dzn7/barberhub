@@ -1160,7 +1160,7 @@ export function GestaoHorariosAvancada() {
             </div>
             <p className="text-zinc-600 dark:text-zinc-400 font-medium">Nenhum horário bloqueado</p>
             <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-1">
-              Clique em "Novo Bloqueio" para bloquear horários
+              Clique em &quot;Novo Bloqueio&quot; para bloquear horários
             </p>
           </div>
         ) : (
@@ -1203,7 +1203,7 @@ export function GestaoHorariosAvancada() {
                       </div>
                       {bloqueio.motivo && (
                         <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-1 italic">
-                          "{bloqueio.motivo}"
+                          &ldquo;{bloqueio.motivo}&rdquo;
                         </p>
                       )}
                     </div>
