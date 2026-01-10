@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { 
   Clock, Calendar, Lock, Unlock, AlertCircle, 
-  Plus, Trash2, Save, X, History, Settings, User
+  Plus, Trash2, Save, X, History, Settings, User,
+  CalendarOff, Coffee, Palmtree, Wrench, Heart,
+  CalendarX, Sun, Moon
 } from "lucide-react";
 import { Button, TextField, Select, Switch, Badge, TextArea } from "@radix-ui/themes";
-import { format, parse, addDays, parseISO } from "date-fns";
+import { format, parse, addDays, parseISO, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +17,74 @@ import { Modal } from "@/components/Modal";
 import { ModalPortal } from "@/components/ui/modal-portal";
 import { CalendarioInterativo } from "./CalendarioInterativo";
 import { SeletorHorarioInterativo } from "./SeletorHorarioInterativo";
+import { obterTerminologia } from "@/lib/configuracoes-negocio";
+import { TipoNegocio } from "@/lib/tipos-negocio";
+
+// Função para normalizar horário removendo segundos (HH:mm:ss -> HH:mm)
+function normalizarHorario(horario: string | null | undefined): string {
+  if (!horario) return "09:00";
+  // Se já está no formato HH:mm, retorna como está
+  if (horario.length === 5 && horario.includes(':')) return horario;
+  // Se está no formato HH:mm:ss, remove os segundos
+  if (horario.length === 8 && horario.split(':').length === 3) {
+    return horario.substring(0, 5);
+  }
+  return horario;
+}
+
+// Tipos de bloqueio disponíveis
+const TIPOS_BLOQUEIO = [
+  { 
+    valor: "bloqueio_manual", 
+    label: "Bloqueio Manual", 
+    descricao: "Bloqueio geral de horário",
+    icone: Lock, 
+    cor: "zinc",
+    corFundo: "bg-zinc-50 dark:bg-zinc-800",
+    corBorda: "border-zinc-300 dark:border-zinc-600",
+    corIcone: "text-zinc-600 dark:text-zinc-400"
+  },
+  { 
+    valor: "folga", 
+    label: "Folga", 
+    descricao: "Dia de descanso do profissional",
+    icone: Coffee, 
+    cor: "blue",
+    corFundo: "bg-blue-50 dark:bg-blue-900/20",
+    corBorda: "border-blue-300 dark:border-blue-700",
+    corIcone: "text-blue-600 dark:text-blue-400"
+  },
+  { 
+    valor: "feriado", 
+    label: "Feriado", 
+    descricao: "Feriado nacional ou local",
+    icone: Palmtree, 
+    cor: "red",
+    corFundo: "bg-red-50 dark:bg-red-900/20",
+    corBorda: "border-red-300 dark:border-red-700",
+    corIcone: "text-red-600 dark:text-red-400"
+  },
+  { 
+    valor: "manutencao", 
+    label: "Manutenção", 
+    descricao: "Período de manutenção ou reforma",
+    icone: Wrench, 
+    cor: "amber",
+    corFundo: "bg-amber-50 dark:bg-amber-900/20",
+    corBorda: "border-amber-300 dark:border-amber-700",
+    corIcone: "text-amber-600 dark:text-amber-400"
+  },
+  { 
+    valor: "evento", 
+    label: "Evento Especial", 
+    descricao: "Evento, curso ou treinamento",
+    icone: Heart, 
+    cor: "purple",
+    corFundo: "bg-purple-50 dark:bg-purple-900/20",
+    corBorda: "border-purple-300 dark:border-purple-700",
+    corIcone: "text-purple-600 dark:text-purple-400"
+  }
+];
 
 interface HorarioDia {
   abertura: string;
@@ -78,6 +148,7 @@ export function GestaoHorariosAvancada() {
   
   // Modal de novo bloqueio
   const [modalBloqueio, setModalBloqueio] = useState(false);
+  const [bloquearDiaCompleto, setBloquearDiaCompleto] = useState(false);
   const [novoBloqueio, setNovoBloqueio] = useState({
     barbeiro_id: "",
     data: format(new Date(), "yyyy-MM-dd"),
@@ -86,6 +157,10 @@ export function GestaoHorariosAvancada() {
     motivo: "",
     tipo: "bloqueio_manual"
   });
+
+  // Terminologia dinâmica baseada no tipo de negócio
+  const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
+  const terminologia = useMemo(() => obterTerminologia(tipoNegocio), [tipoNegocio]);
   
   const [barbeiros, setBarbeiros] = useState<BarbeiroSimples[]>([]);
   const [modalConfig, setModalConfig] = useState<ModalConfigState | null>(null);
@@ -308,14 +383,53 @@ export function GestaoHorariosAvancada() {
     }
   };
 
+  // Função para obter horários do dia (para bloqueio completo)
+  const obterHorariosDoDia = (data: string): { inicio: string; fim: string } => {
+    if (!config) return { inicio: "09:00", fim: "18:00" };
+    
+    // Verificar se usa horários personalizados
+    if (config.usar_horarios_personalizados && config.horarios_personalizados) {
+      const dataObj = parseISO(data);
+      const diaSemana = getDay(dataObj);
+      const mapasDias: Record<number, string> = {
+        0: 'dom', 1: 'seg', 2: 'ter', 3: 'qua', 4: 'qui', 5: 'sex', 6: 'sab'
+      };
+      const diaKey = mapasDias[diaSemana] as keyof HorariosPersonalizados;
+      const horarioDia = config.horarios_personalizados[diaKey];
+      
+      if (horarioDia) {
+        return {
+          inicio: normalizarHorario(horarioDia.abertura),
+          fim: normalizarHorario(horarioDia.fechamento)
+        };
+      }
+    }
+    
+    // Usar horário padrão
+    return {
+      inicio: normalizarHorario(config.horario_abertura),
+      fim: normalizarHorario(config.horario_fechamento)
+    };
+  };
+
   const criarBloqueio = async () => {
     if (!tenant) return;
     
     setSalvando(true);
     try {
-      // Usar diretamente os valores simples de data e horário
-      const horarioInicioFormatado = novoBloqueio.horario_inicio + ':00';
-      const horarioFimFormatado = novoBloqueio.horario_fim + ':00';
+      // Se bloquear dia completo, usar horários do dia
+      let horarioInicio = novoBloqueio.horario_inicio;
+      let horarioFim = novoBloqueio.horario_fim;
+      
+      if (bloquearDiaCompleto) {
+        const horariosDia = obterHorariosDoDia(novoBloqueio.data);
+        horarioInicio = horariosDia.inicio;
+        horarioFim = horariosDia.fim;
+      }
+      
+      // Garantir formato HH:mm:ss para o banco
+      const horarioInicioFormatado = horarioInicio.length === 5 ? horarioInicio + ':00' : horarioInicio;
+      const horarioFimFormatado = horarioFim.length === 5 ? horarioFim + ':00' : horarioFim;
 
       const { error } = await supabase
         .from('horarios_bloqueados')
@@ -325,7 +439,7 @@ export function GestaoHorariosAvancada() {
           data: novoBloqueio.data,
           horario_inicio: horarioInicioFormatado,
           horario_fim: horarioFimFormatado,
-          motivo: novoBloqueio.motivo,
+          motivo: novoBloqueio.motivo || (bloquearDiaCompleto ? 'Dia completo bloqueado' : null),
           tipo: novoBloqueio.tipo
         }] as any);
 
@@ -335,24 +449,27 @@ export function GestaoHorariosAvancada() {
       await carregarBloqueios();
 
       setModalBloqueio(false);
+      setBloquearDiaCompleto(false);
       setNovoBloqueio({
         barbeiro_id: "",
         data: format(new Date(), "yyyy-MM-dd"),
-        horario_inicio: "09:00",
-        horario_fim: "18:00",
+        horario_inicio: normalizarHorario(config?.horario_abertura),
+        horario_fim: normalizarHorario(config?.horario_fechamento),
         motivo: "",
         tipo: "bloqueio_manual"
       });
 
       setModalConfig({
-        title: "Sucesso",
-        message: "Horário bloqueado com sucesso!",
+        title: "✅ Bloqueio Criado",
+        message: bloquearDiaCompleto 
+          ? "Dia completo bloqueado com sucesso!" 
+          : "Horário bloqueado com sucesso!",
         type: "success"
       });
       setModalAberto(true);
     } catch (error: any) {
       setModalConfig({
-        title: "Erro",
+        title: "❌ Erro",
         message: `Erro ao criar bloqueio: ${error.message}`,
         type: "error"
       });
@@ -1012,15 +1129,23 @@ export function GestaoHorariosAvancada() {
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <Calendar className="w-6 h-6 text-zinc-700 dark:text-zinc-300" />
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              Horários Bloqueados
-            </h3>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+              <CalendarX className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                Horários Bloqueados
+              </h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Gerencie bloqueios para {terminologia.profissional.plural.toLowerCase()}
+              </p>
+            </div>
           </div>
           
           <Button
             onClick={() => setModalBloqueio(true)}
             size="3"
+            color="red"
             className="w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -1029,133 +1154,150 @@ export function GestaoHorariosAvancada() {
         </div>
 
         {bloqueios.length === 0 ? (
-          <div className="text-center py-8 text-zinc-600 dark:text-zinc-400">
-            Nenhum horário bloqueado
+          <div className="text-center py-12">
+            <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-4">
+              <CalendarOff className="w-8 h-8 text-zinc-400" />
+            </div>
+            <p className="text-zinc-600 dark:text-zinc-400 font-medium">Nenhum horário bloqueado</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-1">
+              Clique em "Novo Bloqueio" para bloquear horários
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {bloqueios.map(bloqueio => (
-              <div
-                key={bloqueio.id}
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg"
-              >
-                <div className="flex-1 w-full">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {format(parseISO(`${bloqueio.data}T00:00:00`), "dd/MM/yyyy", { locale: ptBR })}
-                    </span>
-                    <Badge color={bloqueio.tipo === 'feriado' ? 'red' : 'gray'}>
-                      {bloqueio.tipo === 'feriado' ? 'Feriado' : bloqueio.tipo === 'folga' ? 'Folga' : 'Bloqueio'}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400 break-words">
-                    {bloqueio.horario_inicio} - {bloqueio.horario_fim}
-                    {bloqueio.barbeiros && ` • ${bloqueio.barbeiros.nome}`}
-                    {bloqueio.motivo && ` • ${bloqueio.motivo}`}
-                  </div>
-                </div>
-                
-                <Button
-                  onClick={() => removerBloqueio(bloqueio.id)}
-                  color="red"
-                  variant="soft"
-                  size="2"
-                  className="w-full sm:w-auto"
+            {bloqueios.map(bloqueio => {
+              const tipoBloqueio = TIPOS_BLOQUEIO.find(t => t.valor === bloqueio.tipo) || TIPOS_BLOQUEIO[0];
+              const Icone = tipoBloqueio.icone;
+              
+              return (
+                <motion.div
+                  key={bloqueio.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border-2 ${tipoBloqueio.corFundo} ${tipoBloqueio.corBorda}`}
                 >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
+                  <div className="flex items-start gap-3 flex-1 w-full">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${tipoBloqueio.corFundo}`}>
+                      <Icone className={`w-5 h-5 ${tipoBloqueio.corIcone}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          {format(parseISO(`${bloqueio.data}T00:00:00`), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                        </span>
+                        <Badge color={tipoBloqueio.cor as any}>
+                          {tipoBloqueio.label}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          {normalizarHorario(bloqueio.horario_inicio)} - {normalizarHorario(bloqueio.horario_fim)}
+                        </span>
+                        {bloqueio.barbeiros && (
+                          <span className="flex items-center gap-1">
+                            <User className="w-3.5 h-3.5" />
+                            {bloqueio.barbeiros.nome}
+                          </span>
+                        )}
+                      </div>
+                      {bloqueio.motivo && (
+                        <p className="text-sm text-zinc-500 dark:text-zinc-500 mt-1 italic">
+                          "{bloqueio.motivo}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <Button
+                    onClick={() => removerBloqueio(bloqueio.id)}
+                    color="red"
+                    variant="soft"
+                    size="2"
+                    className="w-full sm:w-auto"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    <span className="sm:hidden">Remover</span>
+                  </Button>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </motion.div>
 
       {/* Modal de Novo Bloqueio */}
-      <ModalPortal aberto={modalBloqueio} onFechar={() => setModalBloqueio(false)}>
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-xl shadow-2xl border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Lock className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Novo Bloqueio de Horário</h2>
+      <ModalPortal aberto={modalBloqueio} onFechar={() => { setModalBloqueio(false); setBloquearDiaCompleto(false); }}>
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
+          {/* Header do Modal */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
+                <CalendarX className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Novo Bloqueio</h2>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Bloqueie horários para {terminologia.profissional.plural.toLowerCase()}
+                </p>
+              </div>
             </div>
-            <button onClick={() => setModalBloqueio(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+            <button 
+              onClick={() => { setModalBloqueio(false); setBloquearDiaCompleto(false); }} 
+              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+            >
               <X className="w-5 h-5 text-zinc-500" />
             </button>
           </div>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-            Bloqueie um período específico para impedir novos agendamentos
-          </p>
           
           <div className="space-y-6">
-            {/* Barbeiro */}
-            <div>
-              <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2 flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Barbeiro (opcional)
+            {/* Profissional */}
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
+              <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                <User className="w-4 h-4 text-blue-600" />
+                {terminologia.profissional.singular} (opcional)
               </label>
               <Select.Root
                 value={novoBloqueio.barbeiro_id || "all"}
                 onValueChange={(value) => setNovoBloqueio({ ...novoBloqueio, barbeiro_id: value === "all" ? "" : value })}
               >
-                <Select.Trigger className="w-full" placeholder="Todos os barbeiros" />
+                <Select.Trigger className="w-full" placeholder={`Tod${terminologia.profissional.artigoPlural} ${terminologia.profissional.plural.toLowerCase()}`} />
                 <Select.Content>
-                  <Select.Item value="all">Todos os barbeiros</Select.Item>
+                  <Select.Item value="all">Tod{terminologia.profissional.artigoPlural} {terminologia.profissional.plural.toLowerCase()}</Select.Item>
                   {barbeiros.map(b => (
                     <Select.Item key={b.id} value={b.id}>{b.nome}</Select.Item>
                   ))}
                 </Select.Content>
               </Select.Root>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                Deixe em branco para bloquear para todos os barbeiros
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                Deixe em branco para bloquear para tod{terminologia.profissional.artigoPlural} {terminologia.profissional.plural.toLowerCase()}
               </p>
             </div>
 
             {/* Tipo de Bloqueio */}
             <div>
-              <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
+              <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
                 Tipo de Bloqueio
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { 
-                    valor: "bloqueio_manual", 
-                    label: "Manual", 
-                    icone: Lock, 
-                    corSelecionado: "border-zinc-500 bg-zinc-50 dark:bg-zinc-800",
-                    corIconeSelecionado: "text-zinc-600"
-                  },
-                  { 
-                    valor: "folga", 
-                    label: "Folga", 
-                    icone: Clock, 
-                    corSelecionado: "border-blue-500 bg-blue-50 dark:bg-blue-900/20",
-                    corIconeSelecionado: "text-blue-600"
-                  },
-                  { 
-                    valor: "feriado", 
-                    label: "Feriado", 
-                    icone: Calendar, 
-                    corSelecionado: "border-red-500 bg-red-50 dark:bg-red-900/20",
-                    corIconeSelecionado: "text-red-600"
-                  }
-                ].map((tipo) => {
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                {TIPOS_BLOQUEIO.map((tipo) => {
                   const Icone = tipo.icone;
                   const selecionado = novoBloqueio.tipo === tipo.valor;
                   return (
                     <button
                       key={tipo.valor}
                       onClick={() => setNovoBloqueio({ ...novoBloqueio, tipo: tipo.valor })}
-                      className={`p-4 rounded-lg border-2 transition-all ${
+                      className={`p-3 rounded-xl border-2 transition-all hover:scale-[1.02] ${
                         selecionado
-                          ? tipo.corSelecionado
-                          : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
+                          ? `${tipo.corFundo} ${tipo.corBorda} border-2`
+                          : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900'
                       }`}
                     >
-                      <Icone className={`w-5 h-5 mx-auto mb-2 ${
-                        selecionado ? tipo.corIconeSelecionado : 'text-zinc-400'
+                      <Icone className={`w-5 h-5 mx-auto mb-1.5 ${
+                        selecionado ? tipo.corIcone : 'text-zinc-400'
                       }`} />
-                      <span className={`text-sm font-medium ${
+                      <span className={`text-xs font-medium block ${
                         selecionado ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'
                       }`}>
                         {tipo.label}
@@ -1164,10 +1306,14 @@ export function GestaoHorariosAvancada() {
                   );
                 })}
               </div>
+              {/* Descrição do tipo selecionado */}
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 italic">
+                {TIPOS_BLOQUEIO.find(t => t.valor === novoBloqueio.tipo)?.descricao}
+              </p>
             </div>
 
             {/* Calendário para selecionar data */}
-            <div>
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
               <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-green-600" />
                 Selecione a Data
@@ -1179,62 +1325,128 @@ export function GestaoHorariosAvancada() {
               />
             </div>
 
-            {/* Seletor de Horário */}
-            <div>
-              <SeletorHorarioInterativo
-                horarioInicio={novoBloqueio.horario_inicio}
-                horarioFim={novoBloqueio.horario_fim}
-                onInicioChange={(horario) => setNovoBloqueio({ ...novoBloqueio, horario_inicio: horario })}
-                onFimChange={(horario) => setNovoBloqueio({ ...novoBloqueio, horario_fim: horario })}
-                intervalo={20}
-                minHorario={config?.horario_abertura || "08:00"}
-                maxHorario={config?.horario_fechamento || "20:00"}
-              />
+            {/* Toggle para Bloquear Dia Completo */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                    <Sun className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-zinc-900 dark:text-white">Bloquear Dia Completo</p>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      Bloqueia do horário de abertura ao fechamento
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={bloquearDiaCompleto}
+                  onCheckedChange={(checked) => {
+                    setBloquearDiaCompleto(checked);
+                    if (checked) {
+                      const horarios = obterHorariosDoDia(novoBloqueio.data);
+                      setNovoBloqueio(prev => ({
+                        ...prev,
+                        horario_inicio: horarios.inicio,
+                        horario_fim: horarios.fim
+                      }));
+                    }
+                  }}
+                  size="3"
+                />
+              </div>
+              {bloquearDiaCompleto && (
+                <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-800">
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    ⏰ Horário: <strong>{obterHorariosDoDia(novoBloqueio.data).inicio}</strong> às <strong>{obterHorariosDoDia(novoBloqueio.data).fim}</strong>
+                  </p>
+                </div>
+              )}
             </div>
+
+            {/* Seletor de Horário (apenas se não for dia completo) */}
+            {!bloquearDiaCompleto && (
+              <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
+                <SeletorHorarioInterativo
+                  horarioInicio={normalizarHorario(novoBloqueio.horario_inicio)}
+                  horarioFim={normalizarHorario(novoBloqueio.horario_fim)}
+                  onInicioChange={(horario) => setNovoBloqueio({ ...novoBloqueio, horario_inicio: horario })}
+                  onFimChange={(horario) => setNovoBloqueio({ ...novoBloqueio, horario_fim: horario })}
+                  intervalo={config?.intervalo_horarios || 20}
+                  minHorario={normalizarHorario(config?.horario_abertura) || "08:00"}
+                  maxHorario={normalizarHorario(config?.horario_fechamento) || "20:00"}
+                />
+              </div>
+            )}
 
             {/* Motivo */}
             <div>
               <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
+                <History className="w-4 h-4 text-purple-600" />
                 Motivo (opcional)
               </label>
               <TextArea
                 value={novoBloqueio.motivo}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNovoBloqueio({ ...novoBloqueio, motivo: e.target.value })}
-                placeholder="Ex: Feriado nacional, Folga do barbeiro, Manutenção..."
-                rows={3}
+                placeholder={`Ex: Feriado nacional, Folga d${terminologia.profissional.artigo} ${terminologia.profissional.singular.toLowerCase()}, Manutenção...`}
+                rows={2}
                 className="w-full"
               />
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                Adicione uma descrição para facilitar a identificação do bloqueio
-              </p>
             </div>
 
             {/* Resumo */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                  <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100 mb-2">
                     Resumo do Bloqueio
                   </p>
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Data: {novoBloqueio.data} das {novoBloqueio.horario_inicio} às {novoBloqueio.horario_fim}
-                  </p>
-                  {novoBloqueio.barbeiro_id && (
-                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                      Barbeiro: {barbeiros.find(b => b.id === novoBloqueio.barbeiro_id)?.nome || 'Selecionado'}
+                  <div className="space-y-1">
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>{format(parseISO(novoBloqueio.data), "EEEE, d 'de' MMMM", { locale: ptBR })}</span>
                     </p>
-                  )}
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      <span>
+                        {bloquearDiaCompleto 
+                          ? `${obterHorariosDoDia(novoBloqueio.data).inicio} às ${obterHorariosDoDia(novoBloqueio.data).fim} (dia completo)`
+                          : `${normalizarHorario(novoBloqueio.horario_inicio)} às ${normalizarHorario(novoBloqueio.horario_fim)}`
+                        }
+                      </span>
+                    </p>
+                    {novoBloqueio.barbeiro_id && (
+                      <p className="text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span>{barbeiros.find(b => b.id === novoBloqueio.barbeiro_id)?.nome}</span>
+                      </p>
+                    )}
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                      {(() => {
+                        const tipoSelecionado = TIPOS_BLOQUEIO.find(t => t.valor === novoBloqueio.tipo);
+                        const Icone = tipoSelecionado?.icone || Lock;
+                        return (
+                          <>
+                            <Icone className="w-4 h-4" />
+                            <span>{tipoSelecionado?.label}</span>
+                          </>
+                        );
+                      })()}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Botões de Ação */}
           <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
             <button
-              onClick={() => setModalBloqueio(false)}
-              className="flex-1 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors flex items-center justify-center gap-2"
+              onClick={() => { setModalBloqueio(false); setBloquearDiaCompleto(false); }}
+              className="flex-1 px-4 py-3 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors flex items-center justify-center gap-2 font-medium"
             >
               <X className="w-4 h-4" />
               Cancelar
@@ -1242,7 +1454,7 @@ export function GestaoHorariosAvancada() {
             <button
               onClick={criarBloqueio}
               disabled={salvando}
-              className="flex-1 px-4 py-3 bg-white hover:bg-zinc-100 text-black rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-red-500/25"
             >
               {salvando ? (
                 <>
@@ -1251,8 +1463,8 @@ export function GestaoHorariosAvancada() {
                 </>
               ) : (
                 <>
-                  <Lock className="w-4 h-4" />
-                  Criar Bloqueio
+                  <CalendarX className="w-4 h-4" />
+                  {bloquearDiaCompleto ? 'Bloquear Dia Completo' : 'Criar Bloqueio'}
                 </>
               )}
             </button>
