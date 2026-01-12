@@ -743,7 +743,11 @@ export function GestaoHorariosAvancada() {
               size="3"
             >
               <Select.Trigger className="w-full max-w-full" />
-              <Select.Content position="popper" sideOffset={5}>
+              <Select.Content
+                position="popper"
+                sideOffset={5}
+                className="max-h-[60vh] w-[min(420px,calc(100vw-32px))] overflow-y-auto"
+              >
                 <Select.Group>
                   <Select.Label className="text-xs text-zinc-500 px-2 py-1">Intervalos Curtos</Select.Label>
                   <Select.Item value="5">
@@ -834,37 +838,47 @@ export function GestaoHorariosAvancada() {
                 <label className="block text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
                   Digite o intervalo desejado (em minutos):
                 </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min="1"
-                    max="120"
-                    value={valorIntervaloPersonalizado}
-                    onChange={(e) => setValorIntervaloPersonalizado(e.target.value)}
-                    className="w-24 px-3 py-2 bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 rounded-lg text-zinc-900 dark:text-white text-center font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="25"
-                  />
-                  <span className="text-sm text-amber-700 dark:text-amber-300">minutos</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const valor = parseInt(valorIntervaloPersonalizado);
-                      if (valor >= 1 && valor <= 120) {
-                        setConfig({ ...config, intervalo_horarios: valor });
-                        setIntervaloPersonalizado(false);
-                      }
-                    }}
-                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
-                  >
-                    Aplicar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIntervaloPersonalizado(false)}
-                    className="px-3 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 font-medium rounded-lg transition-colors"
-                  >
-                    Cancelar
-                  </button>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr] sm:items-center">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="5"
+                      max="120"
+                      step="5"
+                      inputMode="numeric"
+                      value={valorIntervaloPersonalizado}
+                      onChange={(e) => setValorIntervaloPersonalizado(e.target.value)}
+                      className="w-full sm:w-28 px-3 py-2 bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 rounded-lg text-zinc-900 dark:text-white text-center font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="25"
+                    />
+                    <span className="shrink-0 text-sm text-amber-700 dark:text-amber-300">
+                      minutos
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const valor = Number(valorIntervaloPersonalizado);
+                        if (Number.isFinite(valor) && valor >= 5 && valor <= 120) {
+                          const valorNormalizado = Math.max(5, Math.min(120, Math.round(valor / 5) * 5));
+                          setConfig({ ...config, intervalo_horarios: valorNormalizado });
+                          setIntervaloPersonalizado(false);
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
+                    >
+                      Aplicar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIntervaloPersonalizado(false)}
+                      className="w-full px-4 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 font-medium rounded-lg transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
                   Valor atual: <strong>{config.intervalo_horarios} minutos</strong>
