@@ -750,82 +750,82 @@ export function GestaoHorariosAvancada() {
               >
                 <Select.Group>
                   <Select.Label className="text-xs text-zinc-500 px-2 py-1">Intervalos Curtos</Select.Label>
-                  <Select.Item value="5">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">5 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:05, 08:10...)</span>
+                  <Select.Item value="5" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">5 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:05, 08:10...)</span>
                     </div>
                   </Select.Item>
-                  <Select.Item value="10">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">10 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:10, 08:20...)</span>
+                  <Select.Item value="10" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">10 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:10, 08:20...)</span>
                     </div>
                   </Select.Item>
-                  <Select.Item value="15">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">15 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:15, 08:30...)</span>
+                  <Select.Item value="15" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">15 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:15, 08:30...)</span>
                     </div>
                   </Select.Item>
                 </Select.Group>
                 <Select.Separator />
                 <Select.Group>
                   <Select.Label className="text-xs text-zinc-500 px-2 py-1">Intervalos Médios</Select.Label>
-                  <Select.Item value="20">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">20 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:20, 08:40...)</span>
+                  <Select.Item value="20" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">20 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:20, 08:40...)</span>
                     </div>
                   </Select.Item>
-                  <Select.Item value="30">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">30 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:30, 09:00...)</span>
+                  <Select.Item value="30" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">30 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:30, 09:00...)</span>
                     </div>
                   </Select.Item>
                 </Select.Group>
                 <Select.Separator />
                 <Select.Group>
                   <Select.Label className="text-xs text-zinc-500 px-2 py-1">Intervalos Longos</Select.Label>
-                  <Select.Item value="45">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">45 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:45, 09:30...)</span>
+                  <Select.Item value="45" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">45 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:45, 09:30...)</span>
                     </div>
                   </Select.Item>
-                  <Select.Item value="60">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">60 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 09:00, 10:00...)</span>
+                  <Select.Item value="60" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">60 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 09:00, 10:00...)</span>
                     </div>
                   </Select.Item>
                 </Select.Group>
                 <Select.Separator />
                 <Select.Group>
                   <Select.Label className="text-xs text-zinc-500 px-2 py-1">Outros</Select.Label>
-                  <Select.Item value="25">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">25 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:25, 08:50...)</span>
+                  <Select.Item value="25" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">25 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:25, 08:50...)</span>
                     </div>
                   </Select.Item>
-                  <Select.Item value="35">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">35 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:35, 09:10...)</span>
+                  <Select.Item value="35" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">35 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:35, 09:10...)</span>
                     </div>
                   </Select.Item>
-                  <Select.Item value="40">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">40 minutos</span>
-                      <span className="text-xs text-zinc-500">(Ex: 08:00, 08:40, 09:20...)</span>
+                  <Select.Item value="40" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">40 minutos</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Ex: 08:00, 08:40, 09:20...)</span>
                     </div>
                   </Select.Item>
-                  <Select.Item value="personalizado">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                      <span className="font-semibold">✏️ Personalizado</span>
-                      <span className="text-xs text-zinc-500">(Digite o valor desejado)</span>
+                  <Select.Item value="personalizado" className="py-2">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold leading-tight text-sm">✏️ Personalizado</span>
+                      <span className="text-[10px] text-zinc-500 leading-tight">(Digite o valor desejado)</span>
                     </div>
                   </Select.Item>
                 </Select.Group>
