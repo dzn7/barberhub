@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
+import { memo } from "react";
 import {
   Plus, ChevronLeft, ChevronRight, Calendar, Scissors,
   CheckCircle, XCircle, Trash2, X, Clock, Phone, RefreshCw,
@@ -633,7 +633,7 @@ export function CalendarioSemanalNovo() {
           <div
             ref={scrollCabecalhoRef}
             onScroll={() => sincronizarScrollHorizontal('cabecalho')}
-            className="flex-1 overflow-x-auto overscroll-x-contain snap-x snap-mandatory"
+            className="flex-1 overflow-x-auto overscroll-x-contain"
           >
             <div className="flex" style={{ minWidth: diasExibidos.length * 220 }}>
               {diasExibidos.map((dia, idx) => {
@@ -651,10 +651,10 @@ export function CalendarioSemanalNovo() {
                         : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-900 dark:text-white'
                     }`}
                   >
-                    <div className={`text-[11px] sm:text-xs font-semibold uppercase ${
+                    <div className={`text-[10px] sm:text-xs font-semibold uppercase truncate ${
                       isSelecionado ? 'text-white/90 dark:text-zinc-700' : 'text-zinc-500 dark:text-zinc-400'
                     }`}>
-                      {format(dia, 'EEE', { locale: ptBR })}.
+                      {format(dia, 'EEEE', { locale: ptBR })}
                     </div>
                     <div className="flex items-center gap-2.5 mt-1">
                       <div className={`text-xl sm:text-lg font-bold leading-none ${
@@ -690,7 +690,7 @@ export function CalendarioSemanalNovo() {
       <div
         ref={scrollRef}
         onScroll={() => sincronizarScrollHorizontal('timeline')}
-        className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950 snap-x snap-mandatory scroll-px-4"
+        className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950"
       >
         {carregando ? (
           <div className="flex items-center justify-center h-64">
@@ -730,7 +730,7 @@ export function CalendarioSemanalNovo() {
                 return (
                   <div
                     key={diaIdx}
-                    className={`relative border-l border-zinc-200 dark:border-zinc-800 first:border-l-0 snap-start ${
+                    className={`relative border-l border-zinc-200 dark:border-zinc-800 first:border-l-0 ${
                       ehHoje ? 'bg-blue-50/30 dark:bg-blue-950/10' : 'bg-white dark:bg-zinc-900/30'
                     }`}
                     style={{ minHeight: horasDia.length * alturaHora }}
@@ -750,70 +750,52 @@ export function CalendarioSemanalNovo() {
                       const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
                       const infoServicos = obterInfoServicos(ag);
                       const pos = calcularPosicao(ag.data_hora, infoServicos.duracao);
-                      const espacoVerticalEntreCards = 8;
-                      const alturaMinimaCard = 120;
+                      const espacoVerticalEntreCards = 4;
+                      const alturaMinimaCard = 60;
                       const alturaCalculada = Math.max(pos.height, alturaMinimaCard);
-                      const modoCompacto = alturaCalculada < 140;
+                      const modoCompacto = alturaCalculada < 80;
                       const horaInicio = format(dataBrasilia, 'HH:mm');
                       const duracaoMs = infoServicos.duracao * 60000;
                       const dataFimBrasilia = new Date(dataBrasilia.getTime() + duracaoMs);
                       const horaFim = format(dataFimBrasilia, 'HH:mm');
 
                       return (
-                        <motion.button
+                        <button
                           key={ag.id}
-                          initial={{ opacity: 0, y: -6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.18 }}
                           type="button"
                           onClick={() => {
                             setAgendamentoSelecionado(ag);
                             setModalDetalhesAberto(true);
                           }}
                           aria-label={`Agendamento de ${ag.clientes?.nome || 'cliente'} às ${horaInicio}`}
-                          className={`absolute rounded-2xl border border-zinc-200/70 dark:border-zinc-700/70 shadow-sm hover:shadow-lg active:scale-[0.99] transition-all text-left overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20 dark:focus-visible:ring-white/20 ${estilo.fundo} ${estilo.borda} border-l-4`}
+                          className={`absolute rounded-xl border shadow-sm hover:shadow-md active:scale-[0.98] transition-shadow text-left overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${estilo.fundo} ${estilo.borda} border-l-[3px]`}
                           style={{ 
                             top: pos.top + espacoVerticalEntreCards,
-                            left: 10,
-                            right: 10,
+                            left: 6,
+                            right: 6,
                             height: Math.max(1, alturaCalculada - (espacoVerticalEntreCards * 2)),
                             minHeight: alturaMinimaCard
                           }}
                         >
-                          <div className="h-full p-3 flex flex-col gap-1.5">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2.5 h-2.5 rounded-full ${estilo.ponto}`} />
-                              <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+                          <div className="h-full p-2 flex flex-col gap-0.5 overflow-hidden">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${estilo.ponto}`} />
+                              <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
                                 {horaInicio}–{horaFim}
                               </span>
-                              {ag.observacoes && (
-                                <span className="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/80 dark:bg-black/20 text-zinc-700 dark:text-zinc-200">
-                                  Obs.
-                                </span>
-                              )}
                             </div>
-                            <div className="min-w-0">
-                              <div className={`text-[15px] font-bold leading-tight truncate ${estilo.texto}`} title={ag.clientes?.nome || 'Cliente não informado'}>
-                                {ag.clientes?.nome || 'Cliente não informado'}
+                            <div className="min-w-0 flex-1">
+                              <div className={`text-sm font-bold leading-snug truncate ${estilo.texto}`} title={ag.clientes?.nome || 'Cliente'}>
+                                {ag.clientes?.nome || 'Cliente'}
                               </div>
                               {!modoCompacto && (
-                                <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200 truncate" title={infoServicos.nome}>
+                                <div className="text-xs text-zinc-600 dark:text-zinc-300 truncate">
                                   {infoServicos.nomesCurtos}
-                                  {infoServicos.quantidade > 1 && (
-                                    <span className="ml-1 text-[11px] font-semibold bg-white/60 dark:bg-black/20 px-1.5 py-0.5 rounded-md">
-                                      +{infoServicos.quantidade - 1}
-                                    </span>
-                                  )}
                                 </div>
                               )}
                             </div>
-                            {ag.barbeiros?.nome && !modoCompacto && (
-                              <div className="mt-auto pt-2 border-t border-zinc-900/10 dark:border-white/10 text-xs font-medium text-zinc-600 dark:text-zinc-300 truncate" title={ag.barbeiros.nome}>
-                                {ag.barbeiros.nome}
-                              </div>
-                            )}
                           </div>
-                        </motion.button>
+                        </button>
                       );
                     })}
                     {/* Indicador de hora atual */}
