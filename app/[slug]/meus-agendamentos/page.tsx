@@ -181,15 +181,49 @@ export default function PaginaMeusAgendamentos() {
     setTelefoneBuscado(telefone)
 
     try {
-      // Primeiro, buscar o cliente pelo telefone
-      const { data: clienteData, error: clienteError } = await supabase
+      // Primeiro, buscar o cliente pelo telefone (suporta formato limpo ou formatado)
+      // Tenta buscar pelo telefone limpo primeiro, depois pelo formatado
+      let clienteData: { id: string } | null = null
+      
+      // Busca 1: telefone limpo (ex: 86981454059)
+      const { data: cliente1 } = await supabase
         .from('clientes')
         .select('id')
         .eq('tenant_id', tenant.id)
         .eq('telefone', telefoneLimpo)
         .single()
+      
+      if (cliente1) {
+        clienteData = cliente1
+      } else {
+        // Busca 2: telefone formatado (ex: (86) 98145-4059)
+        const telefoneFormatado = formatarTelefone(telefoneLimpo)
+        const { data: cliente2 } = await supabase
+          .from('clientes')
+          .select('id')
+          .eq('tenant_id', tenant.id)
+          .eq('telefone', telefoneFormatado)
+          .single()
+        
+        if (cliente2) {
+          clienteData = cliente2
+        } else {
+          // Busca 3: usando ilike para encontrar qualquer formato que contenha os dígitos
+          const { data: cliente3 } = await supabase
+            .from('clientes')
+            .select('id')
+            .eq('tenant_id', tenant.id)
+            .or(`telefone.ilike.%${telefoneLimpo.slice(-8)}%`)
+            .limit(1)
+            .single()
+          
+          if (cliente3) {
+            clienteData = cliente3
+          }
+        }
+      }
 
-      if (clienteError || !clienteData) {
+      if (!clienteData) {
         setAgendamentos([])
         setCarregandoAgendamentos(false)
         return
