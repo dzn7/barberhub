@@ -17,7 +17,8 @@ import {
   Users,
   ChevronRight,
   Loader2,
-  ArrowRight
+  ArrowRight,
+  ClipboardList
 } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/WhatsAppIcon'
 import { TipoNegocio } from '@/lib/tipos-negocio'
@@ -263,6 +264,23 @@ export default function PaginaBarbearia() {
                 WhatsApp
               </a>
             )}
+          </motion.div>
+
+          {/* Link Meus Agendamentos */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-4 text-center"
+          >
+            <Link
+              href={`/${tenant.slug}/meus-agendamentos`}
+              className="inline-flex items-center gap-2 text-sm font-medium transition-all hover:opacity-80"
+              style={{ color: cores.destaque }}
+            >
+              <ClipboardList className="w-4 h-4" />
+              Consultar meus agendamentos
+            </Link>
           </motion.div>
         </div>
       </section>
