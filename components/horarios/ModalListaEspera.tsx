@@ -140,18 +140,16 @@ export function ModalListaEspera({
           />
 
           {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 max-w-md mx-auto z-50"
-            style={{
-              top: '50%',
-              transform: 'translateY(-50%)',
-              maxHeight: 'calc(100vh - 120px)',
-              marginTop: 'env(safe-area-inset-top, 0px)'
-            }}
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md"
+              style={{
+                maxHeight: 'calc(100vh - 80px)',
+              }}
+            >
             <div 
               className="rounded-2xl border overflow-hidden shadow-2xl max-h-full flex flex-col"
               style={{ 
@@ -396,7 +394,8 @@ export function ModalListaEspera({
                 </AnimatePresence>
               </div>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>
