@@ -32,6 +32,7 @@ import { Badge, Button, TextField, Select } from "@radix-ui/themes";
 import { PortalModal } from "@/components/ui/PortalModal";
 import { ModalRemarcacao } from "./ModalRemarcacao";
 import { ModalNovoAgendamento } from "@/components/agendamento";
+import { buscarConfiguracaoHorarios, ConfiguracaoHorarios, HORARIOS_PADRAO } from "@/lib/horarios-funcionamento";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
 
@@ -92,28 +93,39 @@ function obterInfoServicos(agendamento: Agendamento) {
 
 const STATUS_CONFIG = {
   pendente: { 
-    bg: "bg-yellow-50 dark:bg-yellow-950/20", 
-    border: "border-l-4 border-l-yellow-500", 
+    bg: "bg-amber-50/80 dark:bg-amber-950/30", 
+    border: "border-l-[3px] border-l-amber-400", 
     badge: "yellow" as const,
-    textColor: "text-yellow-700 dark:text-yellow-400"
+    textColor: "text-amber-700 dark:text-amber-400",
+    ponto: "bg-amber-400"
   },
   confirmado: { 
-    bg: "bg-blue-50 dark:bg-blue-950/20", 
-    border: "border-l-4 border-l-blue-500", 
-    badge: "blue" as const,
-    textColor: "text-blue-700 dark:text-blue-400"
+    bg: "bg-teal-50/80 dark:bg-teal-950/30", 
+    border: "border-l-[3px] border-l-teal-400", 
+    badge: "teal" as const,
+    textColor: "text-teal-700 dark:text-teal-400",
+    ponto: "bg-teal-400"
   },
   concluido: { 
-    bg: "bg-green-50 dark:bg-green-950/20", 
-    border: "border-l-4 border-l-green-500", 
+    bg: "bg-emerald-50/80 dark:bg-emerald-950/30", 
+    border: "border-l-[3px] border-l-emerald-400", 
     badge: "green" as const,
-    textColor: "text-green-700 dark:text-green-400"
+    textColor: "text-emerald-700 dark:text-emerald-400",
+    ponto: "bg-emerald-400"
   },
   cancelado: { 
-    bg: "bg-red-50 dark:bg-red-950/20", 
-    border: "border-l-4 border-l-red-500", 
+    bg: "bg-rose-50/80 dark:bg-rose-950/30", 
+    border: "border-l-[3px] border-l-rose-400", 
     badge: "red" as const,
-    textColor: "text-red-700 dark:text-red-400"
+    textColor: "text-rose-700 dark:text-rose-400",
+    ponto: "bg-rose-400"
+  },
+  nao_compareceu: { 
+    bg: "bg-zinc-50/80 dark:bg-zinc-900/30", 
+    border: "border-l-[3px] border-l-zinc-400", 
+    badge: "gray" as const,
+    textColor: "text-zinc-700 dark:text-zinc-400",
+    ponto: "bg-zinc-400"
   },
 };
 
@@ -133,18 +145,48 @@ export function CalendarioAgendamentos() {
   
   // Estado para novo agendamento
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
+  
+  // Configuração de horários e dias de funcionamento
+  const [configHorarios, setConfigHorarios] = useState<ConfiguracaoHorarios>(HORARIOS_PADRAO);
+  const [diasFuncionamento, setDiasFuncionamento] = useState<string[]>(['seg', 'ter', 'qua', 'qui', 'sex', 'sab']);
 
-  // Calcular próximos 7 dias
+  // Mapeamento de dia da semana para abreviação
+  const DIAS_SEMANA_MAP: Record<number, string> = {
+    0: 'dom', 1: 'seg', 2: 'ter', 3: 'qua', 4: 'qui', 5: 'sex', 6: 'sab'
+  };
+
+  // Buscar configuração de horários do tenant
+  useEffect(() => {
+    const buscarConfiguracao = async () => {
+      if (!tenant?.id) return;
+      const config = await buscarConfiguracaoHorarios(tenant.id, supabase);
+      setConfigHorarios(config);
+      setDiasFuncionamento(config.diasFuncionamento);
+    };
+    buscarConfiguracao();
+  }, [tenant?.id]);
+
+  // Calcular próximos 7 dias filtrados por dias de funcionamento
   const diasExibicao = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => addDays(startOfDay(dataInicio), i));
-  }, [dataInicio]);
+    const todosDias = Array.from({ length: 14 }, (_, i) => addDays(startOfDay(dataInicio), i));
+    
+    // Filtrar apenas os dias que a barbearia funciona
+    const diasFiltrados = todosDias.filter(dia => {
+      const diaSemana = dia.getDay();
+      const abreviacao = DIAS_SEMANA_MAP[diaSemana];
+      return diasFuncionamento.includes(abreviacao);
+    });
+    
+    // Retornar os próximos 7 dias de funcionamento
+    return diasFiltrados.slice(0, 7);
+  }, [dataInicio, diasFuncionamento]);
 
   // Buscar agendamentos
   useEffect(() => {
     if (tenant) {
       buscarAgendamentos();
     }
-  }, [dataInicio, tenant]);
+  }, [dataInicio, tenant, diasFuncionamento]);
 
   const buscarAgendamentos = async () => {
     if (!tenant) return;
@@ -679,90 +721,75 @@ export function CalendarioAgendamentos() {
                     return (
                       <motion.div
                         key={agendamento.id}
-                        whileHover={{ scale: 1.01 }}
-                        className={`p-6 cursor-pointer transition-all ${config.bg} ${config.border} hover:shadow-md`}
+                        whileHover={{ scale: 1.005 }}
+                        whileTap={{ scale: 0.995 }}
+                        className={`p-4 sm:p-5 cursor-pointer transition-all rounded-lg mx-2 my-1.5 ${config.bg} ${config.border} hover:shadow-md`}
                         onClick={() => setAgendamentoSelecionado(agendamento)}
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                           {/* Informações Principais */}
-                          <div className="flex-1 space-y-3">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <Clock className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-                                  <span className="text-xl font-bold text-zinc-900 dark:text-white">
-                                    {format(parseISO(agendamento.data_hora), 'HH:mm')}
-                                  </span>
-                                  <Badge color={config.badge} size="2">
-                                    {agendamento.status}
-                                  </Badge>
-                                </div>
-                                
-                                <div className="flex items-center gap-2 mb-2">
-                                  <User className="w-4 h-4 text-zinc-500" />
-                                  <span className="font-semibold text-lg text-zinc-900 dark:text-white">
-                                    {agendamento.clientes?.nome}
-                                  </span>
-                                </div>
-
-                                <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                                  <Phone className="w-4 h-4" />
-                                  <span className="text-sm">{agendamento.clientes?.telefone}</span>
-                                </div>
-                              </div>
+                          <div className="flex-1 min-w-0">
+                            {/* Linha 1: Horário + Status + Cliente */}
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${config.ponto}`} />
+                              <span className="text-lg font-bold text-zinc-900 dark:text-white tabular-nums">
+                                {format(parseISO(agendamento.data_hora), 'HH:mm')}
+                              </span>
+                              <span className="text-zinc-400 dark:text-zinc-600">•</span>
+                              <span className="font-semibold text-zinc-900 dark:text-white truncate">
+                                {agendamento.clientes?.nome}
+                              </span>
+                              <Badge color={config.badge} size="1" className="ml-auto flex-shrink-0 capitalize">
+                                {agendamento.status.replace('_', ' ')}
+                              </Badge>
                             </div>
-
-                            <div className="flex flex-wrap gap-4 text-sm">
-                              {(() => {
-                                const info = obterInfoServicos(agendamento);
-                                return (
-                                  <div className="flex items-center gap-2">
-                                    <Scissors className="w-4 h-4 text-zinc-500" />
-                                    <span className="text-zinc-700 dark:text-zinc-300 font-medium">
-                                      {info.nome}
-                                    </span>
-                                    {info.quantidade > 1 && (
-                                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                                        {info.quantidade} serviços
-                                      </span>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-                              
-                              <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-zinc-500" />
-                                <span className="text-zinc-600 dark:text-zinc-400">
-                                  {agendamento.barbeiros?.nome}
-                                </span>
-                              </div>
-
+                            
+                            {/* Linha 2: Serviço + Profissional + Duração + Preço */}
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
                               {(() => {
                                 const info = obterInfoServicos(agendamento);
                                 return (
                                   <>
-                                    <div className="flex items-center gap-2">
-                                      <Clock className="w-4 h-4 text-zinc-500" />
-                                      <span className="text-zinc-600 dark:text-zinc-400">
-                                        {info.duracao}min
+                                    <div className="flex items-center gap-1.5">
+                                      <Scissors className="w-3.5 h-3.5" />
+                                      <span className="font-medium text-zinc-700 dark:text-zinc-300 truncate max-w-[150px]">
+                                        {info.nomesCurtos}
                                       </span>
+                                      {info.quantidade > 1 && (
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-medium">
+                                          {info.quantidade}x
+                                        </span>
+                                      )}
                                     </div>
-
-                                    <div className="flex items-center gap-2">
-                                      <DollarSign className="w-4 h-4 text-zinc-500" />
-                                      <span className="text-zinc-700 dark:text-zinc-300 font-semibold">
-                                        R$ {info.preco.toFixed(2)}
-                                      </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <User className="w-3.5 h-3.5" />
+                                      <span>{agendamento.barbeiros?.nome}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      <span>{info.duracao}min</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                                      <DollarSign className="w-3.5 h-3.5" />
+                                      <span>R$ {info.preco.toFixed(2)}</span>
                                     </div>
                                   </>
                                 );
                               })()}
                             </div>
 
+                            {/* Linha 3: Telefone (opcional) */}
+                            {agendamento.clientes?.telefone && (
+                              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
+                                <Phone className="w-3 h-3" />
+                                <span>{agendamento.clientes.telefone}</span>
+                              </div>
+                            )}
+
                             {agendamento.observacoes && (
-                              <div className="mt-2 p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                                <p className="text-sm text-zinc-700 dark:text-zinc-300">
-                                  <strong>Obs:</strong> {agendamento.observacoes}
+                              <div className="mt-2 p-2 bg-zinc-100/80 dark:bg-zinc-800/50 rounded-md">
+                                <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2">
+                                  <strong className="font-medium">Obs:</strong> {agendamento.observacoes}
                                 </p>
                               </div>
                             )}

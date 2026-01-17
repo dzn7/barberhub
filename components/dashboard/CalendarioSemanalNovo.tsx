@@ -48,18 +48,16 @@ interface Agendamento {
 }
 
 type TipoVisualizacao = 'dia' | '3dias' | 'semana';
-type TamanhoHora = 'compacto' | 'normal' | 'expandido';
 
-// HORAS_DIA removido - agora usa configuração dinâmica do tenant via gerarArrayHoras()
+// Níveis de zoom granulares (0.5x até 1.5x)
+const NIVEIS_ZOOM = [0.5, 0.75, 1, 1.25, 1.5] as const;
+type NivelZoom = typeof NIVEIS_ZOOM[number];
 
-// Altura fixa de 170px como no arquivo de análise
-const ALTURA_HORA = 170;
+// Altura base para cálculo do zoom (1x = 160px)
+const ALTURA_BASE = 160;
 
-const TAMANHOS_HORA: Record<TamanhoHora, number> = {
-  compacto: 130,
-  normal: 170,
-  expandido: 220
-};
+// Largura mínima por coluna baseada no zoom
+const LARGURA_COLUNA_BASE = 180;
 
 const STATUS_CORES = {
   pendente: { bg: 'bg-amber-400', border: 'border-amber-500', text: 'text-amber-900', light: 'bg-amber-100 text-amber-800' },
@@ -152,15 +150,16 @@ export function CalendarioSemanalNovo() {
   
   // Configurações de visualização
   const [visualizacao, setVisualizacao] = useState<TipoVisualizacao>('semana');
-  const [tamanhoHora, setTamanhoHora] = useState<TamanhoHora>('normal');
-  const [modoVisualizacao, setModoVisualizacao] = useState<ModoVisualizacao>('lista');
+  const [nivelZoom, setNivelZoom] = useState<NivelZoom>(1);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollCabecalhoRef = useRef<HTMLDivElement>(null);
-  const sincronizandoScrollHorizontalRef = useRef(false);
+  const sincronizandoScrollRef = useRef(false);
   const subscriptionRef = useRef<any>(null);
 
-  const alturaHora = TAMANHOS_HORA[tamanhoHora];
+  // Calcular altura e largura baseadas no zoom
+  const alturaHora = Math.round(ALTURA_BASE * nivelZoom);
+  const larguraColuna = Math.round(LARGURA_COLUNA_BASE * Math.max(nivelZoom, 0.75));
   
   // Gerar array de horas dinamicamente baseado na configuração do tenant
   const horasDia = useMemo(() => {
@@ -238,33 +237,59 @@ export function CalendarioSemanalNovo() {
     return () => { if (subscriptionRef.current) supabase.removeChannel(subscriptionRef.current); };
   }, [tenant, dataBase, visualizacao]);
 
-  // Scroll para hora atual
+  // Scroll para hora atual (usando hora de início dinâmica)
   useEffect(() => {
-    if (scrollRef.current && !carregando) {
+    if (scrollRef.current && !carregando && horasDia.length > 0) {
       const horaAtual = new Date().getHours();
-      const scrollPosition = Math.max(0, (horaAtual - 8) * alturaHora);
-      scrollRef.current.scrollTop = scrollPosition;
+      const horaInicial = horasDia[0];
+      const scrollPosition = Math.max(0, (horaAtual - horaInicial) * alturaHora);
+      
+      // Scroll suave para a posição
+      scrollRef.current.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      });
     }
-  }, [carregando, alturaHora]);
+  }, [carregando, alturaHora, horasDia]);
 
+  // Sincronização de scroll otimizada com debounce
   const sincronizarScrollHorizontal = useCallback((origem: 'cabecalho' | 'timeline') => {
     const elTimeline = scrollRef.current;
     const elCabecalho = scrollCabecalhoRef.current;
     if (!elTimeline || !elCabecalho) return;
 
-    if (sincronizandoScrollHorizontalRef.current) return;
-    sincronizandoScrollHorizontalRef.current = true;
+    if (sincronizandoScrollRef.current) return;
+    sincronizandoScrollRef.current = true;
 
+    // Usar transform para melhor performance
     if (origem === 'timeline') {
       elCabecalho.scrollLeft = elTimeline.scrollLeft;
     } else {
       elTimeline.scrollLeft = elCabecalho.scrollLeft;
     }
 
+    // Liberar após o próximo frame
     requestAnimationFrame(() => {
-      sincronizandoScrollHorizontalRef.current = false;
+      requestAnimationFrame(() => {
+        sincronizandoScrollRef.current = false;
+      });
     });
   }, []);
+
+  // Funções de zoom
+  const aumentarZoom = useCallback(() => {
+    const indiceAtual = NIVEIS_ZOOM.indexOf(nivelZoom);
+    if (indiceAtual < NIVEIS_ZOOM.length - 1) {
+      setNivelZoom(NIVEIS_ZOOM[indiceAtual + 1]);
+    }
+  }, [nivelZoom]);
+
+  const diminuirZoom = useCallback(() => {
+    const indiceAtual = NIVEIS_ZOOM.indexOf(nivelZoom);
+    if (indiceAtual > 0) {
+      setNivelZoom(NIVEIS_ZOOM[indiceAtual - 1]);
+    }
+  }, [nivelZoom]);
 
   const buscarAgendamentos = async () => {
     if (!tenant) return;
@@ -593,19 +618,24 @@ export function CalendarioSemanalNovo() {
               </button>
             </div>
 
-            {/* Zoom */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
+            {/* Zoom com níveis granulares */}
+            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1">
               <button
-                onClick={() => setTamanhoHora('compacto')}
-                className={`p-1.5 rounded-md transition-all ${tamanhoHora === 'compacto' ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
-                title="Compacto"
+                onClick={diminuirZoom}
+                disabled={nivelZoom === NIVEIS_ZOOM[0]}
+                className="p-1 rounded-md transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Diminuir zoom"
               >
                 <ZoomOut className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
               </button>
+              <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 min-w-[40px] text-center">
+                {nivelZoom}x
+              </span>
               <button
-                onClick={() => setTamanhoHora('expandido')}
-                className={`p-1.5 rounded-md transition-all ${tamanhoHora === 'expandido' ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
-                title="Expandido"
+                onClick={aumentarZoom}
+                disabled={nivelZoom === NIVEIS_ZOOM[NIVEIS_ZOOM.length - 1]}
+                className="p-1 rounded-md transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Aumentar zoom"
               >
                 <ZoomIn className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
               </button>
@@ -635,7 +665,7 @@ export function CalendarioSemanalNovo() {
             onScroll={() => sincronizarScrollHorizontal('cabecalho')}
             className="flex-1 overflow-x-auto overscroll-x-contain"
           >
-            <div className="flex" style={{ minWidth: diasExibidos.length * 220 }}>
+            <div className="flex" style={{ minWidth: diasExibidos.length * larguraColuna }}>
               {diasExibidos.map((dia, idx) => {
                 const ehHoje = isToday(dia);
                 const isSelecionado = format(dia, 'yyyy-MM-dd') === format(dataBase, 'yyyy-MM-dd');
@@ -645,11 +675,12 @@ export function CalendarioSemanalNovo() {
                   <button
                     key={idx}
                     onClick={() => setDataBase(dia)}
-                    className={`flex-none w-[220px] lg:flex-1 lg:w-auto px-4 py-3.5 text-left border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 transition-colors active:scale-[0.99] ${
+                    className={`flex-none px-4 py-3.5 text-left border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 transition-colors active:scale-[0.99] ${
                       isSelecionado
                         ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
                         : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-900 dark:text-white'
                     }`}
+                    style={{ width: larguraColuna, minWidth: larguraColuna }}
                   >
                     <div className={`text-[10px] sm:text-xs font-semibold uppercase truncate ${
                       isSelecionado ? 'text-white/90 dark:text-zinc-700' : 'text-zinc-500 dark:text-zinc-400'
@@ -690,7 +721,8 @@ export function CalendarioSemanalNovo() {
       <div
         ref={scrollRef}
         onScroll={() => sincronizarScrollHorizontal('timeline')}
-        className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950"
+        className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950 scroll-smooth overscroll-contain"
+        style={{ scrollBehavior: 'smooth' }}
       >
         {carregando ? (
           <div className="flex items-center justify-center h-64">
@@ -718,8 +750,8 @@ export function CalendarioSemanalNovo() {
             <div 
               className="flex-1 grid relative" 
               style={{ 
-                gridTemplateColumns: `repeat(${diasExibidos.length}, minmax(220px, 1fr))`,
-                minWidth: diasExibidos.length * 220
+                gridTemplateColumns: `repeat(${diasExibidos.length}, minmax(${larguraColuna}px, 1fr))`,
+                minWidth: diasExibidos.length * larguraColuna
               }}
             >
               {diasExibidos.map((dia, diaIdx) => {
