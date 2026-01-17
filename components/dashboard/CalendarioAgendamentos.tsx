@@ -257,9 +257,14 @@ export function CalendarioAgendamentos() {
     });
 
     agendamentosFiltrados.forEach(ag => {
-      const data = format(parseISO(ag.data_hora), 'yyyy-MM-dd');
-      if (grupos[data]) {
-        grupos[data].push(ag);
+      if (!ag.data_hora) return;
+      try {
+        const data = format(parseISO(ag.data_hora), 'yyyy-MM-dd');
+        if (grupos[data]) {
+          grupos[data].push(ag);
+        }
+      } catch (error) {
+        console.error('[CalendarioAgendamentos] Erro ao processar data:', ag.data_hora, error);
       }
     });
     
@@ -634,7 +639,14 @@ export function CalendarioAgendamentos() {
           
           <div className="text-center">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-              {format(diasExibicao[0], "d 'de' MMMM", { locale: ptBR })} - {format(diasExibicao[6], "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              {diasExibicao.length > 0 && (
+                <>
+                  {format(diasExibicao[0], "d 'de' MMMM", { locale: ptBR })}
+                  {diasExibicao.length > 1 && (
+                    <> - {format(diasExibicao[diasExibicao.length - 1], "d 'de' MMMM 'de' yyyy", { locale: ptBR })}</>
+                  )}
+                </>
+              )}
             </h3>
             <Button
               variant="soft"
@@ -733,7 +745,7 @@ export function CalendarioAgendamentos() {
                             <div className="flex items-center gap-2 mb-2">
                               <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${config.ponto}`} />
                               <span className="text-lg font-bold text-zinc-900 dark:text-white tabular-nums">
-                                {format(parseISO(agendamento.data_hora), 'HH:mm')}
+                                {agendamento.data_hora ? format(parseISO(agendamento.data_hora), 'HH:mm') : '--:--'}
                               </span>
                               <span className="text-zinc-400 dark:text-zinc-600">•</span>
                               <span className="font-semibold text-zinc-900 dark:text-white truncate">
@@ -927,7 +939,10 @@ export function CalendarioAgendamentos() {
                 <div className="flex-1">
                   <p className="text-xs text-zinc-500 mb-0.5">Data e Hora</p>
                   <p className="font-semibold text-zinc-900 dark:text-white">
-                    {format(parseISO(agendamentoSelecionado.data_hora), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                    {agendamentoSelecionado.data_hora 
+                      ? format(parseISO(agendamentoSelecionado.data_hora), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })
+                      : 'Data inválida'
+                    }
                   </p>
                 </div>
               </div>
