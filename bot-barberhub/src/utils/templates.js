@@ -446,6 +446,44 @@ Bom trabalho! ${emoji}✨
 *${nomeBarbearia}*`;
 }
 
+/**
+ * Template de notificação de horário liberado (lista de espera)
+ */
+export function templateHorarioLiberado({ 
+  nomeCliente,
+  nomeBarbearia,
+  nomeBarbeiro, 
+  dataHora,
+  slug,
+  tipoNegocio = 'barbearia'
+}) {
+  const dataFormatada = formatarDataHora(dataHora);
+  const termo = obterTerminologia(tipoNegocio);
+  const ehNail = ehNailDesigner(tipoNegocio);
+  const emoji = obterEmoji(tipoNegocio);
+  
+  const preposicao = ehNail ? 'no' : 'na';
+  
+  return `🔔 *Horário Liberado!*
+
+${nomeCliente ? `Olá, *${nomeCliente}*!` : 'Olá!'}
+
+Ótima notícia! O horário que você estava aguardando ${preposicao} *${nomeBarbearia}* acabou de ser liberado! 🎉
+
+━━━━━━━━━━━━━━━━━━━
+📅 *Data:* ${dataFormatada}
+👤 *${termo.profissional.singular}:* ${nomeBarbeiro}
+━━━━━━━━━━━━━━━━━━━
+
+⚡ *Corra para garantir seu horário!*
+Este horário pode ser reservado por outro cliente a qualquer momento.
+
+🌐 *Agende agora:*
+barberhub.online/${slug}/agendar
+
+${emoji} *${nomeBarbearia}*`;
+}
+
 export default {
   templateBoasVindasTenant,
   templateConfirmacaoCliente,
@@ -453,5 +491,6 @@ export default {
   templateLembreteCliente,
   templateCancelamentoCliente,
   templateRemarcacaoCliente,
-  templateBoasVindasBarbeiro
+  templateBoasVindasBarbeiro,
+  templateHorarioLiberado
 };

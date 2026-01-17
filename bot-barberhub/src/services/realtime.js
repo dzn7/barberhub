@@ -13,6 +13,7 @@ import {
   enviarNotificacaoRemarcacao,
   enviarBoasVindasTenant
 } from './notificacoes.js';
+import { notificarHorarioLiberado } from './lista-espera.js';
 import logger from '../utils/logger.js';
 
 let canalAgendamentos = null;
@@ -80,6 +81,10 @@ export async function iniciarRealtimeAgendamentos() {
             if (statusAnterior !== 'cancelado' && statusNovo === 'cancelado') {
               logger.info('❌ Cancelamento detectado');
               await enviarNotificacaoCancelamento(payload.new.id);
+              
+              // Verificar lista de espera e notificar interessados
+              logger.info('🔔 Verificando lista de espera...');
+              await notificarHorarioLiberado(payload.new.id);
             }
 
             // Remarcação (data/hora mudou e não foi cancelado)
@@ -374,6 +379,10 @@ async function verificarAgendamentosAtualizados() {
           try {
             await enviarNotificacaoCancelamento(ag.id);
             logger.info('✅ Notificação de cancelamento enviada!');
+            
+            // Verificar lista de espera e notificar interessados
+            logger.info('🔔 Verificando lista de espera...');
+            await notificarHorarioLiberado(ag.id);
           } catch (err) {
             logger.error('❌ Erro ao enviar cancelamento:', err.message);
           }

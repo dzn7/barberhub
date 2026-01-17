@@ -266,13 +266,24 @@ export default function PaginaBarbearia() {
             )}
           </motion.div>
 
-          {/* Link Meus Agendamentos */}
+          {/* Links Secundários */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-4 text-center"
+            className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6"
           >
+            <Link
+              href={`/${tenant.slug}/horarios`}
+              className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{ 
+                color: cores.secundaria,
+                backgroundColor: cores.destaque + '15'
+              }}
+            >
+              <Clock className="w-4 h-4" />
+              Ver horários disponíveis
+            </Link>
             <Link
               href={`/${tenant.slug}/meus-agendamentos`}
               className="inline-flex items-center gap-2 text-sm font-medium transition-all hover:opacity-80"

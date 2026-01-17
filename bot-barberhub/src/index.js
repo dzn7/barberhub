@@ -1,7 +1,7 @@
 /**
  * Bot WhatsApp BarberHub
  * Sistema multi-tenant de notificações automáticas via WhatsApp
- * Otimizado para Fly.io free tier
+ * Gerenciado com PM2
  */
 
 import express from 'express';
@@ -16,7 +16,7 @@ import logger from './utils/logger.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(express.json());
