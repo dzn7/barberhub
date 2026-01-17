@@ -10,18 +10,11 @@ import logger from '../utils/logger.js';
 let intervaloLembretes = null;
 
 /**
- * Verifica se está no horário permitido para envio de lembretes
+ * Lembretes podem ser enviados a qualquer momento (24h)
+ * Removido limite de horário para permitir envio contínuo
  */
 function dentroDoHorarioPermitido() {
-  const agora = new Date();
-  const hora = agora.getHours();
-  const minuto = agora.getMinutes();
-  const horaAtual = hora + minuto / 60;
-
-  const [horaInicio] = (process.env.HORARIO_INICIO_LEMBRETES || '08:00').split(':').map(Number);
-  const [horaFim] = (process.env.HORARIO_FIM_LEMBRETES || '22:00').split(':').map(Number);
-
-  return horaAtual >= horaInicio && horaAtual <= horaFim;
+  return true;
 }
 
 /**

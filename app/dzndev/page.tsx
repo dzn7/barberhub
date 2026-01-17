@@ -19,7 +19,7 @@ import { format, formatDistanceToNow, parseISO, differenceInDays } from 'date-fn
 import { ptBR } from 'date-fns/locale'
 import {
   ModalDetalhesTenant, GestaoUsuariosAuth, SistemaBackup, RelatoriosGlobais,
-  PainelBotFly, PLANOS_CONFIG
+  PainelBotVM, PLANOS_CONFIG
 } from '@/components/superadmin'
 import { ModalPagamentoPix } from '@/components/pagamentos'
 import { Hand } from 'lucide-react'
@@ -83,7 +83,6 @@ interface MetricasInfra {
     tabelas: { total_registros: number }
   }
   r2?: { tamanho_total_mb: number; total_objetos: number; percentual: number }
-  fly?: { online: boolean; status: string; region: string }
 }
 
 /**
@@ -207,32 +206,26 @@ export default function PainelSuperAdmin() {
   const verificarBot = async () => {
     setVerificandoBot(true)
     try {
-      // Primeiro tenta a API de métricas que usa o Fly.io GraphQL API
-      const resMetricas = await fetch('/api/admin/metricas', { 
-        headers: { 'x-admin-auth': 'dzndev-1503' } 
-      })
-      
-      if (resMetricas.ok) {
-        const dados = await resMetricas.json()
-        const flyOnline = dados.fly_io?.online || dados.fly_io?.status === 'started'
-        setStatusBot({ online: flyOnline, ultimaVerificacao: new Date() })
-        return
-      }
-      
-      // Fallback: tenta health check direto (pode falhar por CORS)
+      // Conectar diretamente com a VM do Google Cloud
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
       
-      const res = await fetch('https://bot-barberhub.fly.dev/health', { 
-        mode: 'cors',
+      const res = await fetch('http://34.151.235.113:3001/health', { 
         signal: controller.signal
       })
       clearTimeout(timeoutId)
-      setStatusBot({ online: res.ok, ultimaVerificacao: new Date() })
+      
+      if (res.ok) {
+        const dados = await res.json()
+        setStatusBot({ 
+          online: dados.whatsapp?.conectado || false, 
+          ultimaVerificacao: new Date() 
+        })
+      } else {
+        setStatusBot({ online: false, ultimaVerificacao: new Date() })
+      }
     } catch {
-      // Se falhar, assume online baseado nas métricas já carregadas
-      const flyOnline = metricas.fly?.online || metricas.fly?.status === 'started'
-      setStatusBot({ online: flyOnline, ultimaVerificacao: new Date() })
+      setStatusBot({ online: false, ultimaVerificacao: new Date() })
     } finally {
       setVerificandoBot(false)
     }
@@ -244,7 +237,7 @@ export default function PainelSuperAdmin() {
       const res = await fetch('/api/admin/metricas', { headers: { 'x-admin-auth': 'dzndev-1503' } })
       if (res.ok) {
         const dados = await res.json()
-        setMetricas({ supabase: dados.supabase, r2: dados.cloudflare_r2, fly: dados.fly_io })
+        setMetricas({ supabase: dados.supabase, r2: dados.cloudflare_r2 })
       }
     } catch (error) {
       console.error('Erro métricas:', error)
@@ -1065,7 +1058,7 @@ export default function PainelSuperAdmin() {
             {/* Bot WhatsApp */}
             {abaAtiva === 'bot' && (
               <motion.div key="bot" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                <PainelBotFly />
+                <PainelBotVM />
               </motion.div>
             )}
 
@@ -1106,24 +1099,28 @@ export default function PainelSuperAdmin() {
                     </div>
                   </CardInfra>
 
-                  {/* Fly.io */}
+                  {/* Google Cloud VM */}
                   <CardInfra
                     titulo="Bot WhatsApp"
-                    subtitulo="Fly.io"
+                    subtitulo="Google Cloud VM"
                     cor={statusBot.online ? 'bg-purple-500' : 'bg-zinc-500'}
                     icone={Bot}
-                    link="https://fly.io/apps/bot-barberhub"
+                    link="http://34.151.235.113:3001"
                     status={statusBot.online ? 'Online' : 'Offline'}
                     statusCor={statusBot.online ? 'text-emerald-500' : 'text-red-500'}
                   >
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-zinc-500">Região</span>
-                        <span className="text-zinc-900 dark:text-white">{metricas.fly?.region?.toUpperCase() || 'GRU'}</span>
+                        <span className="text-zinc-500">IP</span>
+                        <span className="text-zinc-900 dark:text-white font-mono text-xs">34.151.235.113</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-zinc-500">Status</span>
-                        <span className={statusBot.online ? 'text-emerald-500' : 'text-red-500'}>{metricas.fly?.status || 'Desconhecido'}</span>
+                        <span className="text-zinc-500">Porta</span>
+                        <span className="text-zinc-900 dark:text-white">3001</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-zinc-500">Região</span>
+                        <span className="text-zinc-900 dark:text-white">São Paulo</span>
                       </div>
                     </div>
                   </CardInfra>

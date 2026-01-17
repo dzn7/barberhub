@@ -608,6 +608,62 @@ export function obterEstatisticasStore() {
 }
 
 /**
+ * Desconecta o WhatsApp (logout)
+ */
+export async function desconectarWhatsApp() {
+  try {
+    logger.info('🔌 Desconectando WhatsApp...');
+    
+    if (sock) {
+      await sock.logout();
+      sock = null;
+    }
+    
+    statusConexao = 'disconnected';
+    qrCodeAtual = null;
+    
+    logger.info('✅ WhatsApp desconectado');
+    return { sucesso: true };
+  } catch (error) {
+    logger.error(`❌ Erro ao desconectar: ${error.message}`);
+    return { sucesso: false, erro: error.message };
+  }
+}
+
+/**
+ * Reinicia a conexão do WhatsApp
+ */
+export async function reiniciarWhatsApp() {
+  try {
+    logger.info('🔄 Reiniciando WhatsApp...');
+    
+    if (sock) {
+      try {
+        sock.end(undefined);
+      } catch (e) {
+        // Ignorar erro
+      }
+      sock = null;
+    }
+    
+    statusConexao = 'disconnected';
+    qrCodeAtual = null;
+    conectando = false;
+    
+    // Aguardar um pouco antes de reconectar
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    await iniciarWhatsApp();
+    
+    logger.info('✅ WhatsApp reiniciado');
+    return { sucesso: true };
+  } catch (error) {
+    logger.error(`❌ Erro ao reiniciar: ${error.message}`);
+    return { sucesso: false, erro: error.message };
+  }
+}
+
+/**
  * Limpa mensagens antigas do Supabase (manutenção)
  * Remove mensagens com mais de 24 horas
  */
@@ -640,5 +696,7 @@ export default {
   registrarCallbackQR,
   limparSessaoContato,
   obterEstatisticasStore,
-  limparMensagensAntigas
+  limparMensagensAntigas,
+  desconectarWhatsApp,
+  reiniciarWhatsApp
 };
