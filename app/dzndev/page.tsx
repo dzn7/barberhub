@@ -206,14 +206,8 @@ export default function PainelSuperAdmin() {
   const verificarBot = async () => {
     setVerificandoBot(true)
     try {
-      // Conectar diretamente com a VM do Google Cloud
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000)
-      
-      const res = await fetch('http://34.151.235.113:3001/health', { 
-        signal: controller.signal
-      })
-      clearTimeout(timeoutId)
+      // Usar proxy API para contornar CORS
+      const res = await fetch('/api/bot/health')
       
       if (res.ok) {
         const dados = await res.json()

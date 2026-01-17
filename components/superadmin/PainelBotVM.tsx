@@ -24,8 +24,8 @@ import { format, formatDistanceToNow, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import QRCode from 'qrcode'
 
-// URL da VM do Google Cloud
-const BOT_URL = 'http://34.151.235.113:3001'
+// URL do proxy API (contorna CORS)
+const BOT_API = '/api/bot'
 
 interface StatusBot {
   status: 'online' | 'offline'
@@ -106,7 +106,7 @@ export function PainelBotVM() {
   const buscarStatus = useCallback(async () => {
     try {
       setErro(null)
-      const response = await fetch(`${BOT_URL}/health`, {
+      const response = await fetch(`${BOT_API}/health`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       })
@@ -131,7 +131,7 @@ export function PainelBotVM() {
    */
   const buscarQRCode = useCallback(async () => {
     try {
-      const response = await fetch(`${BOT_URL}/health/qr`, {
+      const response = await fetch(`${BOT_API}/health/qr`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       })
@@ -165,7 +165,7 @@ export function PainelBotVM() {
    */
   const buscarMensagens = useCallback(async () => {
     try {
-      const response = await fetch(`${BOT_URL}/health/mensagens-recentes?limite=15`, {
+      const response = await fetch(`${BOT_API}/health/mensagens-recentes?limite=15`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       })
@@ -186,7 +186,7 @@ export function PainelBotVM() {
    */
   const buscarEstatisticas = useCallback(async () => {
     try {
-      const response = await fetch(`${BOT_URL}/health/estatisticas`, {
+      const response = await fetch(`${BOT_API}/health/estatisticas`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       })
@@ -235,7 +235,7 @@ export function PainelBotVM() {
     setErro(null)
 
     try {
-      const response = await fetch(`${BOT_URL}/health/${acao}`, {
+      const response = await fetch(`${BOT_API}/health/${acao}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
@@ -346,7 +346,7 @@ export function PainelBotVM() {
             </button>
             
             <a
-              href={BOT_URL}
+              href="http://34.151.235.113:3001"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-colors"
