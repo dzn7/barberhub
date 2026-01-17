@@ -144,10 +144,16 @@ export function ModalListaEspera({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-md mx-auto z-50"
+            className="fixed inset-x-4 max-w-md mx-auto z-50"
+            style={{
+              top: '50%',
+              transform: 'translateY(-50%)',
+              maxHeight: 'calc(100vh - 120px)',
+              marginTop: 'env(safe-area-inset-top, 0px)'
+            }}
           >
             <div 
-              className="rounded-2xl border overflow-hidden shadow-2xl"
+              className="rounded-2xl border overflow-hidden shadow-2xl max-h-full flex flex-col"
               style={{ 
                 backgroundColor: cores.primaria,
                 borderColor: cores.destaque + '20'
@@ -155,7 +161,7 @@ export function ModalListaEspera({
             >
               {/* Header */}
               <div 
-                className="flex items-center justify-between px-5 py-4 border-b"
+                className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0"
                 style={{ borderColor: cores.destaque + '20' }}
               >
                 <div className="flex items-center gap-3">
@@ -187,7 +193,7 @@ export function ModalListaEspera({
               </div>
 
               {/* Conteúdo */}
-              <div className="p-5">
+              <div className="p-5 overflow-y-auto flex-1">
                 <AnimatePresence mode="wait">
                   {status === 'formulario' && (
                     <motion.form
