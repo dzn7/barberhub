@@ -12,7 +12,9 @@ import {
   templateCancelamentoCliente,
   templateRemarcacaoCliente,
   templateBoasVindasTenant,
-  templateBoasVindasBarbeiro
+  templateBoasVindasBarbeiro,
+  templateCancelamentoBarbeiro,
+  templateRemarcacaoBarbeiro
 } from '../utils/templates.js';
 import logger from '../utils/logger.js';
 
@@ -295,7 +297,7 @@ export async function enviarLembreteAgendamento(agendamentoId) {
 }
 
 /**
- * Envia notificação de cancelamento
+ * Envia notificação de cancelamento para cliente E barbeiro/profissional
  */
 export async function enviarNotificacaoCancelamento(agendamentoId) {
   try {
@@ -313,43 +315,76 @@ export async function enviarNotificacaoCancelamento(agendamentoId) {
 
     const { clientes, barbeiros, tenants } = agendamento;
 
-    if (!clientes?.telefone) {
-      return { sucesso: false, erro: 'Cliente sem telefone' };
-    }
-
     // Extrair informações de serviços (único ou múltiplos)
     const infoServicos = extrairInfoServicos(agendamento);
-
     const tipoNegocio = tenants?.tipo_negocio || 'barbearia';
-    
-    const mensagem = templateCancelamentoCliente({
-      nomeCliente: clientes.nome,
-      nomeBarbearia: tenants?.nome || 'Estabelecimento',
-      nomeBarbeiro: barbeiros?.nome || 'Profissional',
-      nomeServico: infoServicos.nomeServico,
-      dataHora: agendamento.data_hora,
-      telefone: tenants?.whatsapp || tenants?.telefone,
-      slug: tenants?.slug,
-      tipoNegocio,
-      duracaoTotal: infoServicos.duracaoTotal
-    });
 
-    const resultado = await enviarMensagem(clientes.telefone, mensagem);
+    // 1. Enviar para cliente (se tiver telefone)
+    if (clientes?.telefone) {
+      const mensagemCliente = templateCancelamentoCliente({
+        nomeCliente: clientes.nome,
+        nomeBarbearia: tenants?.nome || 'Estabelecimento',
+        nomeBarbeiro: barbeiros?.nome || 'Profissional',
+        nomeServico: infoServicos.nomeServico,
+        dataHora: agendamento.data_hora,
+        telefone: tenants?.whatsapp || tenants?.telefone,
+        slug: tenants?.slug,
+        tipoNegocio,
+        duracaoTotal: infoServicos.duracaoTotal
+      });
 
-    await registrarNotificacao(
-      agendamento.tenant_id,
-      agendamentoId,
-      'cancelamento',
-      resultado.sucesso ? 'enviada' : 'erro',
-      mensagem,
-      resultado.erro
-    );
+      const resultadoCliente = await enviarMensagem(clientes.telefone, mensagemCliente);
 
-    if (resultado.sucesso) {
-      logger.info('✅ Cancelamento enviado');
+      await registrarNotificacao(
+        agendamento.tenant_id,
+        agendamentoId,
+        'cancelamento',
+        resultadoCliente.sucesso ? 'enviada' : 'erro',
+        mensagemCliente,
+        resultadoCliente.erro
+      );
+
+      if (resultadoCliente.sucesso) {
+        logger.info('✅ Cancelamento enviado ao cliente');
+      }
     }
 
-    return resultado;
+    // 2. Aguardar antes de enviar para o barbeiro (evita rate limiting)
+    if (clientes?.telefone && barbeiros?.telefone) {
+      logger.info('⏳ Aguardando 5s antes de notificar o profissional...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+
+    // 3. Enviar para barbeiro/profissional (se tiver telefone)
+    if (barbeiros?.telefone) {
+      const mensagemBarbeiro = templateCancelamentoBarbeiro({
+        nomeBarbeiro: barbeiros.nome,
+        nomeCliente: clientes?.nome || 'Cliente',
+        telefoneCliente: clientes?.telefone,
+        nomeServico: infoServicos.nomeServico,
+        dataHora: agendamento.data_hora,
+        motivoCancelamento: agendamento.motivo_cancelamento,
+        tipoNegocio,
+        duracaoTotal: infoServicos.duracaoTotal
+      });
+
+      const resultadoBarbeiro = await enviarMensagem(barbeiros.telefone, mensagemBarbeiro);
+
+      await registrarNotificacao(
+        agendamento.tenant_id,
+        agendamentoId,
+        'cancelamento_barbeiro',
+        resultadoBarbeiro.sucesso ? 'enviada' : 'erro',
+        mensagemBarbeiro,
+        resultadoBarbeiro.erro
+      );
+
+      if (resultadoBarbeiro.sucesso) {
+        logger.info('✅ Cancelamento enviado ao barbeiro');
+      }
+    }
+
+    return { sucesso: true };
   } catch (error) {
     logger.error('❌ Erro ao enviar cancelamento:', error);
     return { sucesso: false, erro: error.message };
@@ -357,7 +392,7 @@ export async function enviarNotificacaoCancelamento(agendamentoId) {
 }
 
 /**
- * Envia notificação de remarcação
+ * Envia notificação de remarcação para cliente E barbeiro/profissional
  */
 export async function enviarNotificacaoRemarcacao(agendamentoId, dataHoraAntiga) {
   try {
@@ -370,9 +405,9 @@ export async function enviarNotificacaoRemarcacao(agendamentoId, dataHoraAntiga)
 
     const { clientes, barbeiros, servicos, tenants } = agendamento;
 
-    if (!clientes?.telefone) {
-      return { sucesso: false, erro: 'Cliente sem telefone' };
-    }
+    // Extrair informações de serviços (único ou múltiplos)
+    const infoServicos = extrairInfoServicos(agendamento);
+    const tipoNegocio = tenants?.tipo_negocio || 'barbearia';
 
     let endereco = null;
     if (tenants?.endereco) {
@@ -381,38 +416,75 @@ export async function enviarNotificacaoRemarcacao(agendamentoId, dataHoraAntiga)
       if (tenants.estado) endereco += ` - ${tenants.estado}`;
     }
 
-    const tipoNegocio = tenants?.tipo_negocio || 'barbearia';
-    
-    const mensagem = templateRemarcacaoCliente({
-      nomeCliente: clientes.nome,
-      nomeBarbearia: tenants?.nome || 'Estabelecimento',
-      nomeBarbeiro: barbeiros?.nome || 'Profissional',
-      nomeServico: servicos?.nome || 'Serviço',
-      preco: servicos?.preco,
-      dataHoraAntiga,
-      dataHoraNova: agendamento.data_hora,
-      endereco,
-      telefone: tenants?.whatsapp || tenants?.telefone,
-      slug: tenants?.slug,
-      tipoNegocio
-    });
+    // 1. Enviar para cliente (se tiver telefone)
+    if (clientes?.telefone) {
+      const mensagemCliente = templateRemarcacaoCliente({
+        nomeCliente: clientes.nome,
+        nomeBarbearia: tenants?.nome || 'Estabelecimento',
+        nomeBarbeiro: barbeiros?.nome || 'Profissional',
+        nomeServico: infoServicos.nomeServico,
+        preco: infoServicos.preco,
+        dataHoraAntiga,
+        dataHoraNova: agendamento.data_hora,
+        endereco,
+        telefone: tenants?.whatsapp || tenants?.telefone,
+        slug: tenants?.slug,
+        tipoNegocio,
+        duracaoTotal: infoServicos.duracaoTotal
+      });
 
-    const resultado = await enviarMensagem(clientes.telefone, mensagem);
+      const resultadoCliente = await enviarMensagem(clientes.telefone, mensagemCliente);
 
-    await registrarNotificacao(
-      agendamento.tenant_id,
-      agendamentoId,
-      'remarcacao',
-      resultado.sucesso ? 'enviada' : 'erro',
-      mensagem,
-      resultado.erro
-    );
+      await registrarNotificacao(
+        agendamento.tenant_id,
+        agendamentoId,
+        'remarcacao',
+        resultadoCliente.sucesso ? 'enviada' : 'erro',
+        mensagemCliente,
+        resultadoCliente.erro
+      );
 
-    if (resultado.sucesso) {
-      logger.info('✅ Remarcação enviada');
+      if (resultadoCliente.sucesso) {
+        logger.info('✅ Remarcação enviada ao cliente');
+      }
     }
 
-    return resultado;
+    // 2. Aguardar antes de enviar para o barbeiro (evita rate limiting)
+    if (clientes?.telefone && barbeiros?.telefone) {
+      logger.info('⏳ Aguardando 5s antes de notificar o profissional...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+
+    // 3. Enviar para barbeiro/profissional (se tiver telefone)
+    if (barbeiros?.telefone) {
+      const mensagemBarbeiro = templateRemarcacaoBarbeiro({
+        nomeBarbeiro: barbeiros.nome,
+        nomeCliente: clientes?.nome || 'Cliente',
+        telefoneCliente: clientes?.telefone,
+        nomeServico: infoServicos.nomeServico,
+        dataHoraAntiga,
+        dataHoraNova: agendamento.data_hora,
+        tipoNegocio,
+        duracaoTotal: infoServicos.duracaoTotal
+      });
+
+      const resultadoBarbeiro = await enviarMensagem(barbeiros.telefone, mensagemBarbeiro);
+
+      await registrarNotificacao(
+        agendamento.tenant_id,
+        agendamentoId,
+        'remarcacao_barbeiro',
+        resultadoBarbeiro.sucesso ? 'enviada' : 'erro',
+        mensagemBarbeiro,
+        resultadoBarbeiro.erro
+      );
+
+      if (resultadoBarbeiro.sucesso) {
+        logger.info('✅ Remarcação enviada ao barbeiro');
+      }
+    }
+
+    return { sucesso: true };
   } catch (error) {
     logger.error('❌ Erro ao enviar remarcação:', error);
     return { sucesso: false, erro: error.message };

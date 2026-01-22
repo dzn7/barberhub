@@ -447,6 +447,127 @@ Bom trabalho! ${emoji}✨
 }
 
 /**
+ * Template de cancelamento para barbeiro/profissional
+ * Notifica o profissional quando um agendamento é cancelado
+ */
+export function templateCancelamentoBarbeiro({
+  nomeBarbeiro,
+  nomeCliente,
+  telefoneCliente,
+  nomeServico,
+  dataHora,
+  motivoCancelamento,
+  tipoNegocio = 'barbearia',
+  duracaoTotal = null
+}) {
+  const dataFormatada = formatarDataHora(dataHora);
+  const emojiServico = obterEmojiServico(tipoNegocio);
+  const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
+  const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
+  
+  let mensagem = `❌ *Agendamento Cancelado*
+
+Olá, *${nomeBarbeiro}*!
+
+Um agendamento foi cancelado:
+
+👤 *Cliente:* ${nomeCliente}
+📱 *Telefone:* ${telefoneCliente || 'Não informado'}
+${emojiServico} *${labelServico}:* ${servicosFormatados}
+📅 *Data:* ${dataFormatada}`;
+
+  if (motivoCancelamento) {
+    mensagem += `
+
+📝 *Motivo:* ${motivoCancelamento}`;
+  }
+
+  mensagem += `
+
+⏰ Este horário agora está disponível para novos agendamentos.`;
+
+  return mensagem;
+}
+
+/**
+ * Template de remarcação para barbeiro/profissional
+ * Notifica o profissional quando um agendamento é remarcado
+ */
+export function templateRemarcacaoBarbeiro({
+  nomeBarbeiro,
+  nomeCliente,
+  telefoneCliente,
+  nomeServico,
+  dataHoraAntiga,
+  dataHoraNova,
+  tipoNegocio = 'barbearia',
+  duracaoTotal = null
+}) {
+  const dataAntigaFormatada = formatarDataHora(dataHoraAntiga);
+  const dataNovaFormatada = formatarDataHora(dataHoraNova);
+  const emojiServico = obterEmojiServico(tipoNegocio);
+  const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
+  const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
+  
+  return `🔄 *Agendamento Remarcado*
+
+Olá, *${nomeBarbeiro}*!
+
+Um agendamento foi remarcado:
+
+👤 *Cliente:* ${nomeCliente}
+📱 *Telefone:* ${telefoneCliente || 'Não informado'}
+${emojiServico} *${labelServico}:* ${servicosFormatados}
+
+❌ *Data Anterior:*
+~${dataAntigaFormatada}~
+
+✅ *Nova Data:*
+*${dataNovaFormatada}*
+
+📅 Sua agenda foi atualizada automaticamente.`;
+}
+
+/**
+ * Template de notificação de horário liberado para interessados SEM preferência
+ * (qualquer horário que liberar)
+ */
+export function templateHorarioLiberadoSemPreferencia({
+  nomeCliente,
+  nomeBarbearia,
+  nomeBarbeiro,
+  dataHora,
+  slug,
+  tipoNegocio = 'barbearia'
+}) {
+  const dataFormatada = formatarDataHora(dataHora);
+  const termo = obterTerminologia(tipoNegocio);
+  const ehNail = ehNailDesigner(tipoNegocio);
+  const emoji = obterEmoji(tipoNegocio);
+  
+  const preposicao = ehNail ? 'no' : 'na';
+  
+  return `🔔 *Horário Disponível!*
+
+${nomeCliente ? `Olá, *${nomeCliente}*!` : 'Olá!'}
+
+Você estava na lista de espera ${preposicao} *${nomeBarbearia}* e um horário acabou de ser liberado! 🎉
+
+━━━━━━━━━━━━━━━━━━━
+📅 *Data:* ${dataFormatada}
+👤 *${termo.profissional.singular}:* ${nomeBarbeiro}
+━━━━━━━━━━━━━━━━━━━
+
+⚡ *Garanta seu horário agora!*
+Este horário pode ser reservado por outro cliente a qualquer momento.
+
+🌐 *Agende agora:*
+barberhub.online/${slug}/agendar
+
+${emoji} *${nomeBarbearia}*`;
+}
+
+/**
  * Template de notificação de horário liberado (lista de espera)
  */
 export function templateHorarioLiberado({ 
@@ -492,5 +613,8 @@ export default {
   templateCancelamentoCliente,
   templateRemarcacaoCliente,
   templateBoasVindasBarbeiro,
-  templateHorarioLiberado
+  templateCancelamentoBarbeiro,
+  templateRemarcacaoBarbeiro,
+  templateHorarioLiberado,
+  templateHorarioLiberadoSemPreferencia
 };

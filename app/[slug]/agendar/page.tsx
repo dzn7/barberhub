@@ -43,7 +43,8 @@ import {
   gerarTodosHorarios, 
   gerarDatasDisponiveis
 } from '@/lib/horarios'
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CalendarDays, Bell, Sparkles } from 'lucide-react'
+import { ModalListaEsperaSemPreferencia } from '@/components/horarios/ModalListaEsperaSemPreferencia'
 
 interface Tenant {
   id: string
@@ -126,6 +127,9 @@ export default function PaginaAgendar() {
   
   // Toast local para feedback
   const [toastInfo, setToastInfo] = useState<{ tipo: 'erro' | 'aviso' | 'sucesso'; mensagem: string } | null>(null)
+  
+  // Modal de lista de espera sem preferência de horário
+  const [modalListaEsperaAberto, setModalListaEsperaAberto] = useState(false)
   
   const mostrarToast = (tipo: 'erro' | 'aviso' | 'sucesso', mensagem: string) => {
     setToastInfo({ tipo, mensagem })
@@ -1372,6 +1376,22 @@ export default function PaginaAgendar() {
                       <p className="text-sm mt-1 opacity-60" style={{ color: cores.destaque }}>
                         Tente selecionar outra data.
                       </p>
+                      
+                      {/* Botão para lista de espera sem preferência */}
+                      {barbeiroSelecionado && (
+                        <button
+                          onClick={() => setModalListaEsperaAberto(true)}
+                          className="mt-6 px-6 py-3 rounded-xl font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 mx-auto"
+                          style={{ 
+                            backgroundColor: cores.secundaria + '15',
+                            color: cores.secundaria,
+                            border: `1px solid ${cores.secundaria}30`
+                          }}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          Entrar na Lista de Espera
+                        </button>
+                      )}
                     </div>
                   ) : (() => {
                     // Agrupar horários por período
@@ -1416,6 +1436,22 @@ export default function PaginaAgendar() {
                               </span>
                               <ArrowRight className="w-4 h-4" style={{ color: cores.destaque }} />
                             </div>
+                          </button>
+                        )}
+
+                        {/* Botão Lista de Espera - Sempre visível quando não há horários disponíveis suficientes */}
+                        {horariosDisponiveis.length < 3 && (
+                          <button
+                            onClick={() => setModalListaEsperaAberto(true)}
+                            className="w-full p-3 rounded-xl border transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+                            style={{ 
+                              borderColor: cores.destaque + '30',
+                              backgroundColor: cores.destaque + '08',
+                              color: cores.destaque
+                            }}
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            <span className="text-sm">Poucos horários? Entre na lista de espera</span>
                           </button>
                         )}
                         
@@ -1793,6 +1829,19 @@ export default function PaginaAgendar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal de Lista de Espera sem Preferência de Horário */}
+      {tenant && barbeiroSelecionado && (
+        <ModalListaEsperaSemPreferencia
+          aberto={modalListaEsperaAberto}
+          onFechar={() => setModalListaEsperaAberto(false)}
+          tenantId={tenant.id}
+          barbeiroId={barbeiroSelecionado}
+          barbeiroNome={barbeiros.find(b => b.id === barbeiroSelecionado)?.nome || 'Profissional'}
+          cores={cores}
+          nomeEstabelecimento={tenant.nome}
+        />
+      )}
     </div>
   )
 }
