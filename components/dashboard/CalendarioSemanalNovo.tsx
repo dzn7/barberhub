@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { memo } from "react";
 import {
   Plus, ChevronLeft, ChevronRight, Calendar, Scissors,
   CheckCircle, XCircle, Trash2, X, Clock, Phone, RefreshCw,
@@ -25,6 +24,7 @@ import { TipoNegocio } from "@/lib/tipos-negocio";
 import { buscarConfiguracaoHorarios, gerarArrayHoras, ConfiguracaoHorarios, HORARIOS_PADRAO } from "@/lib/horarios-funcionamento";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
+const BREAKPOINT_MOBILE = "(max-width: 1023px)";
 const BOT_URL = process.env.NEXT_PUBLIC_BOT_URL || 'https://bot-barberhub.fly.dev';
 
 interface Servico {
@@ -41,10 +41,36 @@ interface Agendamento {
   observacoes?: string;
   barbeiro_id: string;
   servicos_ids?: string[];
-  clientes: { nome: string; telefone: string };
-  barbeiros: { id: string; nome: string };
-  servicos: Servico;
+  clientes?: { nome: string; telefone: string } | null;
+  barbeiros?: { id: string; nome: string } | null;
+  servicos?: Servico | null;
   servicosMultiplos?: Servico[];
+}
+
+interface InfoServicos {
+  nome: string;
+  nomesCurtos: string;
+  preco: number;
+  duracao: number;
+  quantidade: number;
+}
+
+interface AgendamentoProcessado extends Agendamento {
+  chaveDia: string;
+  inicioMin: number;
+  fimMin: number;
+  horaInicio: string;
+  horaFim: string;
+  infoServicos: InfoServicos;
+}
+
+interface LayoutAgendamento {
+  top: number;
+  height: number;
+  indiceColuna: number;
+  totalColunas: number;
+  paddingTop: number;
+  paddingBottom: number;
 }
 
 type TipoVisualizacao = 'dia' | '3dias' | 'semana';
@@ -108,7 +134,7 @@ const DIAS_SEMANA_MAP: Record<number, string> = {
 };
 
 // Função auxiliar para extrair informações de serviços (único ou múltiplos)
-function obterInfoServicos(agendamento: Agendamento) {
+function obterInfoServicos(agendamento: Agendamento): InfoServicos {
   const { servicos, servicosMultiplos } = agendamento;
   
   if (servicosMultiplos && servicosMultiplos.length > 1) {
@@ -137,6 +163,7 @@ function obterInfoServicos(agendamento: Agendamento) {
 export function CalendarioSemanalNovo() {
   const { tenant } = useAuth();
   const [dataBase, setDataBase] = useState(new Date());
+  const [isMobile, setIsMobile] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
@@ -150,12 +177,17 @@ export function CalendarioSemanalNovo() {
   
   // Configurações de visualização
   const [visualizacao, setVisualizacao] = useState<TipoVisualizacao>('semana');
+  const [modoVisualizacao, setModoVisualizacao] = useState<ModoVisualizacao>('timeline');
   const [nivelZoom, setNivelZoom] = useState<NivelZoom>(1);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollCabecalhoRef = useRef<HTMLDivElement>(null);
   const sincronizandoScrollRef = useRef(false);
   const subscriptionRef = useRef<any>(null);
+  const timeoutAtualizacaoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const visualizacaoEfetiva: TipoVisualizacao = isMobile ? 'dia' : visualizacao;
+  const modoVisualizacaoEfetivo: ModoVisualizacao = isMobile ? 'lista' : modoVisualizacao;
 
   // Calcular altura e largura baseadas no zoom
   const alturaHora = Math.round(ALTURA_BASE * nivelZoom);
@@ -180,12 +212,32 @@ export function CalendarioSemanalNovo() {
     buscarConfiguracao();
   }, [tenant?.id]);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(BREAKPOINT_MOBILE);
+    const atualizarModoMobile = () => setIsMobile(mediaQuery.matches);
+
+    atualizarModoMobile();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", atualizarModoMobile);
+    } else {
+      mediaQuery.addListener(atualizarModoMobile);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", atualizarModoMobile);
+      } else {
+        mediaQuery.removeListener(atualizarModoMobile);
+      }
+    };
+  }, []);
+
   // Calcular dias a exibir baseado na visualização e dias de funcionamento
   const diasExibidos = useMemo(() => {
-    if (visualizacao === 'dia') {
+    if (visualizacaoEfetiva === 'dia') {
       return [dataBase];
     }
-    if (visualizacao === '3dias') {
+    if (visualizacaoEfetiva === '3dias') {
       return [subDays(dataBase, 1), dataBase, addDays(dataBase, 1)];
     }
     // Semana - filtrar apenas dias de funcionamento
@@ -201,11 +253,11 @@ export function CalendarioSemanalNovo() {
     
     // Se não houver dias filtrados (configuração vazia), mostrar todos
     return diasFiltrados.length > 0 ? diasFiltrados : todosDias;
-  }, [dataBase, visualizacao, diasFuncionamento]);
+  }, [dataBase, visualizacaoEfetiva, diasFuncionamento]);
 
   // Título do período
   const tituloPeriodo = useMemo(() => {
-    if (visualizacao === 'dia') {
+    if (visualizacaoEfetiva === 'dia') {
       return format(dataBase, "EEEE, d 'de' MMMM", { locale: ptBR });
     }
     const inicio = diasExibidos[0];
@@ -214,16 +266,21 @@ export function CalendarioSemanalNovo() {
       return format(inicio, "MMMM 'de' yyyy", { locale: ptBR });
     }
     return `${format(inicio, "MMM", { locale: ptBR })} - ${format(fim, "MMM 'de' yyyy", { locale: ptBR })}`;
-  }, [dataBase, diasExibidos, visualizacao]);
+  }, [dataBase, diasExibidos, visualizacaoEfetiva]);
 
   // Buscar agendamentos
   useEffect(() => {
-    if (tenant) buscarAgendamentos();
-  }, [dataBase, visualizacao, tenant]);
+    if (tenant?.id) buscarAgendamentos();
+  }, [buscarAgendamentos, tenant?.id]);
 
   // Realtime
   useEffect(() => {
-    if (!tenant) return;
+    if (!tenant?.id) return;
+
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+    }
+
     const canal = supabase
       .channel('calendario-realtime')
       .on('postgres_changes', {
@@ -231,14 +288,32 @@ export function CalendarioSemanalNovo() {
         schema: 'public',
         table: 'agendamentos',
         filter: `tenant_id=eq.${tenant.id}`
-      }, () => buscarAgendamentos())
+      }, () => {
+        if (timeoutAtualizacaoRef.current) {
+          clearTimeout(timeoutAtualizacaoRef.current);
+        }
+
+        timeoutAtualizacaoRef.current = setTimeout(() => {
+          buscarAgendamentos({ silencioso: true });
+        }, 200);
+      })
       .subscribe();
+
     subscriptionRef.current = canal;
-    return () => { if (subscriptionRef.current) supabase.removeChannel(subscriptionRef.current); };
-  }, [tenant, dataBase, visualizacao]);
+    return () => {
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+      }
+      if (timeoutAtualizacaoRef.current) {
+        clearTimeout(timeoutAtualizacaoRef.current);
+      }
+    };
+  }, [buscarAgendamentos, tenant?.id]);
 
   // Scroll para hora atual (usando hora de início dinâmica)
   useEffect(() => {
+    if (modoVisualizacaoEfetivo === 'lista') return;
+
     if (scrollRef.current && !carregando && horasDia.length > 0) {
       const horaAtual = new Date().getHours();
       const horaInicial = horasDia[0];
@@ -250,7 +325,7 @@ export function CalendarioSemanalNovo() {
         behavior: 'smooth'
       });
     }
-  }, [carregando, alturaHora, horasDia]);
+  }, [carregando, alturaHora, horasDia, modoVisualizacaoEfetivo]);
 
   // Sincronização de scroll otimizada com debounce
   const sincronizarScrollHorizontal = useCallback((origem: 'cabecalho' | 'timeline') => {
@@ -291,10 +366,14 @@ export function CalendarioSemanalNovo() {
     }
   }, [nivelZoom]);
 
-  const buscarAgendamentos = async () => {
-    if (!tenant) return;
+  const buscarAgendamentos = useCallback(async (opcoes?: { silencioso?: boolean }) => {
+    if (!tenant?.id || diasExibidos.length === 0) return;
+
     try {
-      setCarregando(true);
+      if (!opcoes?.silencioso) {
+        setCarregando(true);
+      }
+
       const inicio = diasExibidos[0];
       const fim = addDays(diasExibidos[diasExibidos.length - 1], 1);
       const inicioUTC = fromZonedTime(`${format(inicio, 'yyyy-MM-dd')}T00:00:00`, TIMEZONE_BRASILIA);
@@ -309,65 +388,197 @@ export function CalendarioSemanalNovo() {
         .order('data_hora', { ascending: true });
 
       if (error) throw error;
-      
-      // Processar múltiplos serviços se existirem
-      const agendamentosProcessados = await Promise.all((data || []).map(async (ag) => {
-        if (ag.servicos_ids && Array.isArray(ag.servicos_ids) && ag.servicos_ids.length > 1) {
-          const { data: servicosMultiplos } = await supabase
-            .from('servicos')
-            .select('id, nome, preco, duracao')
-            .in('id', ag.servicos_ids);
-          
-          if (servicosMultiplos) {
-            return { ...ag, servicosMultiplos };
+
+      const agendamentosBase = (data || []) as Agendamento[];
+      const idsServicosMultiplos = new Set<string>();
+
+      for (const agendamento of agendamentosBase) {
+        if (Array.isArray(agendamento.servicos_ids) && agendamento.servicos_ids.length > 1) {
+          for (const servicoId of agendamento.servicos_ids) {
+            idsServicosMultiplos.add(servicoId);
           }
         }
-        return ag;
-      }));
-      
-      setAgendamentos(agendamentosProcessados);
+      }
+
+      const servicosPorId = new Map<string, Servico>();
+      if (idsServicosMultiplos.size > 0) {
+        const { data: servicosData } = await supabase
+          .from('servicos')
+          .select('id, nome, preco, duracao')
+          .in('id', Array.from(idsServicosMultiplos));
+
+        for (const servico of (servicosData || []) as Servico[]) {
+          if (servico.id) {
+            servicosPorId.set(servico.id, servico);
+          }
+        }
+      }
+
+      const agendamentosComServicos = agendamentosBase.map((agendamento) => {
+        if (!Array.isArray(agendamento.servicos_ids) || agendamento.servicos_ids.length <= 1) {
+          return agendamento;
+        }
+
+        const servicosMultiplos = agendamento.servicos_ids
+          .map((servicoId) => servicosPorId.get(servicoId))
+          .filter(Boolean) as Servico[];
+
+        return {
+          ...agendamento,
+          servicosMultiplos: servicosMultiplos.length > 0 ? servicosMultiplos : agendamento.servicosMultiplos,
+        };
+      });
+
+      setAgendamentos(agendamentosComServicos);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
     } finally {
-      setCarregando(false);
+      if (!opcoes?.silencioso) {
+        setCarregando(false);
+      }
     }
-  };
+  }, [diasExibidos, tenant?.id]);
+
+  const agendamentosProcessados = useMemo<AgendamentoProcessado[]>(() => {
+    return agendamentos
+      .map((agendamento) => {
+        const dataBrasilia = toZonedTime(parseISO(agendamento.data_hora), TIMEZONE_BRASILIA);
+        const infoServicos = obterInfoServicos(agendamento);
+        const inicioMin = (dataBrasilia.getHours() * 60) + dataBrasilia.getMinutes();
+        const fimMin = inicioMin + infoServicos.duracao;
+
+        return {
+          ...agendamento,
+          chaveDia: format(dataBrasilia, 'yyyy-MM-dd'),
+          inicioMin,
+          fimMin,
+          horaInicio: format(dataBrasilia, 'HH:mm'),
+          horaFim: format(new Date(dataBrasilia.getTime() + (infoServicos.duracao * 60000)), 'HH:mm'),
+          infoServicos,
+        };
+      })
+      .sort((a, b) => a.inicioMin - b.inicioMin);
+  }, [agendamentos]);
 
   // Agrupar agendamentos por dia
   const agendamentosPorDia = useMemo(() => {
-    const grupos: Record<string, Agendamento[]> = {};
-    diasExibidos.forEach(dia => { grupos[format(dia, 'yyyy-MM-dd')] = []; });
-    agendamentos.forEach(ag => {
-      const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
-      const key = format(dataBrasilia, 'yyyy-MM-dd');
-      if (grupos[key]) grupos[key].push(ag);
+    const grupos: Record<string, AgendamentoProcessado[]> = {};
+    diasExibidos.forEach((dia) => { grupos[format(dia, 'yyyy-MM-dd')] = []; });
+
+    agendamentosProcessados.forEach((agendamento) => {
+      if (grupos[agendamento.chaveDia]) {
+        grupos[agendamento.chaveDia].push(agendamento);
+      }
     });
+
     return grupos;
-  }, [agendamentos, diasExibidos]);
+  }, [agendamentosProcessados, diasExibidos]);
 
   // Calcular posição do agendamento baseado na hora inicial dinâmica
-  const calcularPosicao = useCallback((dataHora: string, duracao: number) => {
-    const dataBrasilia = toZonedTime(parseISO(dataHora), TIMEZONE_BRASILIA);
-    const hora = dataBrasilia.getHours();
-    const minutos = dataBrasilia.getMinutes();
+  const calcularPosicao = useCallback((inicioMin: number, duracao: number) => {
     const horaInicial = horasDia.length > 0 ? horasDia[0] : configHorarios.horaInicio;
-    const top = ((hora - horaInicial) * alturaHora) + ((minutos / 60) * alturaHora);
+    const top = ((inicioMin - (horaInicial * 60)) / 60) * alturaHora;
     const height = Math.max((duracao / 60) * alturaHora, 40);
     return { top, height };
   }, [horasDia, alturaHora, configHorarios.horaInicio]);
 
+  const calcularLayoutAgendamentosDia = useCallback((agendamentosDia: AgendamentoProcessado[]) => {
+    const espacoVerticalEntreCards = 4;
+
+    const eventos = agendamentosDia
+      .map((agendamento) => {
+        const pos = calcularPosicao(agendamento.inicioMin, agendamento.infoServicos.duracao);
+        return {
+          agendamento,
+          inicioMin: agendamento.inicioMin,
+          fimMin: agendamento.fimMin,
+          top: pos.top,
+          height: Math.max(pos.height, 60),
+        };
+      })
+      .sort((a, b) => a.inicioMin - b.inicioMin);
+
+    type Coluna = { fimMin: number; itens: typeof eventos };
+    const colunas: Coluna[] = [];
+    const resultado: Record<string, LayoutAgendamento> = {};
+
+    for (const evento of eventos) {
+      let indiceColuna = colunas.findIndex((coluna) => coluna.fimMin <= evento.inicioMin);
+
+      if (indiceColuna === -1) {
+        colunas.push({ fimMin: evento.fimMin, itens: [evento] });
+        indiceColuna = colunas.length - 1;
+      } else {
+        colunas[indiceColuna].fimMin = evento.fimMin;
+        colunas[indiceColuna].itens.push(evento);
+      }
+
+      resultado[evento.agendamento.id] = {
+        top: evento.top,
+        height: evento.height,
+        indiceColuna,
+        totalColunas: 1,
+        paddingTop: espacoVerticalEntreCards,
+        paddingBottom: espacoVerticalEntreCards,
+      };
+    }
+
+    for (const evento of eventos) {
+      const colunasAtivas = new Set<number>();
+
+      for (let i = 0; i < colunas.length; i++) {
+        const itens = colunas[i].itens;
+        for (const item of itens) {
+          const sobrepoe = !(item.fimMin <= evento.inicioMin || item.inicioMin >= evento.fimMin);
+          if (sobrepoe) {
+            colunasAtivas.add(i);
+            break;
+          }
+        }
+      }
+
+      resultado[evento.agendamento.id] = {
+        ...resultado[evento.agendamento.id],
+        totalColunas: Math.max(1, colunasAtivas.size),
+      };
+    }
+
+    return resultado;
+  }, [calcularPosicao]);
+
+  const layoutAgendamentosPorDia = useMemo(() => {
+    const layoutPorDia: Record<string, Record<string, LayoutAgendamento>> = {};
+    for (const dia of diasExibidos) {
+      const chaveDia = format(dia, 'yyyy-MM-dd');
+      layoutPorDia[chaveDia] = calcularLayoutAgendamentosDia(agendamentosPorDia[chaveDia] || []);
+    }
+    return layoutPorDia;
+  }, [agendamentosPorDia, calcularLayoutAgendamentosDia, diasExibidos]);
+
   // Navegação
   const navegarAnterior = () => {
-    if (visualizacao === 'dia') setDataBase(prev => subDays(prev, 1));
-    else if (visualizacao === '3dias') setDataBase(prev => subDays(prev, 3));
+    if (visualizacaoEfetiva === 'dia') setDataBase(prev => subDays(prev, 1));
+    else if (visualizacaoEfetiva === '3dias') setDataBase(prev => subDays(prev, 3));
     else setDataBase(prev => subWeeks(prev, 1));
   };
 
   const navegarProximo = () => {
-    if (visualizacao === 'dia') setDataBase(prev => addDays(prev, 1));
-    else if (visualizacao === '3dias') setDataBase(prev => addDays(prev, 3));
+    if (visualizacaoEfetiva === 'dia') setDataBase(prev => addDays(prev, 1));
+    else if (visualizacaoEfetiva === '3dias') setDataBase(prev => addDays(prev, 3));
     else setDataBase(prev => addWeeks(prev, 1));
   };
+
+  const labelAnterior = visualizacaoEfetiva === 'dia'
+    ? 'Dia Anterior'
+    : visualizacaoEfetiva === '3dias'
+      ? '3 Dias Anteriores'
+      : 'Semana Anterior';
+
+  const labelProximo = visualizacaoEfetiva === 'dia'
+    ? 'Próximo Dia'
+    : visualizacaoEfetiva === '3dias'
+      ? 'Próximos 3 Dias'
+      : 'Próxima Semana';
 
   // Ações
   const atualizarStatus = async (id: string, novoStatus: string) => {
@@ -400,7 +611,7 @@ export function CalendarioSemanalNovo() {
       }
 
       setModalDetalhesAberto(false);
-      buscarAgendamentos();
+      buscarAgendamentos({ silencioso: true });
     } catch (error) {
       console.error('Erro ao atualizar:', error);
     }
@@ -524,7 +735,7 @@ export function CalendarioSemanalNovo() {
       
       setModalExcluirAberto(false);
       setAgendamentoSelecionado(null);
-      buscarAgendamentos();
+      buscarAgendamentos({ silencioso: true });
     } catch (error) {
       console.error('Erro ao deletar:', error);
     } finally {
@@ -539,21 +750,19 @@ export function CalendarioSemanalNovo() {
     window.open(`https://wa.me/55${tel}?text=${encodeURIComponent(mensagem)}`, '_blank');
   };
 
-  // Número de colunas baseado na visualização
-  const numColunas = diasExibidos.length;
-
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] min-h-[500px] bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-170px)] sm:h-[calc(100vh-200px)] min-h-[500px] bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
       {/* Header - Navegação de Semana */}
-      <div className="flex-shrink-0 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
+      <div className="flex-shrink-0 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 px-3 sm:px-4 py-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Botão Semana Anterior */}
           <button
             onClick={navegarAnterior}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-2.5 sm:px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            type="button"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Semana Anterior</span>
+            <span className="hidden sm:inline">{labelAnterior}</span>
           </button>
           
           {/* Centro: Data picker + Hoje + Título */}
@@ -565,11 +774,12 @@ export function CalendarioSemanalNovo() {
                 if (!e.target.value) return;
                 setDataBase(new Date(`${e.target.value}T12:00:00`));
               }}
-              className="hidden sm:block px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
+              className="hidden md:block px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
             />
             <button
               onClick={() => setDataBase(new Date())}
-              className="px-6 py-2 text-sm font-bold bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+              className="px-4 sm:px-6 py-2 text-sm font-bold bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
+              type="button"
             >
               HOJE
             </button>
@@ -578,73 +788,109 @@ export function CalendarioSemanalNovo() {
           {/* Botão Próxima Semana */}
           <button
             onClick={navegarProximo}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-2.5 sm:px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            type="button"
           >
-            <span className="hidden sm:inline">Próxima Semana</span>
+            <span className="hidden sm:inline">{labelProximo}</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
         
         {/* Segunda linha: Controles de visualização */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
           <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-white capitalize">
             {tituloPeriodo}
           </h2>
 
           {/* Controles */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Seletor de Visualização */}
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
-              <button
-                onClick={() => setVisualizacao('dia')}
-                className={`p-1.5 rounded-md transition-all ${visualizacao === 'dia' ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
-                title="Dia"
-              >
-                <CalendarDays className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-              </button>
-              <button
-                onClick={() => setVisualizacao('3dias')}
-                className={`p-1.5 rounded-md transition-all ${visualizacao === '3dias' ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
-                title="3 Dias"
-              >
-                <Columns className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-              </button>
-              <button
-                onClick={() => setVisualizacao('semana')}
-                className={`p-1.5 rounded-md transition-all ${visualizacao === 'semana' ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
-                title="Semana"
-              >
-                <LayoutGrid className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-              </button>
-            </div>
+            {!isMobile && (
+              <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
+                <button
+                  onClick={() => setVisualizacao('dia')}
+                  className={`p-1.5 rounded-md transition-all ${visualizacaoEfetiva === 'dia' ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                  title="Dia"
+                  type="button"
+                >
+                  <CalendarDays className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                </button>
+                <button
+                  onClick={() => setVisualizacao('3dias')}
+                  className={`p-1.5 rounded-md transition-all ${visualizacaoEfetiva === '3dias' ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                  title="3 Dias"
+                  type="button"
+                >
+                  <Columns className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                </button>
+                <button
+                  onClick={() => setVisualizacao('semana')}
+                  className={`p-1.5 rounded-md transition-all ${visualizacaoEfetiva === 'semana' ? 'bg-white dark:bg-zinc-700 shadow-sm' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                  title="Semana"
+                  type="button"
+                >
+                  <LayoutGrid className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                </button>
+              </div>
+            )}
 
-            {/* Zoom com níveis granulares */}
-            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1">
-              <button
-                onClick={diminuirZoom}
-                disabled={nivelZoom === NIVEIS_ZOOM[0]}
-                className="p-1 rounded-md transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                title="Diminuir zoom"
-              >
-                <ZoomOut className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-              </button>
-              <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 min-w-[40px] text-center">
-                {nivelZoom}x
-              </span>
-              <button
-                onClick={aumentarZoom}
-                disabled={nivelZoom === NIVEIS_ZOOM[NIVEIS_ZOOM.length - 1]}
-                className="p-1 rounded-md transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                title="Aumentar zoom"
-              >
-                <ZoomIn className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-              </button>
-            </div>
+            {!isMobile && (
+              <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
+                <button
+                  onClick={() => setModoVisualizacao('timeline')}
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    modoVisualizacaoEfetivo === 'timeline'
+                      ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-800 dark:text-zinc-100'
+                      : 'text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                  }`}
+                  type="button"
+                >
+                  Timeline
+                </button>
+                <button
+                  onClick={() => setModoVisualizacao('lista')}
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    modoVisualizacaoEfetivo === 'lista'
+                      ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-800 dark:text-zinc-100'
+                      : 'text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                  }`}
+                  type="button"
+                >
+                  Lista
+                </button>
+              </div>
+            )}
+
+            {!isMobile && modoVisualizacaoEfetivo === 'timeline' && (
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2 py-1">
+                <button
+                  onClick={diminuirZoom}
+                  disabled={nivelZoom === NIVEIS_ZOOM[0]}
+                  className="p-1 rounded-md transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Diminuir zoom"
+                  type="button"
+                >
+                  <ZoomOut className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                </button>
+                <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 min-w-[40px] text-center">
+                  {nivelZoom}x
+                </span>
+                <button
+                  onClick={aumentarZoom}
+                  disabled={nivelZoom === NIVEIS_ZOOM[NIVEIS_ZOOM.length - 1]}
+                  className="p-1 rounded-md transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Aumentar zoom"
+                  type="button"
+                >
+                  <ZoomIn className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                </button>
+              </div>
+            )}
 
             {/* Botão Novo */}
             <button
               onClick={() => setModalNovoAberto(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-90 transition-opacity font-medium text-sm"
+              type="button"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Novo</span>
@@ -662,7 +908,7 @@ export function CalendarioSemanalNovo() {
           {/* Grid de dias */}
           <div
             ref={scrollCabecalhoRef}
-            onScroll={() => sincronizarScrollHorizontal('cabecalho')}
+            onScroll={modoVisualizacaoEfetivo === 'timeline' ? () => sincronizarScrollHorizontal('cabecalho') : undefined}
             className="flex-1 overflow-x-auto overscroll-x-contain"
           >
             <div className="flex" style={{ minWidth: diasExibidos.length * larguraColuna }}>
@@ -720,16 +966,99 @@ export function CalendarioSemanalNovo() {
       {/* Área de Agendamentos - Layout com Horários Verticais */}
       <div
         ref={scrollRef}
-        onScroll={() => sincronizarScrollHorizontal('timeline')}
+        onScroll={modoVisualizacaoEfetivo === 'timeline' ? () => sincronizarScrollHorizontal('timeline') : undefined}
         className="flex-1 overflow-auto bg-zinc-50 dark:bg-zinc-950 scroll-smooth overscroll-contain"
         style={{ scrollBehavior: 'smooth' }}
       >
-        {carregando ? (
+        {carregando && agendamentosProcessados.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center gap-2">
               <div className="w-8 h-8 border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-white rounded-full animate-spin" />
               <span className="text-sm text-zinc-500">Carregando...</span>
             </div>
+          </div>
+        ) : modoVisualizacaoEfetivo === 'lista' ? (
+          <div className="p-3 sm:p-4 space-y-4">
+            {diasExibidos.map((dia, idx) => {
+              const dataKey = format(dia, 'yyyy-MM-dd');
+              const agDia = agendamentosPorDia[dataKey] || [];
+              const ehHoje = isToday(dia);
+
+              return (
+                <section key={dataKey}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-white">
+                      {format(dia, "EEEE, dd 'de' MMM", { locale: ptBR })}
+                    </h3>
+                    {ehHoje && (
+                      <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
+                        Hoje
+                      </span>
+                    )}
+                  </div>
+
+                  {agDia.length === 0 ? (
+                    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                      Nenhum agendamento neste dia.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {agDia.map((agendamento) => {
+                        const estilo =
+                          ESTILOS_STATUS[agendamento.status as keyof typeof ESTILOS_STATUS] ||
+                          ESTILOS_STATUS.pendente;
+
+                        return (
+                          <button
+                            key={agendamento.id}
+                            type="button"
+                            onClick={() => {
+                              setAgendamentoSelecionado(agendamento);
+                              setModalDetalhesAberto(true);
+                            }}
+                            className={`w-full text-left rounded-xl border px-3 py-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60 ${estilo.fundo} ${estilo.borda}`}
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <div className={`mt-1 w-2 h-2 rounded-full ${estilo.ponto}`} />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className={`text-sm font-bold truncate ${estilo.texto}`}>
+                                    {agendamento.clientes?.nome || 'Cliente'}
+                                  </p>
+                                  <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                                    {agendamento.horaInicio} - {agendamento.horaFim}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-zinc-600 dark:text-zinc-300 truncate mt-0.5">
+                                  {agendamento.infoServicos.nomesCurtos}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-white/70 dark:bg-zinc-900/70 text-zinc-700 dark:text-zinc-300 capitalize">
+                                    {agendamento.status}
+                                  </span>
+                                  {agendamento.barbeiros?.nome && (
+                                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 truncate">
+                                      {agendamento.barbeiros.nome}
+                                    </span>
+                                  )}
+                                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                    R$ {agendamento.infoServicos.preco.toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {idx < diasExibidos.length - 1 && (
+                    <div className="mt-4 border-t border-zinc-200 dark:border-zinc-800" />
+                  )}
+                </section>
+              );
+            })}
           </div>
         ) : (
           <div className="flex min-h-[500px]">
@@ -757,6 +1086,7 @@ export function CalendarioSemanalNovo() {
               {diasExibidos.map((dia, diaIdx) => {
                 const dataKey = format(dia, 'yyyy-MM-dd');
                 const agDia = agendamentosPorDia[dataKey] || [];
+                const layoutAgendamentosDia = layoutAgendamentosPorDia[dataKey] || {};
                 const ehHoje = isToday(dia);
 
                 return (
@@ -779,17 +1109,16 @@ export function CalendarioSemanalNovo() {
                     {/* Agendamentos posicionados */}
                     {agDia.map((ag) => {
                       const estilo = ESTILOS_STATUS[ag.status as keyof typeof ESTILOS_STATUS] || ESTILOS_STATUS.pendente;
-                      const dataBrasilia = toZonedTime(parseISO(ag.data_hora), TIMEZONE_BRASILIA);
-                      const infoServicos = obterInfoServicos(ag);
-                      const pos = calcularPosicao(ag.data_hora, infoServicos.duracao);
-                      const espacoVerticalEntreCards = 4;
-                      const alturaMinimaCard = 60;
-                      const alturaCalculada = Math.max(pos.height, alturaMinimaCard);
+                      const layout = layoutAgendamentosDia[ag.id];
+                      const top = layout?.top ?? 0;
+                      const alturaCalculada = Math.max(layout?.height ?? 60, 60);
+                      const indiceColuna = layout?.indiceColuna ?? 0;
+                      const totalColunas = layout?.totalColunas ?? 1;
+                      const paddingTop = layout?.paddingTop ?? 4;
+                      const paddingBottom = layout?.paddingBottom ?? 4;
+                      const larguraPorColuna = 100 / totalColunas;
+                      const leftPercent = indiceColuna * larguraPorColuna;
                       const modoCompacto = alturaCalculada < 80;
-                      const horaInicio = format(dataBrasilia, 'HH:mm');
-                      const duracaoMs = infoServicos.duracao * 60000;
-                      const dataFimBrasilia = new Date(dataBrasilia.getTime() + duracaoMs);
-                      const horaFim = format(dataFimBrasilia, 'HH:mm');
 
                       return (
                         <button
@@ -799,21 +1128,21 @@ export function CalendarioSemanalNovo() {
                             setAgendamentoSelecionado(ag);
                             setModalDetalhesAberto(true);
                           }}
-                          aria-label={`Agendamento de ${ag.clientes?.nome || 'cliente'} às ${horaInicio}`}
+                          aria-label={`Agendamento de ${ag.clientes?.nome || 'cliente'} às ${ag.horaInicio}`}
                           className={`absolute rounded-xl border shadow-sm hover:shadow-md active:scale-[0.98] transition-shadow text-left overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${estilo.fundo} ${estilo.borda} border-l-[3px]`}
                           style={{ 
-                            top: pos.top + espacoVerticalEntreCards,
-                            left: 6,
-                            right: 6,
-                            height: Math.max(1, alturaCalculada - (espacoVerticalEntreCards * 2)),
-                            minHeight: alturaMinimaCard
+                            top: top + paddingTop,
+                            left: `calc(${leftPercent}% + 6px)`,
+                            width: `calc(${larguraPorColuna}% - 12px)`,
+                            height: Math.max(1, alturaCalculada - (paddingTop + paddingBottom)),
+                            minHeight: 60
                           }}
                         >
                           <div className="h-full p-2 flex flex-col gap-0.5 overflow-hidden">
                             <div className="flex items-center gap-1.5">
                               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${estilo.ponto}`} />
                               <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
-                                {horaInicio}–{horaFim}
+                                {ag.horaInicio}–{ag.horaFim}
                               </span>
                             </div>
                             <div className="min-w-0 flex-1">
@@ -822,7 +1151,7 @@ export function CalendarioSemanalNovo() {
                               </div>
                               {!modoCompacto && (
                                 <div className="text-xs text-zinc-600 dark:text-zinc-300 truncate">
-                                  {infoServicos.nomesCurtos}
+                                  {ag.infoServicos.nomesCurtos}
                                 </div>
                               )}
                             </div>
@@ -1001,7 +1330,7 @@ export function CalendarioSemanalNovo() {
           }}
           aberto={modalRemarcacaoAberto}
           onFechar={() => setModalRemarcacaoAberto(false)}
-          onSucesso={() => { buscarAgendamentos(); setModalRemarcacaoAberto(false); }}
+          onSucesso={() => { buscarAgendamentos({ silencioso: true }); setModalRemarcacaoAberto(false); }}
         />
       )}
 
