@@ -268,65 +268,6 @@ export function CalendarioSemanalNovo() {
     return `${format(inicio, "MMM", { locale: ptBR })} - ${format(fim, "MMM 'de' yyyy", { locale: ptBR })}`;
   }, [dataBase, diasExibidos, visualizacaoEfetiva]);
 
-  // Buscar agendamentos
-  useEffect(() => {
-    if (tenant?.id) buscarAgendamentos();
-  }, [buscarAgendamentos, tenant?.id]);
-
-  // Realtime
-  useEffect(() => {
-    if (!tenant?.id) return;
-
-    if (subscriptionRef.current) {
-      supabase.removeChannel(subscriptionRef.current);
-    }
-
-    const canal = supabase
-      .channel('calendario-realtime')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'agendamentos',
-        filter: `tenant_id=eq.${tenant.id}`
-      }, () => {
-        if (timeoutAtualizacaoRef.current) {
-          clearTimeout(timeoutAtualizacaoRef.current);
-        }
-
-        timeoutAtualizacaoRef.current = setTimeout(() => {
-          buscarAgendamentos({ silencioso: true });
-        }, 200);
-      })
-      .subscribe();
-
-    subscriptionRef.current = canal;
-    return () => {
-      if (subscriptionRef.current) {
-        supabase.removeChannel(subscriptionRef.current);
-      }
-      if (timeoutAtualizacaoRef.current) {
-        clearTimeout(timeoutAtualizacaoRef.current);
-      }
-    };
-  }, [buscarAgendamentos, tenant?.id]);
-
-  // Scroll para hora atual (usando hora de início dinâmica)
-  useEffect(() => {
-    if (modoVisualizacaoEfetivo === 'lista') return;
-
-    if (scrollRef.current && !carregando && horasDia.length > 0) {
-      const horaAtual = new Date().getHours();
-      const horaInicial = horasDia[0];
-      const scrollPosition = Math.max(0, (horaAtual - horaInicial) * alturaHora);
-      
-      // Scroll suave para a posição
-      scrollRef.current.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth'
-      });
-    }
-  }, [carregando, alturaHora, horasDia, modoVisualizacaoEfetivo]);
-
   // Sincronização de scroll otimizada com debounce
   const sincronizarScrollHorizontal = useCallback((origem: 'cabecalho' | 'timeline') => {
     const elTimeline = scrollRef.current;
@@ -438,6 +379,65 @@ export function CalendarioSemanalNovo() {
       }
     }
   }, [diasExibidos, tenant?.id]);
+
+  // Buscar agendamentos
+  useEffect(() => {
+    if (tenant?.id) buscarAgendamentos();
+  }, [buscarAgendamentos, tenant?.id]);
+
+  // Realtime
+  useEffect(() => {
+    if (!tenant?.id) return;
+
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+    }
+
+    const canal = supabase
+      .channel('calendario-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'agendamentos',
+        filter: `tenant_id=eq.${tenant.id}`
+      }, () => {
+        if (timeoutAtualizacaoRef.current) {
+          clearTimeout(timeoutAtualizacaoRef.current);
+        }
+
+        timeoutAtualizacaoRef.current = setTimeout(() => {
+          buscarAgendamentos({ silencioso: true });
+        }, 200);
+      })
+      .subscribe();
+
+    subscriptionRef.current = canal;
+    return () => {
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+      }
+      if (timeoutAtualizacaoRef.current) {
+        clearTimeout(timeoutAtualizacaoRef.current);
+      }
+    };
+  }, [buscarAgendamentos, tenant?.id]);
+
+  // Scroll para hora atual (usando hora de início dinâmica)
+  useEffect(() => {
+    if (modoVisualizacaoEfetivo === 'lista') return;
+
+    if (scrollRef.current && !carregando && horasDia.length > 0) {
+      const horaAtual = new Date().getHours();
+      const horaInicial = horasDia[0];
+      const scrollPosition = Math.max(0, (horaAtual - horaInicial) * alturaHora);
+      
+      // Scroll suave para a posição
+      scrollRef.current.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, [carregando, alturaHora, horasDia, modoVisualizacaoEfetivo]);
 
   const agendamentosProcessados = useMemo<AgendamentoProcessado[]>(() => {
     return agendamentos
