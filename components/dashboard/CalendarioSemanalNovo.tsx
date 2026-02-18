@@ -136,12 +136,12 @@ const DIAS_SEMANA_MAP: Record<number, string> = {
 // Função auxiliar para extrair informações de serviços (único ou múltiplos)
 function obterInfoServicos(agendamento: Agendamento): InfoServicos {
   const { servicos, servicosMultiplos } = agendamento;
-  
+
   if (servicosMultiplos && servicosMultiplos.length > 1) {
     const nomes = servicosMultiplos.map(s => s.nome);
     const precoTotal = servicosMultiplos.reduce((acc, s) => acc + (s.preco || 0), 0);
     const duracaoTotal = servicosMultiplos.reduce((acc, s) => acc + (s.duracao || 0), 0);
-    
+
     return {
       nome: nomes.join(' + '),
       nomesCurtos: nomes.length > 2 ? `${nomes[0]} +${nomes.length - 1}` : nomes.join(' + '),
@@ -150,7 +150,7 @@ function obterInfoServicos(agendamento: Agendamento): InfoServicos {
       quantidade: servicosMultiplos.length
     };
   }
-  
+
   return {
     nome: servicos?.nome || 'Serviço',
     nomesCurtos: servicos?.nome || 'Serviço',
@@ -174,12 +174,12 @@ export function CalendarioSemanalNovo() {
   const [processandoExclusao, setProcessandoExclusao] = useState(false);
   const [diasFuncionamento, setDiasFuncionamento] = useState<string[]>(['seg', 'ter', 'qua', 'qui', 'sex', 'sab']);
   const [configHorarios, setConfigHorarios] = useState<ConfiguracaoHorarios>(HORARIOS_PADRAO);
-  
+
   // Configurações de visualização
   const [visualizacao, setVisualizacao] = useState<TipoVisualizacao>('semana');
   const [modoVisualizacao, setModoVisualizacao] = useState<ModoVisualizacao>('timeline');
   const [nivelZoom, setNivelZoom] = useState<NivelZoom>(1);
-  
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollCabecalhoRef = useRef<HTMLDivElement>(null);
   const sincronizandoScrollRef = useRef(false);
@@ -192,7 +192,7 @@ export function CalendarioSemanalNovo() {
   // Calcular altura e largura baseadas no zoom
   const alturaHora = Math.round(ALTURA_BASE * nivelZoom);
   const larguraColuna = Math.round(LARGURA_COLUNA_BASE * Math.max(nivelZoom, 0.75));
-  
+
   // Gerar array de horas dinamicamente baseado na configuração do tenant
   const horasDia = useMemo(() => {
     return gerarArrayHoras(configHorarios.horaInicio, configHorarios.horaFim);
@@ -202,13 +202,13 @@ export function CalendarioSemanalNovo() {
   useEffect(() => {
     const buscarConfiguracao = async () => {
       if (!tenant?.id) return;
-      
+
       // Buscar configuração completa de horários
       const config = await buscarConfiguracaoHorarios(tenant.id, supabase);
       setConfigHorarios(config);
       setDiasFuncionamento(config.diasFuncionamento);
     };
-    
+
     buscarConfiguracao();
   }, [tenant?.id]);
 
@@ -243,14 +243,14 @@ export function CalendarioSemanalNovo() {
     // Semana - filtrar apenas dias de funcionamento
     const inicio = startOfWeek(dataBase, { weekStartsOn: 0 });
     const todosDias = Array.from({ length: 7 }, (_, i) => addDays(inicio, i));
-    
+
     // Filtrar apenas os dias que a barbearia funciona
     const diasFiltrados = todosDias.filter(dia => {
       const diaSemana = dia.getDay();
       const abreviacao = DIAS_SEMANA_MAP[diaSemana];
       return diasFuncionamento.includes(abreviacao);
     });
-    
+
     // Se não houver dias filtrados (configuração vazia), mostrar todos
     return diasFiltrados.length > 0 ? diasFiltrados : todosDias;
   }, [dataBase, visualizacaoEfetiva, diasFuncionamento]);
@@ -430,7 +430,7 @@ export function CalendarioSemanalNovo() {
       const horaAtual = new Date().getHours();
       const horaInicial = horasDia[0];
       const scrollPosition = Math.max(0, (horaAtual - horaInicial) * alturaHora);
-      
+
       // Scroll suave para a posição
       scrollRef.current.scrollTo({
         top: scrollPosition,
@@ -583,7 +583,7 @@ export function CalendarioSemanalNovo() {
   // Ações
   const atualizarStatus = async (id: string, novoStatus: string) => {
     if (!tenant) return;
-    
+
     try {
       const agendamento = agendamentos.find(a => a.id === id);
       if (!agendamento) return;
@@ -592,12 +592,12 @@ export function CalendarioSemanalNovo() {
       if (novoStatus === 'concluido') {
         updateData.concluido_em = new Date().toISOString();
       }
-      
+
       const { error: erroUpdate } = await supabase
         .from('agendamentos')
         .update(updateData)
         .eq('id', id);
-      
+
       if (erroUpdate) throw erroUpdate;
 
       // Se concluído, criar transação e comissão
@@ -683,7 +683,7 @@ export function CalendarioSemanalNovo() {
         .select('total_atendimentos')
         .eq('id', barbeiroId)
         .single();
-      
+
       await supabase
         .from('barbeiros')
         .update({ total_atendimentos: (barbeiroAtual?.total_atendimentos || 0) + 1 })
@@ -721,7 +721,7 @@ export function CalendarioSemanalNovo() {
 
   const deletarAgendamento = async () => {
     if (!agendamentoSelecionado) return;
-    
+
     setProcessandoExclusao(true);
     try {
       // Deletar registros relacionados
@@ -729,10 +729,10 @@ export function CalendarioSemanalNovo() {
       await supabase.from('notificacoes_enviadas').delete().eq('agendamento_id', agendamentoSelecionado.id);
       await supabase.from('comissoes').update({ agendamento_id: null }).eq('agendamento_id', agendamentoSelecionado.id);
       await supabase.from('transacoes').update({ agendamento_id: null }).eq('agendamento_id', agendamentoSelecionado.id);
-      
+
       const { error } = await supabase.from('agendamentos').delete().eq('id', agendamentoSelecionado.id);
       if (error) throw error;
-      
+
       setModalExcluirAberto(false);
       setAgendamentoSelecionado(null);
       buscarAgendamentos({ silencioso: true });
@@ -764,7 +764,7 @@ export function CalendarioSemanalNovo() {
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">{labelAnterior}</span>
           </button>
-          
+
           {/* Centro: Data picker + Hoje + Título */}
           <div className="flex items-center gap-3">
             <input
@@ -784,7 +784,7 @@ export function CalendarioSemanalNovo() {
               HOJE
             </button>
           </div>
-          
+
           {/* Botão Próxima Semana */}
           <button
             onClick={navegarProximo}
@@ -795,7 +795,7 @@ export function CalendarioSemanalNovo() {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-        
+
         {/* Segunda linha: Controles de visualização */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
           <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-white capitalize">
@@ -837,22 +837,20 @@ export function CalendarioSemanalNovo() {
               <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
                 <button
                   onClick={() => setModoVisualizacao('timeline')}
-                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    modoVisualizacaoEfetivo === 'timeline'
-                      ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-800 dark:text-zinc-100'
-                      : 'text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700'
-                  }`}
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-md transition-all ${modoVisualizacaoEfetivo === 'timeline'
+                    ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-800 dark:text-zinc-100'
+                    : 'text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                    }`}
                   type="button"
                 >
                   Timeline
                 </button>
                 <button
                   onClick={() => setModoVisualizacao('lista')}
-                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    modoVisualizacaoEfetivo === 'lista'
-                      ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-800 dark:text-zinc-100'
-                      : 'text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700'
-                  }`}
+                  className={`px-2.5 py-1.5 text-xs font-semibold rounded-md transition-all ${modoVisualizacaoEfetivo === 'lista'
+                    ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-800 dark:text-zinc-100'
+                    : 'text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                    }`}
                   type="button"
                 >
                   Lista
@@ -904,7 +902,7 @@ export function CalendarioSemanalNovo() {
         <div className="flex">
           {/* Espaço para alinhar com coluna de horários */}
           <div className="flex-shrink-0 w-12 sm:w-16 border-r border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95" />
-          
+
           {/* Grid de dias */}
           <div
             ref={scrollCabecalhoRef}
@@ -916,32 +914,28 @@ export function CalendarioSemanalNovo() {
                 const ehHoje = isToday(dia);
                 const isSelecionado = format(dia, 'yyyy-MM-dd') === format(dataBase, 'yyyy-MM-dd');
                 const agDia = agendamentosPorDia[format(dia, 'yyyy-MM-dd')] || [];
-                
+
                 return (
                   <button
                     key={idx}
                     onClick={() => setDataBase(dia)}
-                    className={`flex-none px-4 py-3.5 text-left border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 transition-colors active:scale-[0.99] ${
-                      isSelecionado
-                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
-                        : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-900 dark:text-white'
-                    }`}
+                    className={`flex-none px-4 py-3.5 text-left border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 transition-colors active:scale-[0.99] ${isSelecionado
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-900 dark:text-white'
+                      }`}
                     style={{ width: larguraColuna, minWidth: larguraColuna }}
                   >
-                    <div className={`text-[10px] sm:text-xs font-semibold uppercase truncate ${
-                      isSelecionado ? 'text-white/90 dark:text-zinc-700' : 'text-zinc-500 dark:text-zinc-400'
-                    }`}>
+                    <div className={`text-[10px] sm:text-xs font-semibold uppercase truncate ${isSelecionado ? 'text-white/90 dark:text-zinc-700' : 'text-zinc-500 dark:text-zinc-400'
+                      }`}>
                       {format(dia, 'EEEE', { locale: ptBR })}
                     </div>
                     <div className="flex items-center gap-2.5 mt-1">
-                      <div className={`text-xl sm:text-lg font-bold leading-none ${
-                        isSelecionado ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'
-                      }`}>
+                      <div className={`text-xl sm:text-lg font-bold leading-none ${isSelecionado ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'
+                        }`}>
                         {format(dia, 'd')}
                       </div>
-                      <div className={`text-sm sm:text-sm font-medium ${
-                        isSelecionado ? 'text-white/80 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-300'
-                      }`}>
+                      <div className={`text-sm sm:text-sm font-medium ${isSelecionado ? 'text-white/80 dark:text-zinc-700' : 'text-zinc-600 dark:text-zinc-300'
+                        }`}>
                         {format(dia, 'MMM', { locale: ptBR })}
                       </div>
                       {ehHoje && !isSelecionado && (
@@ -1076,9 +1070,9 @@ export function CalendarioSemanalNovo() {
             </div>
 
             {/* Grid de Dias com Timeline */}
-            <div 
-              className="flex-1 grid relative" 
-              style={{ 
+            <div
+              className="flex-1 grid relative"
+              style={{
                 gridTemplateColumns: `repeat(${diasExibidos.length}, minmax(${larguraColuna}px, 1fr))`,
                 minWidth: diasExibidos.length * larguraColuna
               }}
@@ -1092,9 +1086,8 @@ export function CalendarioSemanalNovo() {
                 return (
                   <div
                     key={diaIdx}
-                    className={`relative border-l border-zinc-200 dark:border-zinc-800 first:border-l-0 ${
-                      ehHoje ? 'bg-blue-50/30 dark:bg-blue-950/10' : 'bg-white dark:bg-zinc-900/30'
-                    }`}
+                    className={`relative border-l border-zinc-200 dark:border-zinc-800 first:border-l-0 ${ehHoje ? 'bg-blue-50/30 dark:bg-blue-950/10' : 'bg-white dark:bg-zinc-900/30'
+                      }`}
                     style={{ minHeight: horasDia.length * alturaHora }}
                   >
                     {/* Linhas de hora */}
@@ -1130,7 +1123,7 @@ export function CalendarioSemanalNovo() {
                           }}
                           aria-label={`Agendamento de ${ag.clientes?.nome || 'cliente'} às ${ag.horaInicio}`}
                           className={`absolute rounded-xl border shadow-sm hover:shadow-md active:scale-[0.98] transition-shadow text-left overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${estilo.fundo} ${estilo.borda} border-l-[3px]`}
-                          style={{ 
+                          style={{
                             top: top + paddingTop,
                             left: `calc(${leftPercent}% + 6px)`,
                             width: `calc(${larguraPorColuna}% - 12px)`,
@@ -1161,9 +1154,9 @@ export function CalendarioSemanalNovo() {
                     })}
                     {/* Indicador de hora atual */}
                     {ehHoje && (
-                      <div 
+                      <div
                         className="absolute left-0 right-0 z-30 pointer-events-none"
-                        style={{ 
+                        style={{
                           top: ((new Date().getHours() - horasDia[0]) * alturaHora) + ((new Date().getMinutes() / 60) * alturaHora)
                         }}
                       >
@@ -1277,7 +1270,7 @@ export function CalendarioSemanalNovo() {
                 )}
                 {agendamentoSelecionado.clientes?.telefone && (
                   <button
-                    onClick={() => enviarWhatsApp(agendamentoSelecionado.clientes.telefone, agendamentoSelecionado.clientes.nome, agendamentoSelecionado.data_hora)}
+                    onClick={() => enviarWhatsApp(agendamentoSelecionado.clientes?.telefone || '', agendamentoSelecionado.clientes?.nome || '', agendamentoSelecionado.data_hora)}
                     className="flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium"
                   >
                     <WhatsAppIcon className="w-4 h-4" />
@@ -1324,9 +1317,9 @@ export function CalendarioSemanalNovo() {
             id: agendamentoSelecionado.id,
             data_hora: agendamentoSelecionado.data_hora,
             status: agendamentoSelecionado.status,
-            clientes: agendamentoSelecionado.clientes,
+            clientes: agendamentoSelecionado.clientes || { nome: 'Cliente', telefone: '' },
             barbeiros: { id: agendamentoSelecionado.barbeiros?.id || agendamentoSelecionado.barbeiro_id, nome: agendamentoSelecionado.barbeiros?.nome || '' },
-            servicos: agendamentoSelecionado.servicos
+            servicos: agendamentoSelecionado.servicos || { nome: 'Serviço', preco: 0, duracao: 0 }
           }}
           aberto={modalRemarcacaoAberto}
           onFechar={() => setModalRemarcacaoAberto(false)}
