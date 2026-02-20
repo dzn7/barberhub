@@ -15,11 +15,8 @@ export function GestaoAgendamentos() {
   return (
     <div className="space-y-4">
       {/* Toggle de Visualização */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-          Agendamentos
-        </h2>
-        <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+      <div className="flex items-center justify-end">
+        <div className="hidden items-center gap-1 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800 md:flex">
           <button
             onClick={() => setVisualizacao('lista')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${

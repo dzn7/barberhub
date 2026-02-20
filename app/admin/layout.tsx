@@ -20,22 +20,21 @@ function ManifestDinamicoAdmin() {
   useEffect(() => {
     if (!tenant?.id) return
 
-    // Remover manifest existente
-    const manifestExistente = document.querySelector('link[rel="manifest"]')
-    if (manifestExistente) {
-      manifestExistente.remove()
+    // Usa um link dedicado para evitar remover nós gerenciados pelo React/Next
+    let manifestLink = document.querySelector<HTMLLinkElement>('#admin-dynamic-manifest')
+    if (!manifestLink) {
+      manifestLink = document.createElement('link')
+      manifestLink.id = 'admin-dynamic-manifest'
+      manifestLink.rel = 'manifest'
+      document.head.appendChild(manifestLink)
     }
-
-    // Adicionar manifest dinâmico com tenant_id
-    const manifestLink = document.createElement('link')
-    manifestLink.rel = 'manifest'
     manifestLink.href = `/api/admin/manifest?tenant_id=${tenant.id}`
-    document.head.appendChild(manifestLink)
 
     // Atualizar theme-color meta tag
-    let themeColorMeta = document.querySelector('meta[name="theme-color"]')
+    let themeColorMeta = document.querySelector<HTMLMetaElement>('#admin-theme-color')
     if (!themeColorMeta) {
       themeColorMeta = document.createElement('meta')
+      themeColorMeta.id = 'admin-theme-color'
       themeColorMeta.setAttribute('name', 'theme-color')
       document.head.appendChild(themeColorMeta)
     }
@@ -44,9 +43,10 @@ function ManifestDinamicoAdmin() {
     // Atualizar apple-touch-icon se houver logo
     if (tenant.logo_url || (tenant as any).icone_pwa_192) {
       const iconUrl = (tenant as any).icone_pwa_192 || tenant.logo_url
-      let appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]')
+      let appleTouchIcon = document.querySelector<HTMLLinkElement>('#admin-apple-touch-icon')
       if (!appleTouchIcon) {
         appleTouchIcon = document.createElement('link')
+        appleTouchIcon.id = 'admin-apple-touch-icon'
         appleTouchIcon.setAttribute('rel', 'apple-touch-icon')
         document.head.appendChild(appleTouchIcon)
       }
