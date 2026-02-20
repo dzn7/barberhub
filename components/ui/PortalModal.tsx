@@ -2,7 +2,6 @@
 
 import { useEffect, useCallback, ReactNode, useState } from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
 import { X } from "lucide-react";
 
 interface PortalModalProps {
@@ -85,11 +84,8 @@ export function PortalModal({
     aberto ? (
       <>
         {/* Backdrop com blur */}
-        <motion.div
+        <div
           key="portal-modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm"
           onClick={fecharAoClicarFora ? onFechar : undefined}
           aria-hidden="true"
@@ -103,10 +99,7 @@ export function PortalModal({
           aria-modal="true"
           aria-labelledby={titulo ? "modal-titulo" : undefined}
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+          <div
             className={`
               w-full ${tamanhos[tamanho]} 
               bg-white dark:bg-zinc-900 
@@ -144,7 +137,7 @@ export function PortalModal({
 
             {/* Conteúdo com scroll */}
             <div className="flex-1 overflow-y-auto">{children}</div>
-          </motion.div>
+          </div>
         </div>
       </>
     ) : null,

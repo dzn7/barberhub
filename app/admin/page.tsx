@@ -84,6 +84,7 @@ export default function DashboardCompleto() {
   const pronomePossessivoEstabelecimento = artigoEstabelecimento === "a" ? "sua" : "seu";
 
   const [abaAtiva, setAbaAtiva] = useState("visao-geral");
+  const [abaAgendamentosAtiva, setAbaAgendamentosAtiva] = useState("agenda");
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [filtroVisaoGeral, setFiltroVisaoGeral] = useState<{
     tipo: "hoje" | "semana" | "mes" | "ano" | "geral" | "personalizado";
@@ -814,8 +815,20 @@ export default function DashboardCompleto() {
                 </div>
               </div>
 
-              <Tabs.Root defaultValue="agenda">
-                <Tabs.List className="mb-6 flex-wrap">
+              <Tabs.Root value={abaAgendamentosAtiva} onValueChange={setAbaAgendamentosAtiva}>
+                <div className="mb-4 md:hidden">
+                  <select
+                    value={abaAgendamentosAtiva}
+                    onChange={(e) => setAbaAgendamentosAtiva(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                  >
+                    <option value="agenda">Agenda</option>
+                    <option value="atendimentos">Atendimentos Presenciais</option>
+                    <option value="remarcacao">Remarcação</option>
+                  </select>
+                </div>
+
+                <Tabs.List className="mb-6 hidden flex-wrap md:flex">
                   <Tabs.Trigger value="agenda">
                     <Calendar className="w-4 h-4 mr-2" />
                     Agenda

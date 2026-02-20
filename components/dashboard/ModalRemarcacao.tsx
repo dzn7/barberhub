@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, Clock, AlertCircle, Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { format, addDays, setHours, setMinutes, parseISO, isSameDay, parse, isToday } from "date-fns";
@@ -338,26 +337,22 @@ export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipo
   if (!aberto) return null;
 
   return (
-    <AnimatePresence>
-      <div 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        onClick={(e) => {
-          // Fechar ao clicar no overlay
-          if (e.target === e.currentTarget) {
-            onFechar();
-          }
-        }}
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={(e) => {
+        // Fechar ao clicar no overlay
+        if (e.target === e.currentTarget) {
+          onFechar();
+        }
+      }}
+    >
+      {/* Overlay com backdrop */}
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+      
+      <div
+        className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Overlay com backdrop */}
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
           {/* Header - fixo */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
             <div className="flex-1">
@@ -552,8 +547,7 @@ export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipo
               {salvando ? "Remarcando..." : "Remarcar e Notificar"}
             </button>
           </div>
-        </motion.div>
       </div>
-    </AnimatePresence>
+    </div>
   );
 }

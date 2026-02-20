@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   X, 
   User, 
@@ -266,19 +265,14 @@ export function ModalNovoAgendamento({
   return createPortal(
     <>
       {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+      <div
         className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm"
         onClick={() => !processando && onFechar()}
       />
 
       {/* Container do Modal */}
       <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center pointer-events-none">
-        <motion.div
-          initial={{ opacity: 0, y: 100, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        <div
           className="bg-zinc-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
@@ -301,180 +295,167 @@ export function ModalNovoAgendamento({
 
           {/* Conteúdo */}
           <div className="flex-1 overflow-y-auto p-4">
-            <AnimatePresence mode="wait">
-              {etapa === 'dados' ? (
-                <motion.div
-                  key="dados"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4"
-                >
-                  {/* Erro */}
-                  {erro && (
-                    <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-                      <p className="text-sm text-red-400">{erro}</p>
-                    </div>
-                  )}
-
-                  {/* Nome do Cliente */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Nome do Cliente
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
-                      <input
-                        type="text"
-                        value={form.clienteNome}
-                        onChange={(e) => setForm({ ...form, clienteNome: e.target.value })}
-                        placeholder="Digite o nome"
-                        className="w-full pl-11 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/20"
-                      />
-                    </div>
+            {etapa === 'dados' ? (
+              <div className="space-y-4">
+                {/* Erro */}
+                {erro && (
+                  <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <p className="text-sm text-red-400">{erro}</p>
                   </div>
+                )}
 
-                  {/* Telefone */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      Telefone (WhatsApp)
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
-                      <input
-                        type="tel"
-                        value={form.clienteTelefone}
-                        onChange={(e) => setForm({ ...form, clienteTelefone: formatarTelefone(e.target.value) })}
-                        placeholder="(00) 00000-0000"
-                        className="w-full pl-11 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/20"
-                      />
-                    </div>
+                {/* Nome do Cliente */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Nome do Cliente
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <input
+                      type="text"
+                      value={form.clienteNome}
+                      onChange={(e) => setForm({ ...form, clienteNome: e.target.value })}
+                      placeholder="Digite o nome"
+                      className="w-full pl-11 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/20"
+                    />
                   </div>
+                </div>
 
-                  {/* Profissional */}
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                      {terminologia.profissional.singular}
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {barbeiros.map((barbeiro) => (
-                        <button
-                          key={barbeiro.id}
-                          onClick={() => setForm({ ...form, barbeiroId: barbeiro.id })}
-                          className={`p-3 rounded-xl border-2 text-left transition-all ${
-                            form.barbeiroId === barbeiro.id
-                              ? 'border-white bg-white/10 text-white'
-                              : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600'
-                          }`}
-                        >
-                          <span className="font-medium">{barbeiro.nome}</span>
-                        </button>
-                      ))}
-                    </div>
+                {/* Telefone */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Telefone (WhatsApp)
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <input
+                      type="tel"
+                      value={form.clienteTelefone}
+                      onChange={(e) => setForm({ ...form, clienteTelefone: formatarTelefone(e.target.value) })}
+                      placeholder="(00) 00000-0000"
+                      className="w-full pl-11 pr-4 py-3 bg-zinc-800 border border-zinc-700 rounded-xl text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/20"
+                    />
                   </div>
+                </div>
 
-                  {/* Serviços - Seleção Múltipla */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-zinc-300">
-                        Serviços
-                      </label>
-                      {form.servicosSelecionados.length > 0 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
-                          {form.servicosSelecionados.length} selecionado{form.servicosSelecionados.length > 1 ? 's' : ''}
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                      {servicos.map((servico) => {
-                        const estaSelecionado = form.servicosSelecionados.includes(servico.id)
-                        return (
-                          <button
-                            key={servico.id}
-                            onClick={() => {
-                              if (estaSelecionado) {
-                                setForm(prev => ({
-                                  ...prev,
-                                  servicosSelecionados: prev.servicosSelecionados.filter(id => id !== servico.id)
-                                }))
-                              } else {
-                                setForm(prev => ({
-                                  ...prev,
-                                  servicosSelecionados: [...prev.servicosSelecionados, servico.id]
-                                }))
-                              }
-                            }}
-                            className={`w-full p-3 rounded-xl border-2 text-left transition-all relative ${
-                              estaSelecionado
-                                ? 'border-white bg-white/10'
-                                : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
-                            }`}
-                          >
-                            {/* Checkbox visual */}
-                            <div className={`absolute top-3 right-3 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                              estaSelecionado ? 'bg-white border-white' : 'border-zinc-600'
-                            }`}>
-                              {estaSelecionado && <Check className="w-3 h-3 text-zinc-900" />}
-                            </div>
-                            
-                            <div className="flex items-center justify-between pr-8">
-                              <span className="font-medium text-white">{servico.nome}</span>
-                              <span className="text-emerald-400 font-bold">
-                                R$ {servico.preco.toFixed(2)}
-                              </span>
-                            </div>
-                            <span className="text-xs text-zinc-500">
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              {servico.duracao} min
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                    
-                    {/* Resumo quando múltiplos serviços */}
-                    {form.servicosSelecionados.length > 1 && (
-                      <div className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-zinc-300">
-                            <Clock className="w-4 h-4 inline mr-1" />
-                            Duração total: <span className="font-semibold text-white">{duracaoTotal} min</span>
-                          </span>
-                          <span className="text-emerald-400 font-bold">
-                            Total: R$ {precoTotal.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
+                {/* Profissional */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    {terminologia.profissional.singular}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {barbeiros.map((barbeiro) => (
+                      <button
+                        key={barbeiro.id}
+                        onClick={() => setForm({ ...form, barbeiroId: barbeiro.id })}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          form.barbeiroId === barbeiro.id
+                            ? 'border-white bg-white/10 text-white'
+                            : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600'
+                        }`}
+                      >
+                        <span className="font-medium">{barbeiro.nome}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Serviços - Seleção Múltipla */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-zinc-300">
+                      Serviços
+                    </label>
+                    {form.servicosSelecionados.length > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-zinc-300">
+                        {form.servicosSelecionados.length} selecionado{form.servicosSelecionados.length > 1 ? 's' : ''}
+                      </span>
                     )}
                   </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="horario"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                >
-                  {/* Erro */}
-                  {erro && (
-                    <div className="p-3 mb-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-                      <p className="text-sm text-red-400">{erro}</p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {servicos.map((servico) => {
+                      const estaSelecionado = form.servicosSelecionados.includes(servico.id)
+                      return (
+                        <button
+                          key={servico.id}
+                          onClick={() => {
+                            if (estaSelecionado) {
+                              setForm(prev => ({
+                                ...prev,
+                                servicosSelecionados: prev.servicosSelecionados.filter(id => id !== servico.id)
+                              }))
+                            } else {
+                              setForm(prev => ({
+                                ...prev,
+                                servicosSelecionados: [...prev.servicosSelecionados, servico.id]
+                              }))
+                            }
+                          }}
+                          className={`w-full p-3 rounded-xl border-2 text-left transition-all relative ${
+                            estaSelecionado
+                              ? 'border-white bg-white/10'
+                              : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
+                          }`}
+                        >
+                          {/* Checkbox visual */}
+                          <div className={`absolute top-3 right-3 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                            estaSelecionado ? 'bg-white border-white' : 'border-zinc-600'
+                          }`}>
+                            {estaSelecionado && <Check className="w-3 h-3 text-zinc-900" />}
+                          </div>
+                          
+                          <div className="flex items-center justify-between pr-8">
+                            <span className="font-medium text-white">{servico.nome}</span>
+                            <span className="text-emerald-400 font-bold">
+                              R$ {servico.preco.toFixed(2)}
+                            </span>
+                          </div>
+                          <span className="text-xs text-zinc-500">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            {servico.duracao} min
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  
+                  {/* Resumo quando múltiplos serviços */}
+                  {form.servicosSelecionados.length > 1 && (
+                    <div className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-zinc-300">
+                          <Clock className="w-4 h-4 inline mr-1" />
+                          Duração total: <span className="font-semibold text-white">{duracaoTotal} min</span>
+                        </span>
+                        <span className="text-emerald-400 font-bold">
+                          Total: R$ {precoTotal.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   )}
+                </div>
+              </div>
+            ) : (
+              <div>
+                {/* Erro */}
+                {erro && (
+                  <div className="p-3 mb-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <p className="text-sm text-red-400">{erro}</p>
+                  </div>
+                )}
 
-                  <SeletorHorarioAvancado
-                    tenantId={tenantId}
-                    barbeiroId={form.barbeiroId}
-                    dataSelecionada={form.data}
-                    horarioSelecionado={form.hora}
-                    onDataChange={(data) => setForm({ ...form, data })}
-                    onHorarioChange={(hora) => setForm({ ...form, hora })}
-                    servicoDuracao={duracaoTotal}
-                    mostrarCalendario={true}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+                <SeletorHorarioAvancado
+                  tenantId={tenantId}
+                  barbeiroId={form.barbeiroId}
+                  dataSelecionada={form.data}
+                  horarioSelecionado={form.hora}
+                  onDataChange={(data) => setForm({ ...form, data })}
+                  onHorarioChange={(hora) => setForm({ ...form, hora })}
+                  servicoDuracao={duracaoTotal}
+                  mostrarCalendario={true}
+                />
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -519,8 +500,8 @@ export function ModalNovoAgendamento({
               )}
             </div>
           </div>
-            </motion.div>
-          </div>
+        </div>
+      </div>
     </>,
     document.body
   )

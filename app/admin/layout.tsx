@@ -7,6 +7,9 @@ import { ProvedorTema } from '@/components/provedores/provedor-tema'
 import { RegistrarServiceWorker } from '@/components/pwa'
 import { Loader2 } from 'lucide-react'
 
+const ADMIN_PWA_VERSION = '2026-02-20-admin-fix-2'
+const ADMIN_PWA_VERSION_KEY = 'admin-pwa-version'
+
 /**
  * Componente para injetar manifest PWA dinâmico do admin
  * Atualiza o link do manifest no head com os dados do tenant
@@ -61,6 +64,34 @@ function ManifestDinamicoAdmin() {
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { user, carregando } = useAuth()
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const versaoAtual = localStorage.getItem(ADMIN_PWA_VERSION_KEY)
+    if (versaoAtual === ADMIN_PWA_VERSION) return
+
+    const limparCacheAdmin = async () => {
+      try {
+        if ('caches' in window) {
+          const cacheNames = await caches.keys()
+          await Promise.all(cacheNames.map((name) => caches.delete(name)))
+        }
+
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          await Promise.all(registrations.map((reg) => reg.unregister()))
+        }
+      } catch (error) {
+        console.error('Falha ao limpar cache do admin PWA:', error)
+      } finally {
+        localStorage.setItem(ADMIN_PWA_VERSION_KEY, ADMIN_PWA_VERSION)
+        window.location.reload()
+      }
+    }
+
+    void limparCacheAdmin()
+  }, [])
 
   useEffect(() => {
     if (!carregando && !user) {

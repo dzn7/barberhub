@@ -2,7 +2,6 @@
 
 import { useEffect, useState, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { motion } from 'framer-motion'
 
 interface ModalPortalProps {
   aberto: boolean
@@ -33,10 +32,8 @@ export function ModalPortal({ aberto, onFechar, children, zIndex = 99999 }: Moda
 
   return createPortal(
     aberto ? (
-      <motion.div
+      <div
         key="modal-portal-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
         onClick={onFechar}
         style={{
           position: 'fixed',
@@ -56,16 +53,14 @@ export function ModalPortal({ aberto, onFechar, children, zIndex = 99999 }: Moda
           WebkitBackdropFilter: 'blur(8px)',
         }}
       >
-        <motion.div
+        <div
           key="modal-portal-content"
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
           onClick={(e) => e.stopPropagation()}
           className="max-h-[90vh] overflow-auto"
         >
           {children}
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     ) : null,
     document.body
   )
