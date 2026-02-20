@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { ProvedorTema } from '@/components/provedores/provedor-tema'
+import { RegistrarServiceWorker } from '@/components/pwa'
 import { Loader2 } from 'lucide-react'
 
 /**
@@ -82,6 +83,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ManifestDinamicoAdmin />
+      <RegistrarServiceWorker />
       {children}
     </>
   )

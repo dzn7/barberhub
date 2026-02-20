@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import Image from "next/image";
 import { 
   Calendar, DollarSign, Users, TrendingUp, TrendingDown, Package, Percent, LogOut, Scissors, Edit3, Clock, Settings, BarChart3, Filter, ChevronDown, Image as ImageIcon, MessageCircle, Store, Palette, TicketPercent
@@ -678,11 +677,7 @@ export default function DashboardCompleto() {
                     </button>
 
                     {filtroAberto && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute left-0 top-full z-50 mt-2 w-[min(92vw,320px)] rounded-xl border border-zinc-200 bg-white p-4 shadow-lg dark:border-zinc-800 dark:bg-zinc-900 sm:left-auto sm:right-0"
-                      >
+                      <div className="absolute left-0 top-full z-50 mt-2 w-[min(92vw,320px)] rounded-xl border border-zinc-200 bg-white p-4 shadow-lg dark:border-zinc-800 dark:bg-zinc-900 sm:left-auto sm:right-0">
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
@@ -727,7 +722,7 @@ export default function DashboardCompleto() {
                             Aplicar
                           </button>
                         </div>
-                      </motion.div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1027,11 +1022,7 @@ function MetricCard({
   carregando?: boolean;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800"
-    >
+    <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800">
       <div className="flex items-start justify-between mb-4">
         <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800">
           <Icone className="w-6 h-6 text-zinc-600 dark:text-zinc-400" />
@@ -1051,7 +1042,7 @@ function MetricCard({
           <p className="text-2xl font-bold tracking-tight tabular-nums text-zinc-900 dark:text-white">{valor}</p>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
