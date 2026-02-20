@@ -876,7 +876,7 @@ export function CalendarioSemanalNovo() {
               className="hidden md:block px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
             />
             <button
-              onClick={() => setDataBase(new Date())}
+              onClick={() => setDataBase(encontrarDiaAberto(new Date(), 1, true))}
               className="px-4 sm:px-6 py-2 text-sm font-bold bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors"
               type="button"
             >
