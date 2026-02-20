@@ -3,7 +3,7 @@
  * Gerencia cache, funcionamento offline e notificações
  */
 
-const CACHE_NAME = 'barberhub-v1'
+const CACHE_NAME = 'barberhub-v2'
 const OFFLINE_URL = '/offline.html'
 
 // Recursos estáticos para cachear
