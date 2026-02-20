@@ -7,7 +7,7 @@ import { ProvedorTema } from '@/components/provedores/provedor-tema'
 import { RegistrarServiceWorker } from '@/components/pwa'
 import { Loader2 } from 'lucide-react'
 
-const ADMIN_PWA_VERSION = '2026-02-20-admin-fix-2'
+const ADMIN_PWA_VERSION = '2026-02-20-admin-fix-3'
 const ADMIN_PWA_VERSION_KEY = 'admin-pwa-version'
 
 /**

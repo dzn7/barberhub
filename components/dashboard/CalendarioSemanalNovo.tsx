@@ -179,6 +179,7 @@ export function CalendarioSemanalNovo() {
   const [modalRemarcacaoAberto, setModalRemarcacaoAberto] = useState(false);
   const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
   const [processandoExclusao, setProcessandoExclusao] = useState(false);
+  const [processandoConcluirTodos, setProcessandoConcluirTodos] = useState(false);
   const [diasFuncionamento, setDiasFuncionamento] = useState<string[]>(['seg', 'ter', 'qua', 'qui', 'sex', 'sab']);
   const [configHorarios, setConfigHorarios] = useState<ConfiguracaoHorarios>(HORARIOS_PADRAO);
 
@@ -556,6 +557,13 @@ export function CalendarioSemanalNovo() {
     return grupos;
   }, [agendamentosProcessados, diasExibidos]);
 
+  const agendamentosConcluiveisDataBase = useMemo(() => {
+    const chaveDia = format(dataBase, 'yyyy-MM-dd');
+    return (agendamentosPorDia[chaveDia] || []).filter(
+      (agendamento) => agendamento.status === 'confirmado' || agendamento.status === 'pendente'
+    );
+  }, [agendamentosPorDia, dataBase]);
+
   // Calcular posição do agendamento baseado na hora inicial dinâmica
   const calcularPosicao = useCallback((inicioMin: number, duracao: number) => {
     const horaInicial = horasDia.length > 0 ? horasDia[0] : configHorarios.horaInicio;
@@ -720,7 +728,8 @@ export function CalendarioSemanalNovo() {
     if (!tenant) return;
 
     try {
-      const valorServico = agendamento.servicos?.preco || 0;
+      const infoServicos = obterInfoServicos(agendamento);
+      const valorServico = infoServicos.preco;
       const barbeiroId = agendamento.barbeiros?.id || agendamento.barbeiro_id;
       const dataBrasilia = toZonedTime(parseISO(agendamento.data_hora), TIMEZONE_BRASILIA);
       const dataFormatada = format(dataBrasilia, 'yyyy-MM-dd');
@@ -744,7 +753,7 @@ export function CalendarioSemanalNovo() {
           tenant_id: tenant.id,
           tipo: 'receita',
           categoria: 'servico',
-          descricao: `${agendamento.servicos?.nome} - ${agendamento.clientes?.nome}`,
+          descricao: `${infoServicos.nome} - ${agendamento.clientes?.nome}`,
           valor: valorServico,
           data: dataFormatada,
           forma_pagamento: 'dinheiro',
@@ -809,6 +818,48 @@ export function CalendarioSemanalNovo() {
       });
     } catch (error) {
       console.error('Erro ao notificar:', error);
+    }
+  };
+
+  const concluirTodosDoDiaBase = async () => {
+    if (!tenant?.id) return;
+
+    if (agendamentosConcluiveisDataBase.length === 0) {
+      alert('Não há agendamentos pendentes ou confirmados para concluir neste dia.');
+      return;
+    }
+
+    const total = agendamentosConcluiveisDataBase.length;
+    const dataRotulo = format(dataBase, 'dd/MM/yyyy');
+    const confirmar = window.confirm(`Concluir ${total} agendamento(s) do dia ${dataRotulo}?`);
+    if (!confirmar) return;
+
+    setProcessandoConcluirTodos(true);
+
+    try {
+      const ids = agendamentosConcluiveisDataBase.map((agendamento) => agendamento.id);
+
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({
+          status: 'concluido',
+          concluido_em: new Date().toISOString(),
+        })
+        .in('id', ids);
+
+      if (error) throw error;
+
+      for (const agendamento of agendamentosConcluiveisDataBase) {
+        await criarTransacaoEComissao(agendamento);
+      }
+
+      await buscarAgendamentos({ silencioso: true });
+      alert(`✅ ${total} agendamento(s) concluído(s) com sucesso.`);
+    } catch (error) {
+      console.error('Erro ao concluir todos os agendamentos do dia:', error);
+      alert('Erro ao concluir todos os agendamentos do dia.');
+    } finally {
+      setProcessandoConcluirTodos(false);
     }
   };
 
@@ -993,6 +1044,19 @@ export function CalendarioSemanalNovo() {
                 <span className="hidden sm:inline">Novo</span>
               </button>
             )}
+
+            <button
+              onClick={concluirTodosDoDiaBase}
+              disabled={agendamentosConcluiveisDataBase.length === 0 || processandoConcluirTodos}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-100 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 transition disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold"
+              type="button"
+              title="Concluir todos os agendamentos pendentes/confirmados do dia selecionado"
+            >
+              <CheckCircle className="w-4 h-4" />
+              {processandoConcluirTodos
+                ? 'Concluindo...'
+                : `Concluir Todos (${agendamentosConcluiveisDataBase.length})`}
+            </button>
           </div>
         </div>
 
