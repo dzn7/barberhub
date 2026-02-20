@@ -64,28 +64,49 @@ const PALETAS_BARBEARIA = [
 ]
 
 /**
- * Paletas de cores para Nail Designers (tons femininos, elegantes e sofisticados)
+ * Paletas de cores para Nail Designers
  */
-const PALETAS_NAIL = [
-  { nome: 'Nude', descricao: 'Elegância natural', primaria: '#faf5f0', secundaria: '#1c1917', destaque: '#d4a574' },
-  { nome: 'Blush', descricao: 'Rosa suave', primaria: '#fdf2f8', secundaria: '#1f1f1f', destaque: '#f9a8d4' },
-  { nome: 'Rose Gold', descricao: 'Luxo atemporal', primaria: '#1a1a1a', secundaria: '#fefefe', destaque: '#d4a574' },
-  { nome: 'Champagne', descricao: 'Sofisticação leve', primaria: '#fffbeb', secundaria: '#292524', destaque: '#d4a574' },
-  { nome: 'Burgundy', descricao: 'Vinho sofisticado', primaria: '#1c0a0a', secundaria: '#fef2f2', destaque: '#be123c' },
-  { nome: 'Mauve', descricao: 'Roxo delicado', primaria: '#faf5ff', secundaria: '#1e1033', destaque: '#c084fc' },
-  { nome: 'Terracota', descricao: 'Terra elegante', primaria: '#fef3c7', secundaria: '#292524', destaque: '#c2410c' },
-  { nome: 'Sage', descricao: 'Verde sálvia', primaria: '#f0fdf4', secundaria: '#14532d', destaque: '#86efac' },
-  { nome: 'Lavanda', descricao: 'Lilás relaxante', primaria: '#faf5ff', secundaria: '#3b0764', destaque: '#e879f9' },
-  { nome: 'Pearl White', descricao: 'Branco perolado', primaria: '#fefefe', secundaria: '#18181b', destaque: '#a8a29e' },
-  { nome: 'Coral', descricao: 'Coral vibrante', primaria: '#fff7ed', secundaria: '#1c1917', destaque: '#fb923c' },
-  { nome: 'Midnight Rose', descricao: 'Noite rosada', primaria: '#0f0f0f', secundaria: '#fefefe', destaque: '#fb7185' },
+const PALETAS_NAIL_DESIGNER = [
+  { nome: 'Porcelana', descricao: 'Claro e elegante', primaria: '#fff8fb', secundaria: '#311827', destaque: '#e879b9' },
+  { nome: 'Rosé Atelier', descricao: 'Delicado e premium', primaria: '#fff1f6', secundaria: '#3f1d2e', destaque: '#f472b6' },
+  { nome: 'Nude Chic', descricao: 'Neutro sofisticado', primaria: '#f9f4ee', secundaria: '#2f241f', destaque: '#d4a373' },
+  { nome: 'Berry Studio', descricao: 'Moderno e autoral', primaria: '#2f0d1e', secundaria: '#fff7fb', destaque: '#fb7185' },
+  { nome: 'Champanhe', descricao: 'Luxo suave', primaria: '#fff8e8', secundaria: '#352415', destaque: '#eab308' },
+  { nome: 'Linho Rosa', descricao: 'Minimalista e clean', primaria: '#fffdfd', secundaria: '#2c1b24', destaque: '#ec4899' },
+]
+
+/**
+ * Paletas de cores para Lash Designers
+ */
+const PALETAS_LASH_DESIGNER = [
+  { nome: 'Ametista', descricao: 'Refinada e intensa', primaria: '#1b1027', secundaria: '#faf5ff', destaque: '#c084fc' },
+  { nome: 'Plum Glow', descricao: 'Profunda e moderna', primaria: '#2a1027', secundaria: '#fff6fb', destaque: '#f472b6' },
+  { nome: 'Night Silk', descricao: 'Luxo noturno', primaria: '#0f172a', secundaria: '#f8fafc', destaque: '#a78bfa' },
+  { nome: 'Mauve Light', descricao: 'Suave e feminina', primaria: '#faf5ff', secundaria: '#2e1a47', destaque: '#d8b4fe' },
+  { nome: 'Espresso Lash', descricao: 'Quente e premium', primaria: '#231815', secundaria: '#fffaf5', destaque: '#c08457' },
+  { nome: 'Rose Smoke', descricao: 'Contemporânea', primaria: '#fff7fb', secundaria: '#3b1d2c', destaque: '#fb7185' },
+]
+
+/**
+ * Paletas de cores para Cabeleireiras
+ */
+const PALETAS_CABELEIREIRA = [
+  { nome: 'Caramelo', descricao: 'Quente e acolhedora', primaria: '#fff8f1', secundaria: '#2f1f18', destaque: '#d97706' },
+  { nome: 'Cobre', descricao: 'Energia e presença', primaria: '#fff7ed', secundaria: '#3a1f12', destaque: '#ea580c' },
+  { nome: 'Avelã', descricao: 'Elegante e natural', primaria: '#f7f4ef', secundaria: '#2f2a24', destaque: '#a16207' },
+  { nome: 'Turquesa Hair', descricao: 'Criativa e moderna', primaria: '#ecfeff', secundaria: '#082f49', destaque: '#06b6d4' },
+  { nome: 'Bordeaux', descricao: 'Sofisticação clássica', primaria: '#2b0f16', secundaria: '#fff5f7', destaque: '#f43f5e' },
+  { nome: 'Oliva Premium', descricao: 'Natural chic', primaria: '#f7fee7', secundaria: '#1f2937', destaque: '#84cc16' },
 ]
 
 /**
  * Retorna as paletas de cores baseadas no tipo de negócio
  */
 function obterPaletas(tipoNegocio: TipoNegocio | undefined) {
-  return ehTipoNegocioFeminino(tipoNegocio) ? PALETAS_NAIL : PALETAS_BARBEARIA
+  if (tipoNegocio === 'nail_designer') return PALETAS_NAIL_DESIGNER
+  if (tipoNegocio === 'lash_designer') return PALETAS_LASH_DESIGNER
+  if (tipoNegocio === 'cabeleireira') return PALETAS_CABELEIREIRA
+  return PALETAS_BARBEARIA
 }
 
 /**
@@ -205,73 +226,53 @@ interface CabecalhoEtapaProps {
 
 function CabecalhoEtapa({ etapa, etapaAtual, totalEtapas }: CabecalhoEtapaProps) {
   const Icone = etapa.icone
+  const percentual = Math.round((etapaAtual / totalEtapas) * 100)
   
   return (
-    <div className="mb-8">
-      {/* Indicador de progresso mobile */}
-      <div className="flex items-center gap-2 mb-4 lg:hidden">
-        <div className="flex items-center gap-1">
-          {Array.from({ length: totalEtapas }).map((_, i) => (
-            <div 
-              key={i}
-              className={`h-1.5 rounded-full transition-all ${
-                i + 1 === etapaAtual 
-                  ? 'w-6 bg-zinc-900 dark:bg-white' 
-                  : i + 1 < etapaAtual 
-                    ? 'w-3 bg-zinc-400 dark:bg-zinc-500' 
-                    : 'w-3 bg-zinc-200 dark:bg-zinc-700'
-              }`}
-            />
-          ))}
+    <div className="mb-8 space-y-5">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Passo {etapaAtual} de {totalEtapas}
+          </p>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">{percentual}% concluído</p>
         </div>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2">
-          {etapaAtual} de {totalEtapas}
-        </span>
+        <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+          <motion.div
+            className="h-full bg-zinc-900 dark:bg-white"
+            initial={{ width: 0 }}
+            animate={{ width: `${percentual}%` }}
+            transition={{ duration: 0.35 }}
+          />
+        </div>
       </div>
 
-      {/* Cabeçalho principal */}
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-          <Icone className="w-6 h-6 text-zinc-700 dark:text-zinc-300" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white">
+      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 sm:p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+            <Icone className="w-6 h-6 text-zinc-700 dark:text-zinc-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white mb-2">
               {etapa.tituloCompleto}
             </h2>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-full">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {etapa.tempoEstimado}
-            </span>
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base">
+              {etapa.subtitulo}
+            </p>
           </div>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm sm:text-base">
-            {etapa.subtitulo}
+        </div>
+        <div className="mt-5 border-t border-zinc-200 dark:border-zinc-800 pt-4">
+          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
+            Nesta etapa você vai:
           </p>
+          <ul className="space-y-2">
+            {etapa.dicas.map((dica, index) => (
+              <li key={index} className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                • {dica}
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
-
-      {/* Dicas */}
-      <div className="mt-6 p-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-xl">
-        <div className="flex items-center gap-2 mb-3">
-          <svg className="w-4 h-4 text-zinc-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 uppercase tracking-wide">
-            Dicas rápidas
-          </span>
-        </div>
-        <ul className="space-y-2">
-          {etapa.dicas.map((dica, index) => (
-            <li key={index} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <svg className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              {dica}
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   )
@@ -789,6 +790,43 @@ export default function ConfigurarPage() {
     lash_designer: '@estudiobellacilios',
     cabeleireira: '@salaobella'
   }
+  const visualPorTipo: Record<TipoNegocio, {
+    destaque: string
+    destaqueSuave: string
+    fundoDegrade: string
+    titulo: string
+    subtitulo: string
+  }> = {
+    barbearia: {
+      destaque: '#18181b',
+      destaqueSuave: '#e4e4e7',
+      fundoDegrade: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+      titulo: 'Configure seu negócio com clareza',
+      subtitulo: 'Fluxo guiado para publicar sua página de agendamento com uma aparência profissional.'
+    },
+    nail_designer: {
+      destaque: '#be185d',
+      destaqueSuave: '#fbcfe8',
+      fundoDegrade: 'linear-gradient(180deg, #fff6fb 0%, #ffffff 100%)',
+      titulo: 'Deixe sua marca visual impecável',
+      subtitulo: 'Monte um perfil elegante do seu estúdio e publique com identidade própria.'
+    },
+    lash_designer: {
+      destaque: '#7c3aed',
+      destaqueSuave: '#ddd6fe',
+      fundoDegrade: 'linear-gradient(180deg, #f8f5ff 0%, #ffffff 100%)',
+      titulo: 'Crie uma presença premium para seu estúdio',
+      subtitulo: 'Organize dados, serviços e equipe em um fluxo objetivo e fácil de usar.'
+    },
+    cabeleireira: {
+      destaque: '#c2410c',
+      destaqueSuave: '#fed7aa',
+      fundoDegrade: 'linear-gradient(180deg, #fff7ed 0%, #ffffff 100%)',
+      titulo: 'Organize seu salão em poucos passos',
+      subtitulo: 'Defina identidade, serviços e equipe com uma experiência simples e planejada.'
+    }
+  }
+  const visualAtual = visualPorTipo[tipoNegocioAtual]
   
   useEffect(() => {
     setMontado(true)
@@ -924,6 +962,9 @@ export default function ConfigurarPage() {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
+  const classeInputBase = 'w-full px-4 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/15 dark:focus:ring-white/20 focus:border-zinc-500 dark:focus:border-zinc-500 transition-all'
+  const classeInputComIcone = `w-full pl-12 pr-4 py-3.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/15 dark:focus:ring-white/20 focus:border-zinc-500 dark:focus:border-zinc-500 transition-all`
+
   if (carregandoAuth || !tenant) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
@@ -939,31 +980,29 @@ export default function ConfigurarPage() {
         dados={dados}
         totalServicos={totalServicos}
         totalBarbeiros={totalBarbeiros}
-        tipoNegocio={tipoNegocio}
+        tipoNegocio={tipoNegocioAtual}
       />
     )
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black transition-colors">
-      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen transition-colors dark:bg-black" style={{ background: visualAtual.fundoDegrade }}>
+      <header className="border-b border-zinc-200/80 dark:border-zinc-800 bg-white/85 dark:bg-black/85 backdrop-blur">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/"><LogoMarca className="h-10" /></Link>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-zinc-500 dark:text-zinc-600 hidden sm:block">Etapa {etapaAtual} de {TOTAL_ETAPAS}</span>
-            <button 
-              onClick={() => setMostrarPreviewMobile(true)} 
-              className="lg:hidden flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMostrarPreviewMobile(true)}
+              className="lg:hidden inline-flex items-center gap-2 px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
               aria-label="Ver preview do site"
             >
               <Eye className="w-4 h-4" />
-              <span className="hidden sm:inline">Preview</span>
+              Preview
             </button>
-            {/* Theme Toggle */}
             {montado && (
               <button
                 onClick={alternarTema}
-                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 aria-label="Alternar tema"
               >
                 {theme === 'dark' ? (
@@ -973,27 +1012,59 @@ export default function ConfigurarPage() {
                 )}
               </button>
             )}
-            <button onClick={() => router.push('/admin')} className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">Pular</button>
+            <button onClick={() => router.push('/admin')} className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+              Pular
+            </button>
           </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-4 pb-5">
+          <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white">{visualAtual.titulo}</h1>
+          <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 mt-1">{visualAtual.subtitulo}</p>
         </div>
       </header>
 
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="h-1 bg-zinc-200 dark:bg-zinc-900 rounded-full overflow-hidden">
-            <motion.div className="h-full bg-zinc-900 dark:bg-white" initial={{ width: 0 }} animate={{ width: `${(etapaAtual / TOTAL_ETAPAS) * 100}%` }} transition={{ duration: 0.3 }} />
+      <div className="border-b border-zinc-200/70 dark:border-zinc-800 bg-white/75 dark:bg-black/60 backdrop-blur">
+        <div className="max-w-6xl mx-auto px-4 py-4 space-y-4">
+          <div className="h-2 bg-zinc-200 dark:bg-zinc-900 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full"
+              style={{ backgroundColor: visualAtual.destaque }}
+              initial={{ width: 0 }}
+              animate={{ width: `${(etapaAtual / TOTAL_ETAPAS) * 100}%` }}
+              transition={{ duration: 0.35 }}
+            />
           </div>
-          <div className="hidden lg:flex items-center justify-between py-4">
+          <div className="hidden lg:grid grid-cols-6 gap-2">
             {ETAPAS.map((etapa) => {
               const Icone = etapa.icone
               const ativa = etapaAtual === etapa.id
               const completa = etapaAtual > etapa.id
               return (
-                <button key={etapa.id} onClick={() => etapa.id < etapaAtual && setEtapaAtual(etapa.id)} disabled={etapa.id > etapaAtual} className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${ativa ? 'bg-zinc-900/10 dark:bg-white/10' : completa ? 'hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${ativa ? 'bg-zinc-900 dark:bg-white text-white dark:text-black' : completa ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-700 dark:text-white' : 'bg-zinc-200 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-600'}`}>
-                    {completa ? <Check className="w-4 h-4" /> : <Icone className="w-4 h-4" />}
+                <button
+                  key={etapa.id}
+                  onClick={() => etapa.id < etapaAtual && setEtapaAtual(etapa.id)}
+                  disabled={etapa.id > etapaAtual}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all ${
+                    ativa
+                      ? 'border-zinc-400 dark:border-zinc-600 bg-white dark:bg-zinc-900'
+                      : completa
+                        ? 'border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 hover:bg-white dark:hover:bg-zinc-900'
+                        : 'border-zinc-200/60 dark:border-zinc-800/70 bg-transparent opacity-60 cursor-not-allowed'
+                  }`}
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: ativa ? visualAtual.destaque : completa ? visualAtual.destaqueSuave : '#e4e4e7' }}
+                  >
+                    {completa ? (
+                      <Check className="w-4 h-4 text-zinc-900" />
+                    ) : (
+                      <Icone className={`w-4 h-4 ${ativa ? 'text-white' : 'text-zinc-700'}`} style={ativa ? { color: '#fff' } : undefined} />
+                    )}
                   </div>
-                  <div className="text-left"><p className={`text-sm font-medium ${ativa ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}`}>{etapa.titulo}</p></div>
+                  <p className={`text-sm font-medium ${ativa ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                    {etapa.titulo}
+                  </p>
                 </button>
               )
             })}
@@ -1001,14 +1072,20 @@ export default function ConfigurarPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-5 gap-8">
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-10 pb-28 sm:pb-10">
+        <div className="grid lg:grid-cols-5 gap-8 xl:gap-10">
           <div className="lg:col-span-3">
-            <AnimatePresence mode="wait">
+            <div className="rounded-[1.5rem] border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/85 backdrop-blur-sm p-4 sm:p-6 lg:p-7">
+              <AnimatePresence mode="wait">
               {etapaAtual === 1 && (
                 <motion.div key="etapa1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[0]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <div className="space-y-6">
+                    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Use o nome que você quer mostrar ao público. Esse nome aparecerá no site, no link de agendamento e em mensagens de confirmação.
+                      </p>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                         {`Nome ${artigoNomeEstabelecimento} ${nomeEstabelecimento} *`}
@@ -1018,34 +1095,133 @@ export default function ConfigurarPage() {
                         value={dados.nome}
                         onChange={e => setDados({ ...dados, nome: e.target.value })}
                         placeholder={placeholderNomePorTipo[tipoNegocioAtual]}
-                        className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all"
+                        className={classeInputBase}
                       />
                     </div>
-                    <EditorLogo logoUrl={dados.logo_url} tenantId={tenant.id} onLogoChange={(url, iconesPwa) => setDados({ ...dados, logo_url: url, icone_pwa_192: iconesPwa?.icone_192 || '', icone_pwa_512: iconesPwa?.icone_512 || '' })} corPrimaria={dados.cor_primaria} corSecundaria={dados.cor_secundaria} />
+                    <EditorLogo
+                      logoUrl={dados.logo_url}
+                      tenantId={tenant.id}
+                      onLogoChange={(url, iconesPwa) =>
+                        setDados({ ...dados, logo_url: url, icone_pwa_192: iconesPwa?.icone_192 || '', icone_pwa_512: iconesPwa?.icone_512 || '' })
+                      }
+                      corPrimaria={dados.cor_primaria}
+                      corSecundaria={dados.cor_secundaria}
+                      tipoNegocio={tipoNegocioAtual}
+                    />
                   </div>
                 </motion.div>
               )}
               {etapaAtual === 2 && (
                 <motion.div key="etapa2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[1]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Telefone</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.telefone} onChange={e => setDados({ ...dados, telefone: formatarTelefone(e.target.value) })} placeholder="(00) 0000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
-                      <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">WhatsApp *</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.whatsapp} onChange={e => setDados({ ...dados, whatsapp: formatarTelefone(e.target.value) })} placeholder="(00) 00000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div><p className="text-xs text-zinc-500 dark:text-zinc-600 mt-1">Usado para agendamentos</p></div>
+                  <div className="space-y-5">
+                    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Preencha ao menos WhatsApp para começar a receber mensagens automáticas de confirmação e lembrete.
+                      </p>
                     </div>
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">E-mail</label><div className="relative"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="email" value={dados.email} onChange={e => setDados({ ...dados, email: e.target.value })} placeholder={placeholderEmailPorTipo[tipoNegocioAtual]} className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Instagram</label><div className="relative"><Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.instagram} onChange={e => setDados({ ...dados, instagram: e.target.value })} placeholder={placeholderInstagramPorTipo[tipoNegocioAtual]} className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Telefone</label>
+                        <div className="relative">
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                          <input
+                            type="tel"
+                            value={dados.telefone}
+                            onChange={e => setDados({ ...dados, telefone: formatarTelefone(e.target.value) })}
+                            placeholder="(00) 0000-0000"
+                            className={classeInputComIcone}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">WhatsApp *</label>
+                        <div className="relative">
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                          <input
+                            type="tel"
+                            value={dados.whatsapp}
+                            onChange={e => setDados({ ...dados, whatsapp: formatarTelefone(e.target.value) })}
+                            placeholder="(00) 00000-0000"
+                            className={classeInputComIcone}
+                          />
+                        </div>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">Campo principal para receber agendamentos.</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">E-mail</label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                        <input
+                          type="email"
+                          value={dados.email}
+                          onChange={e => setDados({ ...dados, email: e.target.value })}
+                          placeholder={placeholderEmailPorTipo[tipoNegocioAtual]}
+                          className={classeInputComIcone}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Instagram</label>
+                      <div className="relative">
+                        <Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                        <input
+                          type="text"
+                          value={dados.instagram}
+                          onChange={e => setDados({ ...dados, instagram: e.target.value })}
+                          placeholder={placeholderInstagramPorTipo[tipoNegocioAtual]}
+                          className={classeInputComIcone}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
               {etapaAtual === 3 && (
                 <motion.div key="etapa3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[2]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <div className="space-y-4">
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Endereço completo</label><div className="relative"><MapPin className="absolute left-4 top-3.5 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.endereco} onChange={e => setDados({ ...dados, endereco: e.target.value })} placeholder="Rua, número, bairro" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
+                  <div className="space-y-5">
+                    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Endereço completo melhora o encontro pelo mapa e reduz dúvidas no dia do atendimento.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Endereço completo</label>
+                      <div className="relative">
+                        <MapPin className="absolute left-4 top-3.5 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                        <input
+                          type="text"
+                          value={dados.endereco}
+                          onChange={e => setDados({ ...dados, endereco: e.target.value })}
+                          placeholder="Rua, número e bairro"
+                          className={classeInputComIcone}
+                        />
+                      </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Cidade</label><input type="text" value={dados.cidade} onChange={e => setDados({ ...dados, cidade: e.target.value })} placeholder="São Paulo" className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div>
-                      <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Estado</label><input type="text" value={dados.estado} onChange={e => setDados({ ...dados, estado: e.target.value.toUpperCase() })} placeholder="SP" maxLength={2} className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all uppercase" /></div>
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Cidade</label>
+                        <input
+                          type="text"
+                          value={dados.cidade}
+                          onChange={e => setDados({ ...dados, cidade: e.target.value })}
+                          placeholder="São Paulo"
+                          className={classeInputBase}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Estado</label>
+                        <input
+                          type="text"
+                          value={dados.estado}
+                          onChange={e => setDados({ ...dados, estado: e.target.value.toUpperCase() })}
+                          placeholder="SP"
+                          maxLength={2}
+                          className={`${classeInputBase} uppercase`}
+                        />
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -1053,49 +1229,98 @@ export default function ConfigurarPage() {
               {etapaAtual === 4 && (
                 <motion.div key="etapa4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[3]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {PALETAS.map((paleta) => {
-                      const selecionada = dados.cor_primaria === paleta.primaria
-                      return (
-                        <button key={paleta.nome} onClick={() => aplicarPaleta(paleta)} className={`relative p-4 rounded-xl border-2 transition-all ${selecionada ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-zinc-800' : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'}`}>
-                          {selecionada && <div className="absolute top-2 right-2"><Check className="w-4 h-4 text-zinc-900 dark:text-white" /></div>}
-                          <div className="flex gap-2 mb-3"><div className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-700" style={{ backgroundColor: paleta.primaria }} /><div className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-700" style={{ backgroundColor: paleta.secundaria }} /></div>
-                          <p className="text-sm font-medium text-zinc-900 dark:text-white text-left">{paleta.nome}</p><p className="text-xs text-zinc-500 text-left">{paleta.descricao}</p>
-                        </button>
-                      )
-                    })}
+                  <div className="space-y-5">
+                    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Escolha um estilo visual para o seu site. Você pode trocar essa paleta depois no painel sem perder nada.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {PALETAS.map((paleta) => {
+                        const selecionada = dados.cor_primaria === paleta.primaria
+                        return (
+                          <button
+                            key={paleta.nome}
+                            onClick={() => aplicarPaleta(paleta)}
+                            className={`relative p-4 rounded-2xl border text-left transition-all ${
+                              selecionada
+                                ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-zinc-800'
+                                : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'
+                            }`}
+                          >
+                            {selecionada && (
+                              <div className="absolute top-3 right-3">
+                                <Check className="w-4 h-4 text-zinc-900 dark:text-white" />
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-700" style={{ backgroundColor: paleta.primaria }} />
+                              <div className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-700" style={{ backgroundColor: paleta.secundaria }} />
+                              <div className="w-8 h-8 rounded-lg border border-zinc-300 dark:border-zinc-700" style={{ backgroundColor: paleta.destaque }} />
+                            </div>
+                            <p className="text-sm font-semibold text-zinc-900 dark:text-white">{paleta.nome}</p>
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">{paleta.descricao}</p>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </motion.div>
               )}
               {etapaAtual === 5 && (
                 <motion.div key="etapa5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[4]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <ServicosMiniGestao tenantId={tenant.id} onTotalChange={setTotalServicos} tipoNegocio={tipoNegocio} />
+                  <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4 mb-5">
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      Cadastre primeiro os serviços principais. Você pode ajustar valores e duração com calma depois no painel.
+                    </p>
+                  </div>
+                  <ServicosMiniGestao tenantId={tenant.id} onTotalChange={setTotalServicos} tipoNegocio={tipoNegocioAtual} />
                 </motion.div>
               )}
               {etapaAtual === 6 && (
                 <motion.div key="etapa6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[5]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                  <CadastroBarbeirosOnboarding tenantId={tenant.id} onTotalChange={setTotalBarbeiros} tipoNegocio={tipoNegocio} />
+                  <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4 mb-5">
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      Cadastre a equipe que vai atender. Cada profissional recebe acesso próprio para ver agenda e comissões.
+                    </p>
+                  </div>
+                  <CadastroBarbeirosOnboarding tenantId={tenant.id} onTotalChange={setTotalBarbeiros} tipoNegocio={tipoNegocioAtual} />
                 </motion.div>
               )}
-            </AnimatePresence>
+              </AnimatePresence>
+            </div>
 
-            <div className="flex justify-between mt-12 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="hidden sm:flex justify-between mt-6 px-1">
               {etapaAtual > 1 ? (
-                <Botao type="button" variante="fantasma" onClick={voltar} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><ArrowLeft className="w-4 h-4 mr-2" />Voltar</Botao>
+                <Botao type="button" variante="fantasma" onClick={voltar} className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-300 dark:border-zinc-700 rounded-xl px-5 py-2.5">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Voltar
+                </Botao>
               ) : <div />}
               {etapaAtual < TOTAL_ETAPAS ? (
-                <Botao type="button" onClick={avancar} className="bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">Continuar<ArrowRight className="w-4 h-4 ml-2" /></Botao>
+                <Botao type="button" onClick={avancar} className="text-white rounded-xl px-6 py-2.5" style={{ backgroundColor: visualAtual.destaque }}>
+                  Continuar
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Botao>
               ) : (
-                <Botao type="button" onClick={finalizar} disabled={salvando} className="bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">
+                <Botao type="button" onClick={finalizar} disabled={salvando} className="text-white rounded-xl px-6 py-2.5" style={{ backgroundColor: visualAtual.destaque }}>
                   {salvando ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Finalizando...</>) : (<><Check className="w-4 h-4 mr-2" />Finalizar</>)}
                 </Botao>
               )}
             </div>
           </div>
           <div className="hidden lg:block lg:col-span-2">
-            <div className="sticky top-8"><PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} tipoNegocio={tipoNegocioAtual} /></div>
+            <div className="sticky top-8 space-y-3">
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/85 dark:bg-zinc-950/80 p-4">
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Pré-visualização em tempo real</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
+                  Tudo que você altera aqui já aparece no modelo ao lado.
+                </p>
+              </div>
+              <PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} tipoNegocio={tipoNegocioAtual} />
+            </div>
           </div>
         </div>
 
@@ -1125,6 +1350,55 @@ export default function ConfigurarPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Navegação fixa no mobile */}
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-black/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="flex items-center gap-2">
+            {etapaAtual > 1 ? (
+              <button
+                type="button"
+                onClick={voltar}
+                className="px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            ) : (
+              <div className="w-[50px]" />
+            )}
+
+            {etapaAtual < TOTAL_ETAPAS ? (
+              <button
+                type="button"
+                onClick={avancar}
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl text-white font-medium"
+                style={{ backgroundColor: visualAtual.destaque }}
+              >
+                Continuar
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={finalizar}
+                disabled={salvando}
+                className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl text-white font-medium disabled:opacity-60"
+                style={{ backgroundColor: visualAtual.destaque }}
+              >
+                {salvando ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Finalizando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Finalizar
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

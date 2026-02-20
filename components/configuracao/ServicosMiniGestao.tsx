@@ -140,6 +140,7 @@ export function ServicosMiniGestao({
   tipoNegocio = 'barbearia'
 }: ServicosMiniGestaoProps) {
   const { toast } = useToast()
+  const terminologia = useMemo(() => obterTerminologia(tipoNegocio), [tipoNegocio])
   const [servicos, setServicos] = useState<Servico[]>([])
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -376,7 +377,7 @@ export function ServicosMiniGestao({
         <div className="flex items-center gap-2">
           <Scissors className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {servicos.length} {servicos.length === 1 ? 'serviço' : 'serviços'}
+            {servicos.length} {servicos.length === 1 ? 'servico' : 'servicos'} cadastrados
           </span>
         </div>
         {!mostrarFormulario && !editando && (
@@ -394,17 +395,17 @@ export function ServicosMiniGestao({
       {servicos.length === 0 && !mostrarFormulario && (
         <div className="space-y-3">
           <p className="text-sm text-zinc-600 dark:text-zinc-500">
-            Adicione rapidamente serviços comuns:
+            Sugestoes prontas para {terminologia.estabelecimento.artigo} {terminologia.estabelecimento.singular.toLowerCase()}:
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {SERVICOS_SUGERIDOS.map((sugerido, index) => (
               <button
                 key={index}
                 onClick={() => adicionarSugerido(sugerido)}
                 disabled={salvando}
-                className="px-3 py-1.5 text-sm bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all disabled:opacity-50"
+                className="px-3 py-2.5 text-sm text-left bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all disabled:opacity-50"
               >
-                + {sugerido.nome}
+                {sugerido.nome}
               </button>
             ))}
           </div>
@@ -600,25 +601,25 @@ export function ServicosMiniGestao({
                   <GripVertical className="w-4 h-4 text-zinc-300 dark:text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-zinc-900 dark:text-white truncate">
-                        {servico.nome}
-                      </span>
-                      <span className="text-xs px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded">
-                        {CATEGORIAS.find(c => c.valor === servico.categoria)?.label || 'Outro'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-zinc-500 mt-1">
-                      <span className="flex items-center gap-1">
-                        <DollarSign className="w-3 h-3" />
-                        R$ {servico.preco.toFixed(2)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {servico.duracao} min
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-zinc-900 dark:text-white truncate">
+                      {servico.nome}
+                    </span>
                   </div>
+                  <div className="flex items-center gap-4 text-sm text-zinc-500 mt-1">
+                    <span className="flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />
+                      R$ {servico.preco.toFixed(2)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {servico.duracao} min
+                    </span>
+                    <span>
+                      Categoria: {CATEGORIAS.find(c => c.valor === servico.categoria)?.label || 'Outro'}
+                    </span>
+                  </div>
+                </div>
 
                   <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button

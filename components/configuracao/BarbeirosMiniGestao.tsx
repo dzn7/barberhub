@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
 import { RecorteImagem } from '@/components/ui/recorte-imagem'
+import { obterTerminologia } from '@/lib/configuracoes-negocio'
+import { TipoNegocio } from '@/lib/tipos-negocio'
 import {
   User,
   Plus,
@@ -35,6 +37,7 @@ interface BarbeirosMiniGestaoProps {
   tenantId: string
   limiteBarbeiros?: number
   onTotalChange?: (total: number) => void
+  tipoNegocio?: TipoNegocio
 }
 
 const ESPECIALIDADES_SUGERIDAS = [
@@ -54,9 +57,15 @@ const ESPECIALIDADES_SUGERIDAS = [
 export function BarbeirosMiniGestao({
   tenantId,
   limiteBarbeiros = 2,
-  onTotalChange
+  onTotalChange,
+  tipoNegocio = 'barbearia'
 }: BarbeirosMiniGestaoProps) {
   const { toast } = useToast()
+  const terminologia = obterTerminologia(tipoNegocio)
+  const preposicaoNoEstabelecimento = terminologia.estabelecimento.artigo === 'a' ? 'na' : 'no'
+  const profissionalSingular = terminologia.profissional.singular.toLowerCase()
+  const profissionaisPlural = terminologia.profissional.plural.toLowerCase()
+  const nomeEstabelecimento = terminologia.estabelecimento.singular.toLowerCase()
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -198,15 +207,15 @@ export function BarbeirosMiniGestao({
 
   const adicionarBarbeiro = async () => {
     if (!formulario.nome.trim()) {
-      toast({ tipo: 'erro', mensagem: 'Digite o nome do barbeiro' })
+      toast({ tipo: 'erro', mensagem: `Digite o nome ${terminologia.profissional.artigo} ${profissionalSingular}` })
       return
     }
     if (!formulario.telefone.trim()) {
-      toast({ tipo: 'erro', mensagem: 'Digite o telefone do barbeiro' })
+      toast({ tipo: 'erro', mensagem: `Digite o telefone ${terminologia.profissional.artigo} ${profissionalSingular}` })
       return
     }
     if (barbeiros.length >= limiteBarbeiros) {
-      toast({ tipo: 'aviso', mensagem: `Limite de ${limiteBarbeiros} barbeiros atingido` })
+      toast({ tipo: 'aviso', mensagem: `Limite de ${limiteBarbeiros} ${profissionaisPlural} atingido` })
       return
     }
 
@@ -233,7 +242,7 @@ export function BarbeirosMiniGestao({
       resetarFormulario()
       setMostrarFormulario(false)
     } catch (erro) {
-      toast({ tipo: 'erro', mensagem: 'Erro ao adicionar barbeiro' })
+      toast({ tipo: 'erro', mensagem: `Erro ao adicionar ${profissionalSingular}` })
     } finally {
       setSalvando(false)
     }
@@ -264,14 +273,14 @@ export function BarbeirosMiniGestao({
       setEditando(null)
       resetarFormulario()
     } catch (erro) {
-      toast({ tipo: 'erro', mensagem: 'Erro ao atualizar barbeiro' })
+      toast({ tipo: 'erro', mensagem: `Erro ao atualizar ${profissionalSingular}` })
     } finally {
       setSalvando(false)
     }
   }
 
   const removerBarbeiro = async (id: string) => {
-    if (!confirm('Remover este barbeiro? Os agendamentos dele serão mantidos.')) return
+    if (!confirm(`Remover ${terminologia.profissional.artigo} ${profissionalSingular}? Os agendamentos serão mantidos.`)) return
 
     try {
       const { error } = await supabase
@@ -283,7 +292,7 @@ export function BarbeirosMiniGestao({
 
       setBarbeiros(barbeiros.filter(b => b.id !== id))
     } catch (erro) {
-      toast({ tipo: 'erro', mensagem: 'Erro ao remover barbeiro' })
+      toast({ tipo: 'erro', mensagem: `Erro ao remover ${profissionalSingular}` })
     }
   }
 
@@ -351,7 +360,7 @@ export function BarbeirosMiniGestao({
           <User className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
           <p className="text-zinc-400 mb-1">Nenhum profissional cadastrado</p>
           <p className="text-xs text-zinc-600">
-            Adicione os barbeiros que trabalham na sua barbearia
+            Adicione {terminologia.profissional.artigoPlural} {profissionaisPlural} que trabalham {preposicaoNoEstabelecimento} {nomeEstabelecimento}
           </p>
         </div>
       )}

@@ -5,6 +5,8 @@ import Image from 'next/image'
 import Cropper, { Area } from 'react-easy-crop'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/hooks/useToast'
+import { obterTerminologia } from '@/lib/configuracoes-negocio'
+import { TipoNegocio } from '@/lib/tipos-negocio'
 import {
   Upload,
   Trash2,
@@ -28,6 +30,7 @@ interface EditorLogoProps {
   onLogoChange: (url: string, iconesPwa?: IconesPWA) => void
   corPrimaria?: string
   corSecundaria?: string
+  tipoNegocio?: TipoNegocio
 }
 
 /**
@@ -39,9 +42,13 @@ export function EditorLogo({
   onLogoChange,
   tenantId,
   corPrimaria = '#18181b',
-  corSecundaria = '#ffffff'
+  corSecundaria = '#ffffff',
+  tipoNegocio = 'barbearia'
 }: EditorLogoProps) {
   const { toast } = useToast()
+  const terminologia = obterTerminologia(tipoNegocio)
+  const preposicaoEstabelecimento = terminologia.estabelecimento.artigo === 'a' ? 'da' : 'do'
+  const nomeEstabelecimento = terminologia.estabelecimento.singular
   const [imagemParaCrop, setImagemParaCrop] = useState<string | null>(null)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
@@ -235,10 +242,15 @@ export function EditorLogo({
   }
 
   return (
-    <div className="space-y-4">
-      <label className="block text-sm font-medium text-zinc-300 mb-2">
-        Logo da Barbearia
-      </label>
+    <div className="space-y-5">
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          Logo {preposicaoEstabelecimento} {nomeEstabelecimento}
+        </label>
+        <p className="text-xs text-zinc-500 dark:text-zinc-500">
+          Essa imagem aparece no site público e em mensagens de agendamento.
+        </p>
+      </div>
 
       {/* Modal de Crop */}
       <AnimatePresence>
@@ -351,10 +363,11 @@ export function EditorLogo({
       </AnimatePresence>
 
       {/* Preview e Controles */}
-      <div className="flex items-center gap-4">
+      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-4">
+        <div className="flex items-center gap-4">
         {/* Preview da Logo */}
         <div 
-          className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700 flex items-center justify-center"
+          className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center"
           style={{ backgroundColor: corPrimaria }}
         >
           {logoUrl ? (
@@ -377,7 +390,7 @@ export function EditorLogo({
 
         {/* Botões */}
         <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-2 px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors cursor-pointer text-sm">
+          <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-white transition-colors cursor-pointer text-sm font-medium">
             <Upload className="w-4 h-4" />
             {logoUrl ? 'Trocar' : 'Enviar'}
             <input
@@ -391,17 +404,18 @@ export function EditorLogo({
             <button
               onClick={handleRemoverLogo}
               disabled={uploadando}
-              className="flex items-center gap-2 px-4 py-2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50 text-sm"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50 text-sm font-medium"
             >
               <Trash2 className="w-4 h-4" />
               Remover
             </button>
           )}
         </div>
+        </div>
       </div>
 
-      <p className="text-xs text-zinc-600">
-        JPG, PNG ou WebP • Máximo 5MB • Será recortado em formato circular
+      <p className="text-xs text-zinc-500 dark:text-zinc-500">
+        Formatos aceitos: JPG, PNG ou WebP. Tamanho máximo: 5MB.
       </p>
     </div>
   )

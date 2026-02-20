@@ -1,6 +1,5 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Iphone } from '@/components/ui/iphone'
 import {
@@ -10,10 +9,11 @@ import {
   Clock,
   Scissors,
   User,
-  Star,
+  Sparkles,
   Phone
 } from 'lucide-react'
 import { TipoNegocio } from '@/lib/tipos-negocio'
+import { obterTerminologia } from '@/lib/configuracoes-negocio'
 
 interface PreviewSiteProps {
   dados: {
@@ -34,9 +34,8 @@ interface PreviewSiteProps {
 }
 
 /**
- * Componente de preview do site público
- * Mostra como ficará a página do negócio para os clientes
- * Utiliza mockup de iPhone do MagicUI
+ * Componente de preview do site publico
+ * Mostra como ficara a pagina do negocio para os clientes
  */
 export function PreviewSite({
   dados,
@@ -44,6 +43,8 @@ export function PreviewSite({
   totalBarbeiros = 0,
   tipoNegocio = 'barbearia'
 }: PreviewSiteProps) {
+  const terminologia = obterTerminologia(tipoNegocio)
+
   const NOMES_PADRAO_POR_TIPO: Record<TipoNegocio, string> = {
     barbearia: 'Sua Barbearia',
     nail_designer: 'Seu Estúdio de Unhas',
@@ -51,33 +52,79 @@ export function PreviewSite({
     cabeleireira: 'Seu Salão'
   }
 
+  const CONTEUDO_POR_TIPO: Record<TipoNegocio, {
+    cta: string
+    chamada: string
+    servicos: Array<{ nome: string; preco: string; duracao: string }>
+  }> = {
+    barbearia: {
+      cta: 'Agendar horário',
+      chamada: 'Cuidado clássico com resultado impecável.',
+      servicos: [
+        { nome: 'Corte Masculino', preco: 'R$ 45', duracao: '40 min' },
+        { nome: 'Barba + Acabamento', preco: 'R$ 35', duracao: '30 min' }
+      ]
+    },
+    nail_designer: {
+      cta: 'Agendar sessão',
+      chamada: 'Unhas alinhadas com seu estilo.',
+      servicos: [
+        { nome: 'Alongamento em Gel', preco: 'R$ 150', duracao: '120 min' },
+        { nome: 'Esmaltação em Gel', preco: 'R$ 80', duracao: '60 min' }
+      ]
+    },
+    lash_designer: {
+      cta: 'Reservar horário',
+      chamada: 'Olhar marcante com acabamento profissional.',
+      servicos: [
+        { nome: 'Fio a Fio', preco: 'R$ 180', duracao: '120 min' },
+        { nome: 'Volume Brasileiro', preco: 'R$ 220', duracao: '150 min' }
+      ]
+    },
+    cabeleireira: {
+      cta: 'Quero agendar',
+      chamada: 'Beleza e autoestima em cada atendimento.',
+      servicos: [
+        { nome: 'Corte Feminino', preco: 'R$ 90', duracao: '60 min' },
+        { nome: 'Escova Modelada', preco: 'R$ 70', duracao: '45 min' }
+      ]
+    }
+  }
+
+  const conteudoAtual = CONTEUDO_POR_TIPO[tipoNegocio]
+
   const cores = {
     primaria: dados.cor_primaria || '#18181b',
     secundaria: dados.cor_secundaria || '#fafafa',
     destaque: dados.cor_destaque || '#a1a1aa'
   }
 
+  const nomeExibicao = dados.nome || NOMES_PADRAO_POR_TIPO[tipoNegocio]
+  const localExibicao = [dados.cidade, dados.estado].filter(Boolean).join(', ') || 'Sua cidade'
+  const totalProfissionais = totalBarbeiros || '—'
+  const totalServicosExibicao = totalServicos || '—'
+  const quantidadeCards = totalServicos > 0 ? Math.min(totalServicos, 2) : 2
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-          Preview do Site
-        </p>
-        <span className="text-xs text-zinc-500 dark:text-zinc-600">
-          Visão do cliente
-        </span>
+    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/80 p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Preview do site</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-500">Visual que o cliente verá ao abrir seu link</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-zinc-500 dark:text-zinc-500">Modo</p>
+          <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Celular</p>
+        </div>
       </div>
 
-      {/* Container do Preview com mockup iPhone */}
-      <div className="relative mx-auto w-[240px]">
-        {/* Mockup iPhone do MagicUI */}
+      <div className="relative mx-auto w-[250px] sm:w-[262px]">
         <div className="relative">
           <Iphone />
-          
-          {/* Conteúdo sobreposto na tela do iPhone */}
-          <div 
+
+          <div
             className="absolute overflow-hidden pointer-events-none"
-            style={{ 
+            style={{
               backgroundColor: cores.primaria,
               left: '4.9%',
               top: '2.2%',
@@ -86,29 +133,22 @@ export function PreviewSite({
               borderRadius: '14.3% / 6.6%'
             }}
           >
-            {/* Barra de Status (simulada) */}
-            <div 
-              className="flex items-center justify-between px-5 py-1.5 text-[8px]"
-              style={{ color: cores.secundaria }}
-            >
-              <span>9:41</span>
-              <div className="flex gap-1">
-                <div className="w-3 h-1.5 rounded-sm border" style={{ borderColor: cores.secundaria }} />
+            <div className="h-full px-3 pb-4 pt-2 flex flex-col">
+              <div className="flex items-center justify-between px-1 text-[8px]" style={{ color: cores.secundaria }}>
+                <span>9:41</span>
+                <div className="h-1.5 w-4 rounded-sm border" style={{ borderColor: cores.secundaria }} />
               </div>
-            </div>
 
-            {/* Conteúdo do Site */}
-            <div className="px-3 pb-4 space-y-3">
-              {/* Header/Hero */}
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center pt-2"
+              <div
+                className="rounded-xl border p-3 mt-2"
+                style={{
+                  backgroundColor: `${cores.secundaria}14`,
+                  borderColor: `${cores.secundaria}2a`
+                }}
               >
-                {/* Logo */}
-                <div className="mx-auto mb-2">
+                <div className="flex items-center gap-2">
                   {dados.logo_url ? (
-                    <div className="relative w-12 h-12 mx-auto rounded-lg overflow-hidden border" style={{ borderColor: cores.destaque + '30' }}>
+                    <div className="relative w-11 h-11 rounded-lg overflow-hidden border" style={{ borderColor: `${cores.destaque}40` }}>
                       <Image
                         src={dados.logo_url}
                         alt="Logo"
@@ -118,172 +158,92 @@ export function PreviewSite({
                       />
                     </div>
                   ) : (
-                    <div 
-                      className="w-12 h-12 mx-auto rounded-lg flex items-center justify-center"
-                      style={{ backgroundColor: cores.destaque + '20' }}
-                    >
+                    <div className="w-11 h-11 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${cores.destaque}24` }}>
                       <Store className="w-5 h-5" style={{ color: cores.secundaria }} />
                     </div>
                   )}
+                  <div className="min-w-0">
+                    <h1 className="text-[11px] font-bold truncate" style={{ color: cores.secundaria }}>
+                      {nomeExibicao}
+                    </h1>
+                    <p className="text-[8px] mt-0.5 leading-relaxed" style={{ color: cores.destaque }}>
+                      {conteudoAtual.chamada}
+                    </p>
+                    <p className="text-[8px] mt-1 flex items-center gap-1" style={{ color: cores.destaque }}>
+                      <MapPin className="w-2 h-2" />
+                      {localExibicao}
+                    </p>
+                  </div>
                 </div>
+              </div>
 
-                {/* Nome */}
-                <h1 
-                  className="text-sm font-bold mb-0.5"
-                  style={{ color: cores.secundaria }}
-                >
-                  {dados.nome || NOMES_PADRAO_POR_TIPO[tipoNegocio]}
-                </h1>
-
-                {/* Localização */}
-                {(dados.cidade || dados.endereco) && (
-                  <p 
-                    className="text-[9px] flex items-center justify-center gap-0.5"
-                    style={{ color: cores.destaque }}
-                  >
-                    <MapPin className="w-2 h-2" />
-                    {dados.cidade || 'Sua Cidade'}{dados.estado ? `, ${dados.estado}` : ''}
-                  </p>
-                )}
-              </motion.div>
-
-              {/* Botão CTA */}
-              <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="w-full py-1.5 rounded-md font-medium text-[10px] flex items-center justify-center gap-1"
-                style={{
-                  backgroundColor: cores.secundaria,
-                  color: cores.primaria
-                }}
+              <button
+                className="w-full py-2 rounded-lg font-semibold text-[10px] mt-2 flex items-center justify-center gap-1.5"
+                style={{ backgroundColor: cores.secundaria, color: cores.primaria }}
               >
                 <Calendar className="w-3 h-3" />
-                Agendar Horário
-              </motion.button>
+                {conteudoAtual.cta}
+              </button>
 
-              {/* Stats */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="grid grid-cols-3 gap-1 py-2"
-              >
-                <div className="text-center">
-                  <div 
-                    className="w-6 h-6 mx-auto mb-0.5 rounded-md flex items-center justify-center"
-                    style={{ backgroundColor: cores.destaque + '20' }}
-                  >
-                    <Scissors className="w-3 h-3" style={{ color: cores.secundaria }} />
-                  </div>
-                  <p className="text-[9px] font-semibold" style={{ color: cores.secundaria }}>
-                    {totalServicos || '—'}
-                  </p>
-                  <p className="text-[7px]" style={{ color: cores.destaque }}>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="rounded-lg p-2 border" style={{ borderColor: `${cores.destaque}35`, backgroundColor: `${cores.destaque}12` }}>
+                  <p className="text-[8px] flex items-center gap-1" style={{ color: cores.destaque }}>
+                    <Scissors className="w-2.5 h-2.5" />
                     Serviços
                   </p>
+                  <p className="text-[11px] font-semibold mt-1" style={{ color: cores.secundaria }}>{totalServicosExibicao}</p>
                 </div>
-                <div className="text-center">
-                  <div 
-                    className="w-6 h-6 mx-auto mb-0.5 rounded-md flex items-center justify-center"
-                    style={{ backgroundColor: cores.destaque + '20' }}
-                  >
-                    <User className="w-3 h-3" style={{ color: cores.secundaria }} />
-                  </div>
-                  <p className="text-[9px] font-semibold" style={{ color: cores.secundaria }}>
-                    {totalBarbeiros || '—'}
+                <div className="rounded-lg p-2 border" style={{ borderColor: `${cores.destaque}35`, backgroundColor: `${cores.destaque}12` }}>
+                  <p className="text-[8px] flex items-center gap-1" style={{ color: cores.destaque }}>
+                    <User className="w-2.5 h-2.5" />
+                    {terminologia.profissional.plural}
                   </p>
-                  <p className="text-[7px]" style={{ color: cores.destaque }}>
-                    Profissionais
-                  </p>
+                  <p className="text-[11px] font-semibold mt-1" style={{ color: cores.secundaria }}>{totalProfissionais}</p>
                 </div>
-                <div className="text-center">
-                  <div 
-                    className="w-6 h-6 mx-auto mb-0.5 rounded-md flex items-center justify-center"
-                    style={{ backgroundColor: cores.destaque + '20' }}
-                  >
-                    <Star className="w-3 h-3" style={{ color: cores.secundaria }} />
-                  </div>
-                  <p className="text-[9px] font-semibold" style={{ color: cores.secundaria }}>
-                    5.0
-                  </p>
-                  <p className="text-[7px]" style={{ color: cores.destaque }}>
-                    Avaliação
-                  </p>
-                </div>
-              </motion.div>
+              </div>
 
-              {/* Preview de Serviços */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-1.5"
-              >
-                <p 
-                  className="text-[9px] font-medium"
-                  style={{ color: cores.secundaria }}
-                >
-                  Serviços
+              <div className="mt-3 space-y-2">
+                <p className="text-[9px] font-semibold flex items-center gap-1" style={{ color: cores.secundaria }}>
+                  <Sparkles className="w-3 h-3" />
+                  Serviços em destaque
                 </p>
-                
-                {/* Cards de serviço placeholder */}
-                {[1, 2].map((i) => (
-                  <div 
-                    key={i}
-                    className="p-2 rounded-md border"
-                    style={{ 
-                      backgroundColor: cores.destaque + '08',
-                      borderColor: cores.destaque + '20'
+                {conteudoAtual.servicos.slice(0, quantidadeCards).map((servico, index) => (
+                  <div
+                    key={`${servico.nome}-${index}`}
+                    className="p-2.5 rounded-lg border"
+                    style={{
+                      backgroundColor: `${cores.secundaria}0f`,
+                      borderColor: `${cores.destaque}30`
                     }}
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-0.5">
-                        <div 
-                          className="h-2 w-14 rounded"
-                          style={{ backgroundColor: cores.destaque + '30' }}
-                        />
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-2 h-2" style={{ color: cores.destaque }} />
-                          <div 
-                            className="h-1.5 w-8 rounded"
-                            style={{ backgroundColor: cores.destaque + '20' }}
-                          />
-                        </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-semibold truncate" style={{ color: cores.secundaria }}>
+                          {servico.nome}
+                        </p>
+                        <p className="text-[8px] flex items-center gap-1 mt-0.5" style={{ color: cores.destaque }}>
+                          <Clock className="w-2 h-2" />
+                          {servico.duracao}
+                        </p>
                       </div>
-                      <div 
-                        className="h-3 w-10 rounded"
-                        style={{ backgroundColor: cores.destaque + '30' }}
-                      />
+                      <p className="text-[9px] font-semibold" style={{ color: cores.secundaria }}>{servico.preco}</p>
                     </div>
                   </div>
                 ))}
-              </motion.div>
+              </div>
 
-              {/* Contato */}
-              {dados.whatsapp && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex items-center justify-center gap-1 pt-1"
-                >
-                  <Phone className="w-2 h-2" style={{ color: cores.destaque }} />
-                  <span className="text-[8px]" style={{ color: cores.destaque }}>
-                    WhatsApp disponível
+              <div className="mt-auto pt-2">
+                <div className="flex items-center justify-between text-[8px]" style={{ color: cores.destaque }}>
+                  <span className="flex items-center gap-1">
+                    <Phone className="w-2 h-2" />
+                    {dados.whatsapp ? 'WhatsApp ativo' : 'Adicione WhatsApp'}
                   </span>
-                </motion.div>
-              )}
+                  <span className="font-medium">barberhub.online</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Dicas */}
-      <div className="mt-6 p-3 bg-zinc-100 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-        <p className="text-xs text-zinc-600 dark:text-zinc-500 text-center">
-          Este é um preview aproximado. O site real terá mais seções e funcionalidades.
-        </p>
       </div>
     </div>
   )
