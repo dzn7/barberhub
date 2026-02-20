@@ -272,7 +272,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.className} ${fontVariables}`}>
+      <body className={`${inter.className} ${fontVariables} antialiased font-sans bg-white dark:bg-black text-zinc-900 dark:text-zinc-50`}>
         <ProvedorTema
           attribute="class"
           defaultTheme="system"

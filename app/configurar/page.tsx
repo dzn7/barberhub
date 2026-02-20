@@ -49,54 +49,40 @@ import { TipoNegocio, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
  * Paletas de cores para Barbearias (tons masculinos e neutros)
  */
 const PALETAS_BARBEARIA = [
-  { nome: 'Obsidian', descricao: 'Elegância clássica', primaria: '#09090b', secundaria: '#fafafa', destaque: '#fafafa' },
-  { nome: 'Grafite', descricao: 'Minimalismo moderno', primaria: '#18181b', secundaria: '#f4f4f5', destaque: '#a1a1aa' },
-  { nome: 'Midnight', descricao: 'Sofisticação noturna', primaria: '#0c0a09', secundaria: '#fafaf9', destaque: '#a8a29e' },
-  { nome: 'Slate', descricao: 'Profissional discreto', primaria: '#0f172a', secundaria: '#f8fafc', destaque: '#94a3b8' },
-  { nome: 'Charcoal', descricao: 'Neutro atemporal', primaria: '#171717', secundaria: '#fafafa', destaque: '#d4d4d4' },
-  { nome: 'Onyx', descricao: 'Contraste marcante', primaria: '#0a0a0a', secundaria: '#ffffff', destaque: '#737373' },
-  { nome: 'Navy', descricao: 'Azul profundo', primaria: '#0c1929', secundaria: '#f0f9ff', destaque: '#38bdf8' },
-  { nome: 'Forest', descricao: 'Verde floresta', primaria: '#052e16', secundaria: '#f0fdf4', destaque: '#4ade80' },
-  { nome: 'Wine', descricao: 'Vinho elegante', primaria: '#1c0a0a', secundaria: '#fef2f2', destaque: '#f87171' },
-  { nome: 'Copper', descricao: 'Cobre vintage', primaria: '#1c1210', secundaria: '#fffbeb', destaque: '#f59e0b' },
-  { nome: 'Snow', descricao: 'Branco neve', primaria: '#ffffff', secundaria: '#18181b', destaque: '#71717a' },
-  { nome: 'Pearl', descricao: 'Pérola suave', primaria: '#fafafa', secundaria: '#27272a', destaque: '#a1a1aa' },
+  { nome: 'Obsidian', descricao: 'Elegância clássica', primaria: '#09090b', secundaria: '#fafafa', destaque: '#18181b' },
+  { nome: 'Grafite', descricao: 'Minimalismo moderno', primaria: '#18181b', secundaria: '#f4f4f5', destaque: '#27272a' },
+  { nome: 'Slate', descricao: 'Profissional discreto', primaria: '#0f172a', secundaria: '#f8fafc', destaque: '#334155' },
+  { nome: 'Snow', descricao: 'Branco neve', primaria: '#ffffff', secundaria: '#09090b', destaque: '#18181b' },
 ]
 
 /**
  * Paletas de cores para Nail Designers
  */
 const PALETAS_NAIL_DESIGNER = [
-  { nome: 'Porcelana', descricao: 'Claro e elegante', primaria: '#fff8fb', secundaria: '#311827', destaque: '#e879b9' },
-  { nome: 'Rosé Atelier', descricao: 'Delicado e premium', primaria: '#fff1f6', secundaria: '#3f1d2e', destaque: '#f472b6' },
-  { nome: 'Nude Chic', descricao: 'Neutro sofisticado', primaria: '#f9f4ee', secundaria: '#2f241f', destaque: '#d4a373' },
-  { nome: 'Berry Studio', descricao: 'Moderno e autoral', primaria: '#2f0d1e', secundaria: '#fff7fb', destaque: '#fb7185' },
-  { nome: 'Champanhe', descricao: 'Luxo suave', primaria: '#fff8e8', secundaria: '#352415', destaque: '#eab308' },
-  { nome: 'Linho Rosa', descricao: 'Minimalista e clean', primaria: '#fffdfd', secundaria: '#2c1b24', destaque: '#ec4899' },
+  { nome: 'Rose Quartz', descricao: 'Minimalista rosa', primaria: '#fff1f2', secundaria: '#09090b', destaque: '#be185d' },
+  { nome: 'Pearl White', descricao: 'Clássico e limpo', primaria: '#ffffff', secundaria: '#18181b', destaque: '#ec4899' },
+  { nome: 'Soft Nude', descricao: 'Neutro elegante', primaria: '#fafaf9', secundaria: '#1c1917', destaque: '#d6d3d1' },
+  { nome: 'Midnight Rose', descricao: 'Contraste moderno', primaria: '#09090b', secundaria: '#fff1f2', destaque: '#f43f5e' },
 ]
 
 /**
  * Paletas de cores para Lash Designers
  */
 const PALETAS_LASH_DESIGNER = [
-  { nome: 'Ametista', descricao: 'Refinada e intensa', primaria: '#1b1027', secundaria: '#faf5ff', destaque: '#c084fc' },
-  { nome: 'Plum Glow', descricao: 'Profunda e moderna', primaria: '#2a1027', secundaria: '#fff6fb', destaque: '#f472b6' },
-  { nome: 'Night Silk', descricao: 'Luxo noturno', primaria: '#0f172a', secundaria: '#f8fafc', destaque: '#a78bfa' },
-  { nome: 'Mauve Light', descricao: 'Suave e feminina', primaria: '#faf5ff', secundaria: '#2e1a47', destaque: '#d8b4fe' },
-  { nome: 'Espresso Lash', descricao: 'Quente e premium', primaria: '#231815', secundaria: '#fffaf5', destaque: '#c08457' },
-  { nome: 'Rose Smoke', descricao: 'Contemporânea', primaria: '#fff7fb', secundaria: '#3b1d2c', destaque: '#fb7185' },
+  { nome: 'Lavender', descricao: 'Suave e moderno', primaria: '#faf5ff', secundaria: '#09090b', destaque: '#7c3aed' },
+  { nome: 'Dark Violet', descricao: 'Profundo e luxuoso', primaria: '#0f172a', secundaria: '#f8fafc', destaque: '#8b5cf6' },
+  { nome: 'Pure Silk', descricao: 'Branco acetinado', primaria: '#ffffff', secundaria: '#09090b', destaque: '#a855f7' },
+  { nome: 'Slate Velvet', descricao: 'Cinza aveludado', primaria: '#f8fafc', secundaria: '#0f172a', destaque: '#475569' },
 ]
 
 /**
  * Paletas de cores para Cabeleireiras
  */
 const PALETAS_CABELEIREIRA = [
-  { nome: 'Caramelo', descricao: 'Quente e acolhedora', primaria: '#fff8f1', secundaria: '#2f1f18', destaque: '#d97706' },
-  { nome: 'Cobre', descricao: 'Energia e presença', primaria: '#fff7ed', secundaria: '#3a1f12', destaque: '#ea580c' },
-  { nome: 'Avelã', descricao: 'Elegante e natural', primaria: '#f7f4ef', secundaria: '#2f2a24', destaque: '#a16207' },
-  { nome: 'Turquesa Hair', descricao: 'Criativa e moderna', primaria: '#ecfeff', secundaria: '#082f49', destaque: '#06b6d4' },
-  { nome: 'Bordeaux', descricao: 'Sofisticação clássica', primaria: '#2b0f16', secundaria: '#fff5f7', destaque: '#f43f5e' },
-  { nome: 'Oliva Premium', descricao: 'Natural chic', primaria: '#f7fee7', secundaria: '#1f2937', destaque: '#84cc16' },
+  { nome: 'Platinum', descricao: 'Frio e sofisticado', primaria: '#f1f5f9', secundaria: '#0f172a', destaque: '#64748b' },
+  { nome: 'Classic Noir', descricao: 'Preto e branco', primaria: '#ffffff', secundaria: '#000000', destaque: '#171717' },
+  { nome: 'Blush Sand', descricao: 'Areia elegante', primaria: '#fafaf9', secundaria: '#1c1917', destaque: '#a8a29e' },
+  { nome: 'Dark Teal', descricao: 'Contraste único', primaria: '#042f2e', secundaria: '#f0fdfa', destaque: '#0d9488' },
 ]
 
 /**
@@ -793,35 +779,35 @@ export default function ConfigurarPage() {
   const visualPorTipo: Record<TipoNegocio, {
     destaque: string
     destaqueSuave: string
-    fundoDegrade: string
+    bgClass: string
     titulo: string
     subtitulo: string
   }> = {
     barbearia: {
       destaque: '#18181b',
       destaqueSuave: '#e4e4e7',
-      fundoDegrade: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+      bgClass: 'bg-zinc-50 dark:bg-zinc-950',
       titulo: 'Configure seu negócio com clareza',
       subtitulo: 'Fluxo guiado para publicar sua página de agendamento com uma aparência profissional.'
     },
     nail_designer: {
       destaque: '#be185d',
       destaqueSuave: '#fbcfe8',
-      fundoDegrade: 'linear-gradient(180deg, #fff6fb 0%, #ffffff 100%)',
+      bgClass: 'bg-pink-50 dark:bg-zinc-950',
       titulo: 'Deixe sua marca visual impecável',
       subtitulo: 'Monte um perfil elegante do seu estúdio e publique com identidade própria.'
     },
     lash_designer: {
       destaque: '#7c3aed',
       destaqueSuave: '#ddd6fe',
-      fundoDegrade: 'linear-gradient(180deg, #f8f5ff 0%, #ffffff 100%)',
+      bgClass: 'bg-violet-50 dark:bg-zinc-950',
       titulo: 'Crie uma presença premium para seu estúdio',
       subtitulo: 'Organize dados, serviços e equipe em um fluxo objetivo e fácil de usar.'
     },
     cabeleireira: {
-      destaque: '#c2410c',
-      destaqueSuave: '#fed7aa',
-      fundoDegrade: 'linear-gradient(180deg, #fff7ed 0%, #ffffff 100%)',
+      destaque: '#0f766e',
+      destaqueSuave: '#99f6e4',
+      bgClass: 'bg-teal-50 dark:bg-zinc-950',
       titulo: 'Organize seu salão em poucos passos',
       subtitulo: 'Defina identidade, serviços e equipe com uma experiência simples e planejada.'
     }
@@ -986,7 +972,7 @@ export default function ConfigurarPage() {
   }
 
   return (
-    <div className="min-h-screen transition-colors dark:bg-black" style={{ background: visualAtual.fundoDegrade }}>
+    <div className={`min-h-screen transition-colors ${visualAtual.bgClass}`}>
       <header className="border-b border-zinc-200/80 dark:border-zinc-800 bg-white/85 dark:bg-black/85 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/"><LogoMarca className="h-10" /></Link>
@@ -1053,13 +1039,13 @@ export default function ConfigurarPage() {
                   }`}
                 >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: ativa ? visualAtual.destaque : completa ? visualAtual.destaqueSuave : '#e4e4e7' }}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${!ativa && !completa ? 'bg-zinc-200 dark:bg-zinc-800' : ''}`}
+                    style={{ backgroundColor: ativa ? visualAtual.destaque : completa ? visualAtual.destaqueSuave : undefined }}
                   >
                     {completa ? (
                       <Check className="w-4 h-4 text-zinc-900" />
                     ) : (
-                      <Icone className={`w-4 h-4 ${ativa ? 'text-white' : 'text-zinc-700'}`} style={ativa ? { color: '#fff' } : undefined} />
+                      <Icone className={`w-4 h-4 ${ativa ? 'text-white' : 'text-zinc-500 dark:text-zinc-400'}`} style={ativa ? { color: '#fff' } : undefined} />
                     )}
                   </div>
                   <p className={`text-sm font-medium ${ativa ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}>

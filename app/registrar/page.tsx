@@ -22,8 +22,12 @@ import {
   Scissors,
   Hand,
   Clock3,
+  X,
+  HelpCircle,
+  Info
 } from 'lucide-react'
 import Image from 'next/image'
+import { motion, AnimatePresence } from 'framer-motion'
 import { TipoNegocio, OPCOES_TIPO_NEGOCIO, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
 import { obterTerminologia } from '@/lib/configuracoes-negocio'
 
@@ -104,6 +108,8 @@ export default function RegistrarPage() {
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [mostrarSenha, setMostrarSenha] = useState(false)
+  const [notificacoesFechadas, setNotificacoesFechadas] = useState<string[]>([])
+  const [modalAjudaAberto, setModalAjudaAberto] = useState(false)
 
   // Refs para foco automático
   const inputNomeBarbeariaRef = useRef<HTMLInputElement>(null)
@@ -239,9 +245,10 @@ export default function RegistrarPage() {
   }, [form.email, verificarEmailDisponivel])
 
   /**
-   * Foco automático ao mudar de etapa
+   * Foco automático e limpar notificações ao mudar de etapa
    */
   useEffect(() => {
+    setNotificacoesFechadas([])
     const timer = setTimeout(() => {
       if (etapa === 1) inputNomeBarbeariaRef.current?.focus()
       else if (etapa === 2) inputNomeProprietarioRef.current?.focus()
@@ -1150,48 +1157,159 @@ export default function RegistrarPage() {
             </p>
           </section>
 
-          <aside
-            className={`rounded-3xl border bg-white/90 p-5 shadow-sm dark:bg-zinc-900/80 sm:p-6 lg:sticky lg:top-6 ${
-              ehSegmentoFeminino ? 'border-rose-200 dark:border-rose-900/30' : 'border-zinc-200 dark:border-zinc-800'
-            }`}
-          >
-            <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              <Clock3 className="h-4 w-4" aria-hidden="true" />
-              Tempo estimado desta etapa: {etapaAtualDetalhes.tempoEstimado}
-            </div>
+          <div className="lg:sticky lg:top-6 space-y-4">
+            <AnimatePresence>
+              {etapaAtualDetalhes.listaApoio.filter(i => !notificacoesFechadas.includes(i)).length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mb-4 flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 px-2"
+                >
+                  <Clock3 className="h-4 w-4" aria-hidden="true" />
+                  Tempo estimado: {etapaAtualDetalhes.tempoEstimado}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <h3 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">O que você vai preencher agora</h3>
-
-            <ul className="mt-3 space-y-3" aria-label="Checklist da etapa">
-              {etapaAtualDetalhes.listaApoio.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-zinc-700 dark:text-zinc-300">
-                  <span
-                    className={`mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full ${
-                      ehSegmentoFeminino ? 'bg-rose-500 dark:bg-rose-400' : 'bg-zinc-900 dark:bg-zinc-100'
+            <AnimatePresence>
+              {etapaAtualDetalhes.listaApoio.map((item) => {
+                if (notificacoesFechadas.includes(item)) return null
+                return (
+                  <motion.div
+                    key={item}
+                    layout
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                    className={`relative rounded-2xl border bg-white p-4 pr-10 shadow-sm dark:bg-zinc-900 ${
+                      ehSegmentoFeminino ? 'border-rose-100 dark:border-rose-900/30' : 'border-zinc-200 dark:border-zinc-800'
                     }`}
-                    aria-hidden="true"
-                  />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${
+                          ehSegmentoFeminino ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                        }`}
+                      >
+                        <Info className="h-3 w-3" />
+                      </div>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-300">{item}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNotificacoesFechadas([...notificacoesFechadas, item])}
+                      className="absolute right-3 top-3 p-1.5 text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-zinc-300 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      aria-label="Dispensar dica"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
 
-            <div className="mt-6 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-              <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Por que isso é importante</h4>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{etapaAtualDetalhes.explicacao}</p>
-            </div>
-
-            <div className="mt-6 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-              <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Próximo passo</h4>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                {etapa === 3
-                  ? 'Após criar a conta, você será direcionado para o onboarding completo com serviços, equipe e aparência da sua página.'
-                  : `Depois desta etapa, vamos para “${etapasCadastro[etapa].titulo}”.`}
-              </p>
-            </div>
-          </aside>
+            <AnimatePresence>
+              {etapaAtualDetalhes.listaApoio.every(i => notificacoesFechadas.includes(i)) && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex justify-end"
+                >
+                  <button
+                    onClick={() => setModalAjudaAberto(true)}
+                    className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 ${
+                      ehSegmentoFeminino ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
+                    }`}
+                    aria-label="Ver dicas da etapa"
+                  >
+                    <HelpCircle className="h-6 w-6" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {modalAjudaAberto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={() => setModalAjudaAberto(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 shadow-xl dark:bg-zinc-900"
+            >
+              <button
+                onClick={() => setModalAjudaAberto(false)}
+                className="absolute right-4 top-4 p-2 text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-zinc-300"
+                aria-label="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="mb-6 flex items-center gap-3">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    ehSegmentoFeminino ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                  }`}
+                >
+                  <HelpCircle className="h-5 w-5" />
+                </div>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Dicas da Etapa</h3>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">O que você vai preencher</h4>
+                  <ul className="space-y-2">
+                    {etapaAtualDetalhes.listaApoio.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+                  <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Por que isso é importante</h4>
+                  <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{etapaAtualDetalhes.explicacao}</p>
+                </div>
+
+                <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+                  <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Próximo passo</h4>
+                  <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    {etapa === 3
+                      ? 'Após criar a conta, você será direcionado para o onboarding completo com serviços, equipe e aparência da sua página.'
+                      : `Depois desta etapa, vamos para “${etapasCadastro[etapa].titulo}”.`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <Botao
+                  type="button"
+                  onClick={() => setModalAjudaAberto(false)}
+                  className={`w-full ${classeBotaoPrimario}`}
+                >
+                  Entendi
+                </Botao>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
