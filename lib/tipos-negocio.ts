@@ -153,14 +153,14 @@ export const OPCOES_TIPO_NEGOCIO: OpcaoTipoNegocio[] = [
     tipo: 'lash_designer',
     titulo: 'Lash Designer',
     descricao: 'Extensão de cílios, lash lifting, volume brasileiro',
-    imagem: '/naildesign.png',
+    imagem: '/lashdesign.png',
     cor: '#f43f5e'
   },
   {
     tipo: 'cabeleireira',
     titulo: 'Cabeleireira',
     descricao: 'Corte feminino, escova, hidratação, coloração',
-    imagem: '/barber.png',
+    imagem: '/cabeleireira.png',
     cor: '#db2777'
   }
 ]
