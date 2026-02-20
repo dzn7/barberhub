@@ -23,7 +23,7 @@ import {
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
 const BREAKPOINT_MOBILE = "(max-width: 1023px)";
 const ALTURA_HORA = 72;
-const LARGURA_COLUNA = 180;
+const LARGURA_COLUNA = 220;
 
 interface Servico {
   id?: string;
@@ -129,58 +129,59 @@ function calcularLayoutAgendamentosDia(agendamentosDia: AgendamentoProcessado[],
     .map((agendamento) => {
       const top = ((agendamento.inicioMin - (horaInicio * 60)) / 60) * ALTURA_HORA;
       const duracaoVisivel = Math.max(agendamento.fimMin - agendamento.inicioMin, 15);
-      const height = Math.max((duracaoVisivel / 60) * ALTURA_HORA, 40);
+      const height = Math.max((duracaoVisivel / 60) * ALTURA_HORA, 36);
       return {
-        agendamento,
+        id: agendamento.id,
         inicioMin: agendamento.inicioMin,
         fimMin: agendamento.fimMin,
         top,
         height,
       };
     })
-    .sort((a, b) => a.inicioMin - b.inicioMin);
+    .sort((a, b) => a.inicioMin - b.inicioMin || a.fimMin - b.fimMin);
 
-  type Coluna = { fimMin: number; itens: typeof eventos };
-  const colunas: Coluna[] = [];
+  type EventoComColuna = (typeof eventos)[number] & { coluna: number };
   const resultado: Record<string, LayoutAgendamento> = {};
+  let indice = 0;
 
-  for (const evento of eventos) {
-    let indiceColuna = colunas.findIndex((coluna) => coluna.fimMin <= evento.inicioMin);
+  while (indice < eventos.length) {
+    const grupo: typeof eventos = [];
+    let fimGrupo = eventos[indice].fimMin;
 
-    if (indiceColuna === -1) {
-      colunas.push({ fimMin: evento.fimMin, itens: [evento] });
-      indiceColuna = colunas.length - 1;
-    } else {
-      colunas[indiceColuna].fimMin = evento.fimMin;
-      colunas[indiceColuna].itens.push(evento);
+    grupo.push(eventos[indice]);
+    indice += 1;
+
+    while (indice < eventos.length && eventos[indice].inicioMin < fimGrupo) {
+      grupo.push(eventos[indice]);
+      fimGrupo = Math.max(fimGrupo, eventos[indice].fimMin);
+      indice += 1;
     }
 
-    resultado[evento.agendamento.id] = {
-      top: evento.top,
-      height: evento.height,
-      indiceColuna,
-      totalColunas: 1,
-    };
-  }
+    const fimPorColuna: number[] = [];
+    const eventosComColuna: EventoComColuna[] = [];
 
-  for (const evento of eventos) {
-    const colunasAtivas = new Set<number>();
-
-    for (let indice = 0; indice < colunas.length; indice += 1) {
-      const itens = colunas[indice].itens;
-      for (const item of itens) {
-        const sobrepoe = !(item.fimMin <= evento.inicioMin || item.inicioMin >= evento.fimMin);
-        if (sobrepoe) {
-          colunasAtivas.add(indice);
-          break;
-        }
+    for (const evento of grupo) {
+      let coluna = fimPorColuna.findIndex((fim) => fim <= evento.inicioMin);
+      if (coluna === -1) {
+        coluna = fimPorColuna.length;
+        fimPorColuna.push(evento.fimMin);
+      } else {
+        fimPorColuna[coluna] = evento.fimMin;
       }
+
+      eventosComColuna.push({ ...evento, coluna });
     }
 
-    resultado[evento.agendamento.id] = {
-      ...resultado[evento.agendamento.id],
-      totalColunas: Math.max(1, colunasAtivas.size),
-    };
+    const totalColunas = Math.max(1, fimPorColuna.length);
+
+    for (const evento of eventosComColuna) {
+      resultado[evento.id] = {
+        top: evento.top,
+        height: evento.height,
+        indiceColuna: evento.coluna,
+        totalColunas,
+      };
+    }
   }
 
   return resultado;
@@ -203,7 +204,7 @@ export function CalendarioAppBarberNovo() {
   const subscriptionRef = useRef<any>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const modoEfetivo: ModoCalendario = isMobile ? "dia" : modoCalendario;
+  const modoEfetivo: ModoCalendario = isMobile ? "semana" : modoCalendario;
 
   const diasExibidos = useMemo(() => {
     const dataBase = normalizarData(dataFoco);
@@ -338,6 +339,12 @@ export function CalendarioAppBarberNovo() {
   }, []);
 
   useEffect(() => {
+    if (isMobile && modoCalendario !== "semana") {
+      setModoCalendario("semana");
+    }
+  }, [isMobile, modoCalendario]);
+
+  useEffect(() => {
     void carregarDadosFixos();
   }, [carregarDadosFixos]);
 
@@ -458,12 +465,17 @@ export function CalendarioAppBarberNovo() {
     })}`;
   }, [modoEfetivo, dataFoco, diasExibidos]);
 
-  const agendamentosConcluiveisDiaFoco = useMemo(() => {
-    const chaveDia = format(dataFoco, "yyyy-MM-dd");
+  const obterConcluiveisDia = useCallback((dia: Date) => {
+    const chaveDia = format(dia, "yyyy-MM-dd");
     return (agendamentosPorDia[chaveDia] || []).filter((agendamento) =>
       agendamento.status === "confirmado" || agendamento.status === "pendente"
     );
-  }, [agendamentosPorDia, dataFoco]);
+  }, [agendamentosPorDia]);
+
+  const agendamentosConcluiveisDiaFoco = useMemo(
+    () => obterConcluiveisDia(dataFoco),
+    [obterConcluiveisDia, dataFoco]
+  );
 
   const criarTransacaoEComissao = useCallback(async (agendamento: AgendamentoProcessado) => {
     if (!tenant?.id) return;
@@ -522,23 +534,24 @@ export function CalendarioAppBarberNovo() {
     }
   }, [tenant?.id]);
 
-  const concluirTodosDiaFoco = useCallback(async () => {
+  const concluirTodosDia = useCallback(async (dia: Date) => {
     if (!tenant?.id) return;
 
-    if (agendamentosConcluiveisDiaFoco.length === 0) {
+    const agendamentosConcluiveis = obterConcluiveisDia(dia);
+    if (agendamentosConcluiveis.length === 0) {
       alert("Não há agendamentos pendentes ou confirmados para concluir neste dia.");
       return;
     }
 
-    const total = agendamentosConcluiveisDiaFoco.length;
-    const dataFormatada = format(dataFoco, "dd/MM/yyyy");
+    const total = agendamentosConcluiveis.length;
+    const dataFormatada = format(dia, "dd/MM/yyyy");
     const confirmou = window.confirm(`Concluir ${total} agendamento(s) do dia ${dataFormatada}?`);
     if (!confirmou) return;
 
     setProcessandoConcluirTodos(true);
 
     try {
-      const ids = agendamentosConcluiveisDiaFoco.map((agendamento) => agendamento.id);
+      const ids = agendamentosConcluiveis.map((agendamento) => agendamento.id);
 
       const { error } = await supabase
         .from("agendamentos")
@@ -547,7 +560,7 @@ export function CalendarioAppBarberNovo() {
 
       if (error) throw error;
 
-      for (const agendamento of agendamentosConcluiveisDiaFoco) {
+      for (const agendamento of agendamentosConcluiveis) {
         await criarTransacaoEComissao(agendamento);
       }
 
@@ -561,8 +574,7 @@ export function CalendarioAppBarberNovo() {
     }
   }, [
     tenant?.id,
-    agendamentosConcluiveisDiaFoco,
-    dataFoco,
+    obterConcluiveisDia,
     criarTransacaoEComissao,
     buscarAgendamentos,
   ]);
@@ -578,6 +590,8 @@ export function CalendarioAppBarberNovo() {
   const hoje = () => {
     setDataFoco(normalizarData(new Date()));
   };
+
+  const larguraColunaEfetiva = modoEfetivo === "semana" ? LARGURA_COLUNA : 760;
 
   return (
     <div className="flex h-[calc(100vh-170px)] min-h-[560px] flex-col overflow-hidden rounded-2xl border border-border bg-card">
@@ -641,7 +655,7 @@ export function CalendarioAppBarberNovo() {
 
             <button
               type="button"
-              onClick={concluirTodosDiaFoco}
+              onClick={() => concluirTodosDia(dataFoco)}
               disabled={agendamentosConcluiveisDiaFoco.length === 0 || processandoConcluirTodos}
               className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
               title="Concluir todos do dia selecionado"
@@ -695,146 +709,220 @@ export function CalendarioAppBarberNovo() {
       </div>
 
       <div className="relative flex-1 overflow-auto bg-muted/30">
-        <div className="min-w-max">
-          <div className="sticky top-0 z-30 flex border-b border-border bg-card/95 backdrop-blur">
-            <div className="sticky left-0 z-40 w-16 border-r border-border bg-card" />
+        {isMobile ? (
+          <div className="space-y-4 p-3">
+            {diasExibidos.map((dia) => {
+              const chaveDia = format(dia, "yyyy-MM-dd");
+              const agDia = (agendamentosPorDia[chaveDia] || []).slice().sort((a, b) => a.inicioMin - b.inicioMin);
+              const concluiDia = obterConcluiveisDia(dia);
 
-            <div className="flex" style={{ minWidth: modoEfetivo === "semana" ? diasExibidos.length * LARGURA_COLUNA : undefined }}>
-              {diasExibidos.map((dia) => {
-                const chaveDia = format(dia, "yyyy-MM-dd");
-                const isDiaFoco = chaveDia === format(dataFoco, "yyyy-MM-dd");
-                const isDiaHoje = isToday(dia);
-                const diaFuncionamento = configHorarios.diasFuncionamento.includes(DIAS_SEMANA_MAP[dia.getDay()]);
-                const totalDia = (agendamentosPorDia[chaveDia] || []).length;
-
-                return (
-                  <button
-                    key={chaveDia}
-                    type="button"
-                    onClick={() => setDataFoco(dia)}
-                    className={`border-r border-border px-3 py-2 text-left transition last:border-r-0 ${
-                      isDiaFoco
-                        ? "bg-muted"
-                        : "hover:bg-muted/70"
-                    } ${!diaFuncionamento ? "opacity-60" : ""}`}
-                    style={{ width: modoEfetivo === "semana" ? LARGURA_COLUNA : "calc(100vw - 64px)" }}
-                  >
-                    <div className="flex items-center justify-between gap-2">
+              return (
+                <section key={chaveDia} className="rounded-xl border border-border bg-card">
+                  <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
+                    <div>
                       <p className="text-[11px] font-semibold uppercase text-muted-foreground">
-                        {format(dia, "EEE", { locale: ptBR })}
+                        {format(dia, "EEEE", { locale: ptBR })}
                       </p>
-                      {isDiaHoje && (
+                      <p className="text-sm font-semibold text-foreground">
+                        {format(dia, "d 'de' MMMM", { locale: ptBR })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {isToday(dia) && (
                         <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-bold text-background">
                           Hoje
                         </span>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => concluirTodosDia(dia)}
+                        disabled={concluiDia.length === 0 || processandoConcluirTodos}
+                        className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-900 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {concluiDia.length}
+                      </button>
                     </div>
-                    <p className="mt-1 text-sm font-semibold text-foreground">
-                      {format(dia, "d 'de' MMM", { locale: ptBR })}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {totalDia} agendamento{totalDia === 1 ? "" : "s"}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex">
-            <div className="sticky left-0 z-20 w-16 border-r border-border bg-card">
-              {faixasHoras.map((hora) => (
-                <div key={hora} className="relative border-t border-border" style={{ height: ALTURA_HORA }}>
-                  <span className="absolute -top-2 right-2 text-[10px] font-semibold text-muted-foreground">
-                    {`${hora.toString().padStart(2, "0")}:00`}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex" style={{ minWidth: modoEfetivo === "semana" ? diasExibidos.length * LARGURA_COLUNA : undefined }}>
-              {diasExibidos.map((dia) => {
-                const chaveDia = format(dia, "yyyy-MM-dd");
-                const agDia = agendamentosPorDia[chaveDia] || [];
-                const layoutDia = layoutPorDia[chaveDia] || {};
-                const isDiaHoje = isToday(dia);
-                const horaAtual = new Date();
-                const topHoraAtual = ((horaAtual.getHours() - configHorarios.horaInicio) * ALTURA_HORA) +
-                  ((horaAtual.getMinutes() / 60) * ALTURA_HORA);
-
-                return (
-                  <div
-                    key={chaveDia}
-                    className="relative border-r border-border bg-card last:border-r-0"
-                    style={{
-                      width: modoEfetivo === "semana" ? LARGURA_COLUNA : "calc(100vw - 64px)",
-                      minHeight: alturaGrade,
-                    }}
-                  >
-                    {faixasHoras.map((hora, indice) => (
-                      <div
-                        key={hora}
-                        className="absolute left-0 right-0 border-t border-border/70"
-                        style={{ top: indice * ALTURA_HORA }}
-                      />
-                    ))}
-
-                    {isDiaHoje && topHoraAtual >= 0 && topHoraAtual <= alturaGrade && (
-                      <div className="absolute left-0 right-0 z-20" style={{ top: topHoraAtual }}>
-                        <div className="flex items-center">
-                          <div className="-ml-1 h-2.5 w-2.5 rounded-full bg-rose-500" />
-                          <div className="h-0.5 flex-1 bg-rose-500" />
-                        </div>
-                      </div>
-                    )}
-
-                    {agDia.map((agendamento) => {
-                      const layout = layoutDia[agendamento.id];
-                      if (!layout) return null;
-
-                      const largura = 100 / layout.totalColunas;
-                      const left = layout.indiceColuna * largura;
-                      const statusClasses = ESTILOS_STATUS[agendamento.status] || ESTILOS_STATUS.pendente;
-
-                      return (
-                        <div
-                          key={agendamento.id}
-                          className={`absolute overflow-hidden rounded-md border px-2 py-1 shadow-sm ${statusClasses}`}
-                          style={{
-                            top: layout.top,
-                            left: `calc(${left}% + 4px)`,
-                            width: `calc(${largura}% - 8px)`,
-                            height: Math.max(layout.height, 40),
-                          }}
-                          title={`${agendamento.clientes?.nome || "Cliente"} - ${agendamento.infoServicos.nome}`}
-                        >
-                          <p className="truncate text-[11px] font-bold">
-                            {agendamento.horaInicio} - {agendamento.horaFim}
-                          </p>
-                          <p className="mt-0.5 truncate text-xs font-semibold">
-                            {agendamento.clientes?.nome || "Cliente"}
-                          </p>
-                          <p className="mt-0.5 truncate text-[11px] opacity-85">
-                            {agendamento.infoServicos.nomesCurtos}
-                          </p>
-                          <p className="mt-0.5 inline-flex rounded bg-black/10 px-1.5 py-0.5 text-[10px] font-semibold capitalize dark:bg-white/10">
-                            {agendamento.status}
-                          </p>
-                        </div>
-                      );
-                    })}
                   </div>
-                );
-              })}
+
+                  {agDia.length === 0 ? (
+                    <div className="px-3 py-5 text-center text-xs text-muted-foreground">
+                      Sem agendamentos neste dia.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-2">
+                      {agDia.map((agendamento) => {
+                        const statusClasses = ESTILOS_STATUS[agendamento.status] || ESTILOS_STATUS.pendente;
+                        return (
+                          <div
+                            key={agendamento.id}
+                            className={`rounded-lg border px-2.5 py-2 shadow-sm ${statusClasses}`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs font-bold">
+                                {agendamento.horaInicio} - {agendamento.horaFim}
+                              </p>
+                              <span className="rounded bg-black/10 px-1.5 py-0.5 text-[10px] font-semibold capitalize dark:bg-white/10">
+                                {agendamento.status}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm font-semibold truncate">
+                              {agendamento.clientes?.nome || "Cliente"}
+                            </p>
+                            <p className="mt-0.5 text-xs truncate opacity-90">
+                              {agendamento.infoServicos.nomesCurtos}
+                            </p>
+                            <p className="mt-1 text-[11px] opacity-80">
+                              {agendamento.barbeiros?.nome || "Profissional"}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="min-w-max">
+            <div className="sticky top-0 z-30 flex border-b border-border bg-card/95 backdrop-blur">
+              <div className="sticky left-0 z-40 w-16 border-r border-border bg-card" />
+
+              <div className="flex" style={{ minWidth: diasExibidos.length * larguraColunaEfetiva }}>
+                {diasExibidos.map((dia) => {
+                  const chaveDia = format(dia, "yyyy-MM-dd");
+                  const isDiaFoco = chaveDia === format(dataFoco, "yyyy-MM-dd");
+                  const isDiaHoje = isToday(dia);
+                  const diaFuncionamento = configHorarios.diasFuncionamento.includes(DIAS_SEMANA_MAP[dia.getDay()]);
+                  const totalDia = (agendamentosPorDia[chaveDia] || []).length;
+
+                  return (
+                    <button
+                      key={chaveDia}
+                      type="button"
+                      onClick={() => setDataFoco(dia)}
+                      className={`border-r border-border px-3 py-2 text-left transition last:border-r-0 ${
+                        isDiaFoco ? "bg-muted" : "hover:bg-muted/70"
+                      } ${!diaFuncionamento ? "opacity-60" : ""}`}
+                      style={{ width: larguraColunaEfetiva }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+                          {format(dia, "EEE", { locale: ptBR })}
+                        </p>
+                        {isDiaHoje && (
+                          <span className="rounded-full bg-foreground px-2 py-0.5 text-[10px] font-bold text-background">
+                            Hoje
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm font-semibold text-foreground">
+                        {format(dia, "d 'de' MMM", { locale: ptBR })}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {totalDia} agendamento{totalDia === 1 ? "" : "s"}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex">
+              <div className="sticky left-0 z-20 w-16 border-r border-border bg-card">
+                {faixasHoras.map((hora) => (
+                  <div key={hora} className="relative border-t border-border" style={{ height: ALTURA_HORA }}>
+                    <span className="absolute -top-2 right-2 text-[10px] font-semibold text-muted-foreground">
+                      {`${hora.toString().padStart(2, "0")}:00`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex" style={{ minWidth: diasExibidos.length * larguraColunaEfetiva }}>
+                {diasExibidos.map((dia) => {
+                  const chaveDia = format(dia, "yyyy-MM-dd");
+                  const agDia = agendamentosPorDia[chaveDia] || [];
+                  const layoutDia = layoutPorDia[chaveDia] || {};
+                  const isDiaHoje = isToday(dia);
+                  const horaAtual = new Date();
+                  const topHoraAtual =
+                    ((horaAtual.getHours() - configHorarios.horaInicio) * ALTURA_HORA) +
+                    ((horaAtual.getMinutes() / 60) * ALTURA_HORA);
+
+                  return (
+                    <div
+                      key={chaveDia}
+                      className="relative border-r border-border bg-card last:border-r-0"
+                      style={{ width: larguraColunaEfetiva, minHeight: alturaGrade }}
+                    >
+                      {faixasHoras.map((hora, indiceHora) => (
+                        <div
+                          key={hora}
+                          className="absolute left-0 right-0 border-t border-border/70"
+                          style={{ top: indiceHora * ALTURA_HORA }}
+                        />
+                      ))}
+
+                      {isDiaHoje && topHoraAtual >= 0 && topHoraAtual <= alturaGrade && (
+                        <div className="absolute left-0 right-0 z-20" style={{ top: topHoraAtual }}>
+                          <div className="flex items-center">
+                            <div className="-ml-1 h-2.5 w-2.5 rounded-full bg-rose-500" />
+                            <div className="h-0.5 flex-1 bg-rose-500" />
+                          </div>
+                        </div>
+                      )}
+
+                      {agDia.map((agendamento) => {
+                        const layout = layoutDia[agendamento.id];
+                        if (!layout) return null;
+
+                        const largura = 100 / layout.totalColunas;
+                        const left = layout.indiceColuna * largura;
+                        const statusClasses = ESTILOS_STATUS[agendamento.status] || ESTILOS_STATUS.pendente;
+                        const alturaCard = Math.max(layout.height - 2, 36);
+
+                        return (
+                          <div
+                            key={agendamento.id}
+                            className={`absolute overflow-hidden rounded-md border px-2 py-1 shadow-sm ${statusClasses}`}
+                            style={{
+                              top: layout.top + 1,
+                              left: `calc(${left}% + 3px)`,
+                              width: `calc(${largura}% - 6px)`,
+                              height: alturaCard,
+                            }}
+                            title={`${agendamento.clientes?.nome || "Cliente"} - ${agendamento.infoServicos.nome}`}
+                          >
+                            <p className="truncate text-[11px] font-bold">
+                              {agendamento.horaInicio} - {agendamento.horaFim}
+                            </p>
+                            <p className="mt-0.5 truncate text-xs font-semibold">
+                              {agendamento.clientes?.nome || "Cliente"}
+                            </p>
+                            <p className="mt-0.5 truncate text-[11px] opacity-85">
+                              {agendamento.infoServicos.nomesCurtos}
+                            </p>
+                            <p className="mt-0.5 inline-flex rounded bg-black/10 px-1.5 py-0.5 text-[10px] font-semibold capitalize dark:bg-white/10">
+                              {agendamento.status}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {!carregando && agendamentosProcessados.length === 0 && (
           <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center">
             <div className="mx-auto w-fit rounded-xl border border-border bg-card px-6 py-4 shadow-sm">
               <CalendarDays className="mx-auto mb-2 h-5 w-5 text-muted-foreground" />
-              <p className="text-sm font-semibold text-foreground">Sem agendamentos neste período</p>
+              <p className="text-sm font-semibold text-foreground">Sem agendamentos nesta semana</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Horário de funcionamento: {configHorarios.horaInicio}:00 às {configHorarios.horaFim}:00
               </p>
