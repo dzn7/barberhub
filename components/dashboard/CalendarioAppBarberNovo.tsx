@@ -6,9 +6,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Plus,
-  User,
 } from "lucide-react";
 import { addDays, format, isToday, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -126,11 +124,12 @@ function obterInfoServicos(agendamento: Agendamento) {
   };
 }
 
-function calcularLayoutAgendamentosDia(agendamentosDia: AgendamentoProcessado[]) {
+function calcularLayoutAgendamentosDia(agendamentosDia: AgendamentoProcessado[], horaInicio: number) {
   const eventos = agendamentosDia
     .map((agendamento) => {
-      const top = ((agendamento.inicioMin % (24 * 60)) / 60) * ALTURA_HORA;
-      const height = Math.max((agendamento.infoServicos.duracao / 60) * ALTURA_HORA, 40);
+      const top = ((agendamento.inicioMin - (horaInicio * 60)) / 60) * ALTURA_HORA;
+      const duracaoVisivel = Math.max(agendamento.fimMin - agendamento.inicioMin, 15);
+      const height = Math.max((duracaoVisivel / 60) * ALTURA_HORA, 40);
       return {
         agendamento,
         inicioMin: agendamento.inicioMin,
@@ -433,11 +432,14 @@ export function CalendarioAppBarberNovo() {
 
     diasExibidos.forEach((dia) => {
       const chaveDia = format(dia, "yyyy-MM-dd");
-      layout[chaveDia] = calcularLayoutAgendamentosDia(agendamentosPorDia[chaveDia] || []);
+      layout[chaveDia] = calcularLayoutAgendamentosDia(
+        agendamentosPorDia[chaveDia] || [],
+        configHorarios.horaInicio
+      );
     });
 
     return layout;
-  }, [agendamentosPorDia, diasExibidos]);
+  }, [agendamentosPorDia, diasExibidos, configHorarios.horaInicio]);
 
   const tituloPeriodo = useMemo(() => {
     if (modoEfetivo === "dia") {
@@ -692,7 +694,7 @@ export function CalendarioAppBarberNovo() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-muted/30">
+      <div className="relative flex-1 overflow-auto bg-muted/30">
         <div className="min-w-max">
           <div className="sticky top-0 z-30 flex border-b border-border bg-card/95 backdrop-blur">
             <div className="sticky left-0 z-40 w-16 border-r border-border bg-card" />

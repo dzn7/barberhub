@@ -3,7 +3,7 @@
  * Gerencia cache, funcionamento offline e notificações
  */
 
-const CACHE_NAME = 'barberhub-v4-google-calendar'
+const CACHE_NAME = 'barberhub-v5-google-calendar'
 const OFFLINE_URL = '/offline.html'
 
 // Recursos estáticos para cachear
