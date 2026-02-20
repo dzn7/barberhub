@@ -21,7 +21,8 @@ import {
   X,
   Sun,
   Sunset,
-  Moon
+  Moon,
+  TicketPercent
 } from 'lucide-react'
 import { 
   format, 
@@ -87,6 +88,31 @@ interface ConfiguracaoBarbearia {
   horarios_personalizados: any
 }
 
+interface CupomDisponivel {
+  id: string
+  codigo: string
+  nome: string
+  descricao: string | null
+  tipo_desconto: 'percentual' | 'valor_fixo'
+  valor_desconto: number
+  valor_minimo_pedido: number | null
+  maximo_desconto: number | null
+  escopo: 'loja' | 'servico'
+  inicio_em: string | null
+  fim_em: string | null
+  ativo: boolean
+}
+
+interface ResultadoCupom {
+  valido: boolean
+  mensagem: string
+  cupom_id: string | null
+  cupom_codigo: string | null
+  valor_bruto: number
+  valor_desconto: number
+  valor_final: number
+}
+
 export default function PaginaAgendar() {
   const params = useParams()
   const slug = params.slug as string
@@ -124,6 +150,11 @@ export default function PaginaAgendar() {
   })
   const [usarHorariosPersonalizados, setUsarHorariosPersonalizados] = useState(false)
   const [horariosPersonalizados, setHorariosPersonalizados] = useState<any>(null)
+  const [cuponsDisponiveis, setCuponsDisponiveis] = useState<CupomDisponivel[]>([])
+  const [cupomServicos, setCupomServicos] = useState<Record<string, string[]>>({})
+  const [codigoCupom, setCodigoCupom] = useState('')
+  const [cupomAplicado, setCupomAplicado] = useState<ResultadoCupom | null>(null)
+  const [validandoCupom, setValidandoCupom] = useState(false)
   
   // Toast local para feedback
   const [toastInfo, setToastInfo] = useState<{ tipo: 'erro' | 'aviso' | 'sucesso'; mensagem: string } | null>(null)
@@ -185,6 +216,35 @@ export default function PaginaAgendar() {
       supabase.removeChannel(channel)
     }
   }, [tenant])
+
+  useEffect(() => {
+    if (!tenant?.id) return
+
+    carregarCuponsDisponiveis(tenant.id)
+
+    const channel = supabase
+      .channel(`cupons-publico-${tenant.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'cupons',
+        filter: `tenant_id=eq.${tenant.id}`
+      }, () => {
+        carregarCuponsDisponiveis(tenant.id)
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'cupom_servicos'
+      }, () => {
+        carregarCuponsDisponiveis(tenant.id)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [tenant?.id])
 
   useEffect(() => {
     let channel: any = null
@@ -356,6 +416,7 @@ export default function PaginaAgendar() {
       setBarbeiros(barbeirosRes.data || [])
       setServicosBase(servicosRes.data || [])
       setServicos(servicosRes.data || [])
+      await carregarCuponsDisponiveis(tenantData.id)
 
       if (barbeirosRes.data && barbeirosRes.data.length > 0) {
         const primeiroBarbeiro = barbeirosRes.data[0].id
@@ -367,6 +428,46 @@ export default function PaginaAgendar() {
       console.error('Erro ao carregar dados:', error)
     } finally {
       setCarregando(false)
+    }
+  }
+
+  const carregarCuponsDisponiveis = async (tenantId: string) => {
+    try {
+      const { data: cuponsData, error: cuponsError } = await supabase
+        .from('cupons')
+        .select('id, codigo, nome, descricao, tipo_desconto, valor_desconto, valor_minimo_pedido, maximo_desconto, escopo, inicio_em, fim_em, ativo')
+        .eq('tenant_id', tenantId)
+        .eq('ativo', true)
+        .order('codigo', { ascending: true })
+
+      if (cuponsError) throw cuponsError
+
+      const listaCupons = (cuponsData || []) as CupomDisponivel[]
+      setCuponsDisponiveis(listaCupons)
+
+      if (listaCupons.length === 0) {
+        setCupomServicos({})
+        return
+      }
+
+      const ids = listaCupons.map(c => c.id)
+      const { data: cupomServicosData, error: cupomServicosError } = await supabase
+        .from('cupom_servicos')
+        .select('cupom_id, servico_id')
+        .in('cupom_id', ids)
+
+      if (cupomServicosError) throw cupomServicosError
+
+      const mapa: Record<string, string[]> = {}
+      ;(cupomServicosData || []).forEach((item: any) => {
+        if (!mapa[item.cupom_id]) mapa[item.cupom_id] = []
+        mapa[item.cupom_id].push(item.servico_id)
+      })
+      setCupomServicos(mapa)
+    } catch (error) {
+      console.error('Erro ao carregar cupons:', error)
+      setCuponsDisponiveis([])
+      setCupomServicos({})
     }
   }
 
@@ -418,6 +519,11 @@ export default function PaginaAgendar() {
     }
   }, [barbeiroSelecionado, tenant])
 
+  useEffect(() => {
+    if (!cupomAplicado) return
+    setCupomAplicado(null)
+  }, [servicosSelecionados.join('|')])
+
   const verificarStatusBarbearia = async () => {
     if (!tenant) return
 
@@ -449,6 +555,93 @@ export default function PaginaAgendar() {
   const servicosSelecionadosObj = servicos.filter(s => servicosSelecionados.includes(s.id))
   const duracaoServico = servicosSelecionadosObj.reduce((acc, s) => acc + s.duracao, 0) || 30
   const precoTotal = servicosSelecionadosObj.reduce((acc, s) => acc + s.preco, 0)
+  const descontoAplicado = cupomAplicado?.valor_desconto || 0
+  const totalComDesconto = cupomAplicado?.valor_final ?? Math.max(precoTotal - descontoAplicado, 0)
+
+  const cuponsFiltradosCheckout = cuponsDisponiveis.filter((cupom) => {
+    const agora = new Date()
+    if (!cupom.ativo) return false
+    if (cupom.inicio_em && new Date(cupom.inicio_em) > agora) return false
+    if (cupom.fim_em && new Date(cupom.fim_em) < agora) return false
+    if (cupom.valor_minimo_pedido && precoTotal < cupom.valor_minimo_pedido) return false
+
+    if (cupom.escopo === 'servico') {
+      const relacionados = cupomServicos[cupom.id] || []
+      return servicosSelecionados.some((id) => relacionados.includes(id))
+    }
+
+    return true
+  })
+
+  const buscarClienteIdPorTelefone = async () => {
+    if (!tenant || !telefoneCliente) return null
+
+    const { data } = await supabase
+      .from('clientes')
+      .select('id')
+      .eq('tenant_id', tenant.id)
+      .eq('telefone', telefoneCliente)
+      .limit(1)
+
+    return data && data.length > 0 ? data[0].id : null
+  }
+
+  const aplicarCupom = async (codigoParam?: string) => {
+    if (!tenant) return
+
+    const codigo = (codigoParam || codigoCupom).trim().toUpperCase()
+    if (!codigo) {
+      mostrarToast('aviso', 'Informe um código de cupom.')
+      return
+    }
+
+    setValidandoCupom(true)
+
+    try {
+      const clienteId = await buscarClienteIdPorTelefone()
+      const { data, error } = await supabase.rpc('validar_cupom_agendamento', {
+        p_tenant_id: tenant.id,
+        p_cliente_id: clienteId,
+        p_servico_id: servicosSelecionados[0] || null,
+        p_servicos_ids: servicosSelecionados,
+        p_cupom_codigo: codigo,
+        p_cupom_id: null,
+        p_agendamento_id: null
+      })
+
+      if (error) throw error
+
+      const resultado = (Array.isArray(data) ? data[0] : data) as ResultadoCupom | undefined
+      if (!resultado || !resultado.valido || !resultado.cupom_id) {
+        mostrarToast('erro', resultado?.mensagem || 'Cupom inválido para este agendamento.')
+        return
+      }
+
+      const bruto = Number(resultado.valor_bruto || 0)
+      const desconto = Number(resultado.valor_desconto || 0)
+      const final = Number(resultado.valor_final || 0)
+
+      setCodigoCupom(resultado.cupom_codigo || codigo)
+      setCupomAplicado({
+        ...resultado,
+        valor_bruto: bruto,
+        valor_desconto: desconto,
+        valor_final: final
+      })
+      mostrarToast('sucesso', 'Cupom aplicado com sucesso.')
+    } catch (error: any) {
+      console.error('Erro ao validar cupom:', error)
+      mostrarToast('erro', error?.message || 'Não foi possível validar o cupom.')
+    } finally {
+      setValidandoCupom(false)
+    }
+  }
+
+  const removerCupom = () => {
+    setCupomAplicado(null)
+    setCodigoCupom('')
+    mostrarToast('sucesso', 'Cupom removido.')
+  }
 
   const normalizarHorario = (horario: string | null): string | null => {
     if (!horario) return null
@@ -550,10 +743,21 @@ export default function PaginaAgendar() {
           servicos_ids: servicosSelecionados,
           data_hora: dataHora.toISOString(),
           status: 'pendente',
+          cupom_id: cupomAplicado?.cupom_id || null,
+          cupom_codigo: cupomAplicado?.cupom_codigo || null,
+          valor_bruto: precoTotal,
+          valor_desconto: cupomAplicado?.valor_desconto || 0,
+          valor_pago: totalComDesconto,
           observacoes: observacoes || null,
         }])
 
-      if (erroAgendamento) throw erroAgendamento
+      if (erroAgendamento) {
+        const mensagemCupom = erroAgendamento.message?.toLowerCase().includes('cupom')
+        if (mensagemCupom) {
+          mostrarToast('erro', erroAgendamento.message)
+        }
+        throw erroAgendamento
+      }
 
       localStorage.setItem('dadosCliente', JSON.stringify({
         nome: nomeCliente,
@@ -936,6 +1140,8 @@ export default function PaginaAgendar() {
                 <div className="grid gap-3">
                   {servicos.map((servico) => {
                     const estaSelecionado = servicosSelecionados.includes(servico.id)
+                    const comentario = (servico.descricao || '').trim()
+                    const exibirComentario = comentario.length > 0 && comentario.toLowerCase() !== servico.nome.trim().toLowerCase()
                     
                     return (
                       <button
@@ -977,9 +1183,9 @@ export default function PaginaAgendar() {
                             <h3 className="font-semibold" style={{ color: cores.secundaria }}>
                               {servico.nome}
                             </h3>
-                            {servico.descricao && (
-                              <p className="text-sm mt-1" style={{ color: cores.destaque }}>
-                                {servico.descricao}
+                            {exibirComentario && (
+                              <p className="text-sm mt-1 leading-relaxed line-clamp-3 md:line-clamp-2" style={{ color: cores.destaque }}>
+                                {comentario}
                               </p>
                             )}
                             <p className="text-sm mt-1" style={{ color: cores.destaque }}>
@@ -1699,6 +1905,118 @@ export default function PaginaAgendar() {
                   <span className="text-sm" style={{ color: cores.destaque }}>WhatsApp</span>
                   <span className="font-semibold text-right" style={{ color: cores.secundaria }}>{telefoneCliente}</span>
                 </div>
+
+                <div 
+                  className="pb-3 sm:pb-4 border-b space-y-3"
+                  style={{ borderColor: cores.destaque + '20' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <TicketPercent className="w-4 h-4" style={{ color: cores.destaque }} />
+                    <span className="text-sm font-medium" style={{ color: cores.destaque }}>Cupom de desconto</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      value={codigoCupom}
+                      onChange={(e) => setCodigoCupom(e.target.value.toUpperCase())}
+                      placeholder="Digite o código"
+                      className="flex-1 px-3 py-2 rounded-lg border text-sm focus:outline-none"
+                      style={{
+                        backgroundColor: cores.destaque + '10',
+                        borderColor: cores.destaque + '20',
+                        color: cores.secundaria
+                      }}
+                    />
+
+                    {cupomAplicado ? (
+                      <button
+                        type="button"
+                        onClick={removerCupom}
+                        className="px-3 py-2 rounded-lg text-sm font-semibold"
+                        style={{
+                          backgroundColor: '#ef4444',
+                          color: '#fff'
+                        }}
+                      >
+                        Remover
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => aplicarCupom()}
+                        disabled={validandoCupom || !codigoCupom.trim()}
+                        className="px-3 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+                        style={{
+                          backgroundColor: cores.secundaria,
+                          color: cores.primaria
+                        }}
+                      >
+                        {validandoCupom ? 'Validando...' : 'Aplicar'}
+                      </button>
+                    )}
+                  </div>
+
+                  {cupomAplicado && (
+                    <div
+                      className="rounded-lg px-3 py-2 text-sm"
+                      style={{ backgroundColor: '#10b98120', color: '#047857' }}
+                    >
+                      Cupom <strong>{cupomAplicado.cupom_codigo}</strong> aplicado com desconto de{' '}
+                      <strong>R$ {cupomAplicado.valor_desconto.toFixed(2)}</strong>.
+                    </div>
+                  )}
+
+                  {cuponsFiltradosCheckout.length > 0 && !cupomAplicado && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium" style={{ color: cores.destaque }}>
+                        Cupons disponíveis para este agendamento:
+                      </p>
+                      <div className="grid gap-2">
+                        {cuponsFiltradosCheckout.slice(0, 4).map((cupom) => (
+                          <button
+                            key={cupom.id}
+                            type="button"
+                            onClick={() => aplicarCupom(cupom.codigo)}
+                            className="w-full text-left px-3 py-2 rounded-lg border transition-all hover:scale-[1.01]"
+                            style={{
+                              backgroundColor: cores.destaque + '10',
+                              borderColor: cores.destaque + '25',
+                              color: cores.secundaria
+                            }}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-semibold">{cupom.codigo}</span>
+                              <span className="text-xs" style={{ color: cores.destaque }}>
+                                {cupom.tipo_desconto === 'percentual'
+                                  ? `${cupom.valor_desconto}%`
+                                  : `R$ ${cupom.valor_desconto.toFixed(2)}`}
+                              </span>
+                            </div>
+                            <p className="text-xs mt-1 line-clamp-2" style={{ color: cores.destaque }}>
+                              {cupom.nome}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm" style={{ color: cores.destaque }}>Subtotal</span>
+                    <span className="font-semibold" style={{ color: cores.secundaria }}>
+                      R$ {precoTotal.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm" style={{ color: cores.destaque }}>Desconto</span>
+                    <span className="font-semibold" style={{ color: descontoAplicado > 0 ? '#047857' : cores.secundaria }}>
+                      - R$ {descontoAplicado.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
                 
                 <div className="flex justify-between items-center pt-2">
                   <div>
@@ -1710,7 +2028,7 @@ export default function PaginaAgendar() {
                     )}
                   </div>
                   <span className="font-bold text-xl sm:text-2xl" style={{ color: cores.secundaria }}>
-                    R$ {precoTotal.toFixed(2)}
+                    R$ {totalComDesconto.toFixed(2)}
                   </span>
                 </div>
               </div>

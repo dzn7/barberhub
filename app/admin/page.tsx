@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { 
-  Calendar, DollarSign, Users, TrendingUp, TrendingDown, Package, Percent, LogOut, Scissors, Edit3, Clock, Menu, X, Settings, BarChart3, Filter, ChevronDown, Image as ImageIcon, MessageCircle, Store, Palette
+  Calendar, DollarSign, Users, TrendingUp, TrendingDown, Package, Percent, LogOut, Scissors, Edit3, Clock, Settings, BarChart3, Filter, ChevronDown, Image as ImageIcon, MessageCircle, Store, Palette, TicketPercent
 } from "lucide-react";
 import { Tabs } from "@radix-ui/themes";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { GestaoFinanceira } from "@/components/dashboard/GestaoFinanceira";
 import { AtendimentosPresenciais } from "@/components/dashboard/AtendimentosPresenciais";
@@ -23,6 +23,7 @@ import { Relatorios } from "@/components/dashboard/Relatorios";
 import { ConfiguracaoBarbearia } from "@/components/dashboard/ConfiguracaoBarbearia";
 import { TelaTesteExpirado } from "@/components/dashboard/TelaTesteExpirado";
 import { GuiaAcessoBarbeiros } from "@/components/dashboard/GuiaAcessoBarbeiros";
+import { GestaoCupons } from "@/components/dashboard/GestaoCupons";
 import { AlternadorTema } from "@/components/AlternadorTema";
 import { useTerminologia } from "@/hooks/useTerminologia";
 // PWA removido temporariamente
@@ -56,19 +57,34 @@ function formatarMoedaSemCentavosBRL(valor: number) {
   return formatadorMoedaBRLSemCentavos.format(numero);
 }
 
+const ABAS_PRINCIPAIS_ADMIN = [
+  { value: "visao-geral", icon: TrendingUp, label: "Visão Geral" },
+  { value: "agendamentos", icon: Calendar, label: "Agendamentos" },
+  { value: "clientes", icon: Users, label: "Clientes" },
+  { value: "financeiro", icon: DollarSign, label: "Financeiro" },
+  { value: "cupons", icon: TicketPercent, label: "Cupons" },
+  { value: "equipe", icon: Users, label: "Equipe" },
+  { value: "servicos", icon: Scissors, label: "Serviços" },
+  { value: "estoque", icon: Package, label: "Estoque" },
+  { value: "relatorios", icon: BarChart3, label: "Relatórios" },
+  { value: "configuracoes", icon: Settings, label: "Configurações" },
+] as const;
+
 /**
  * Dashboard Completo de Gestão
  * Sistema integrado para controle total da barbearia
  */
 export default function DashboardCompleto() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, tenant, carregando: carregandoAuth, sair } = useAuth();
   const { profissional, estabelecimento, terminologia } = useTerminologia();
   const artigoEstabelecimento = terminologia.estabelecimento.artigo;
   const preposicaoEstabelecimento = artigoEstabelecimento === "a" ? "da" : "do";
   const pronomePossessivoEstabelecimento = artigoEstabelecimento === "a" ? "sua" : "seu";
+
   const [abaAtiva, setAbaAtiva] = useState("visao-geral");
-  const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [filtroVisaoGeral, setFiltroVisaoGeral] = useState<{
     tipo: "hoje" | "semana" | "mes" | "ano" | "geral" | "personalizado";
@@ -92,6 +108,14 @@ export default function DashboardCompleto() {
   const [carregando, setCarregando] = useState(true);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState<Date | null>(null);
 
+  const trocarAba = (value: string) => {
+    setAbaAtiva(value);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("aba", value);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   // Hook de notificações em tempo real (PWA removido temporariamente)
   // useAgendamentosRealtime({
   //   enabled: !!user && !!tenant,
@@ -111,6 +135,16 @@ export default function DashboardCompleto() {
       router.push("/entrar");
     }
   }, [carregandoAuth, user, router]);
+
+  useEffect(() => {
+    const abaParam = searchParams.get("aba");
+    if (!abaParam) return;
+
+    const abaValida = ABAS_PRINCIPAIS_ADMIN.some((aba) => aba.value === abaParam);
+    if (abaValida) {
+      setAbaAtiva(abaParam);
+    }
+  }, [searchParams]);
 
   // Verificar se o trial expirou
   const verificarTrialExpirado = (): boolean => {
@@ -558,105 +592,43 @@ export default function DashboardCompleto() {
 
       {/* Conteúdo Principal */}
       <div className="container mx-auto px-4 py-8 max-w-full overflow-x-hidden">
-        <Tabs.Root value={abaAtiva} onValueChange={(value) => {
-          setAbaAtiva(value);
-          setMenuMobileAberto(false); // Fechar menu ao selecionar
-        }}>
-          {/* Botão Menu Mobile */}
-          <div className="lg:hidden mb-4">
-            <button
-              onClick={() => setMenuMobileAberto(!menuMobileAberto)}
-              className="w-full flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
-            >
-              <span className="font-semibold text-zinc-900 dark:text-white">
-                Menu
-              </span>
-              {menuMobileAberto ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-
-          {/* Menu Desktop - 9 abas principais reorganizadas */}
+        <Tabs.Root value={abaAtiva} onValueChange={trocarAba}>
           <Tabs.List className="mb-8 hidden lg:flex">
-            <Tabs.Trigger value="visao-geral">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Visão Geral
-            </Tabs.Trigger>
-            <Tabs.Trigger value="agendamentos">
-              <Calendar className="w-4 h-4 mr-2" />
-              Agendamentos
-            </Tabs.Trigger>
-            <Tabs.Trigger value="clientes">
-              <Users className="w-4 h-4 mr-2" />
-              Clientes
-            </Tabs.Trigger>
-            <Tabs.Trigger value="financeiro">
-              <DollarSign className="w-4 h-4 mr-2" />
-              Financeiro
-            </Tabs.Trigger>
-            <Tabs.Trigger value="equipe">
-              <Users className="w-4 h-4 mr-2" />
-              Equipe
-            </Tabs.Trigger>
-            <Tabs.Trigger value="servicos">
-              <Scissors className="w-4 h-4 mr-2" />
-              Serviços
-            </Tabs.Trigger>
-            <Tabs.Trigger value="estoque">
-              <Package className="w-4 h-4 mr-2" />
-              Estoque
-            </Tabs.Trigger>
-            <Tabs.Trigger value="relatorios">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Relatórios
-            </Tabs.Trigger>
-            <Tabs.Trigger value="configuracoes">
-              <Settings className="w-4 h-4 mr-2" />
-              Configurações
-            </Tabs.Trigger>
+            {ABAS_PRINCIPAIS_ADMIN.map((aba) => {
+              const Icone = aba.icon;
+              return (
+                <Tabs.Trigger key={aba.value} value={aba.value}>
+                  <Icone className="w-4 h-4 mr-2" />
+                  {aba.label}
+                </Tabs.Trigger>
+              );
+            })}
           </Tabs.List>
 
-          {/* Menu Mobile */}
-          {menuMobileAberto && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden mb-4 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden"
-            >
-              <div className="flex flex-col">
-                {[
-                  { value: "visao-geral", icon: TrendingUp, label: "Visão Geral" },
-                  { value: "agendamentos", icon: Calendar, label: "Agendamentos" },
-                  { value: "clientes", icon: Users, label: "Clientes" },
-                  { value: "financeiro", icon: DollarSign, label: "Financeiro" },
-                  { value: "equipe", icon: Users, label: "Equipe" },
-                  { value: "servicos", icon: Scissors, label: "Serviços" },
-                  { value: "estoque", icon: Package, label: "Estoque" },
-                  { value: "relatorios", icon: BarChart3, label: "Relatórios" },
-                  { value: "configuracoes", icon: Settings, label: "Configurações" },
-                ].map((item) => {
-                  const Icon = item.icon;
+          <div className="mb-6 lg:hidden">
+            <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="flex min-w-max gap-1">
+                {ABAS_PRINCIPAIS_ADMIN.map((aba) => {
+                  const Icone = aba.icon;
+                  const ativa = abaAtiva === aba.value;
                   return (
                     <button
-                      key={item.value}
-                      onClick={() => {
-                        setAbaAtiva(item.value);
-                        setMenuMobileAberto(false);
-                      }}
-                      className={`flex items-center gap-3 p-4 text-left transition-colors ${
-                        abaAtiva === item.value
-                          ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
-                          : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                      key={aba.value}
+                      onClick={() => trocarAba(aba.value)}
+                      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                        ativa
+                          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+                      <Icone className="h-4 w-4" />
+                      {aba.label}
                     </button>
                   );
                 })}
               </div>
-            </motion.div>
-          )}
+            </div>
+          </div>
 
           {/* Visão Geral */}
           <Tabs.Content value="visao-geral">
@@ -899,6 +871,11 @@ export default function DashboardCompleto() {
           {/* Financeiro */}
           <Tabs.Content value="financeiro">
             <GestaoFinanceira />
+          </Tabs.Content>
+
+          {/* Cupons */}
+          <Tabs.Content value="cupons">
+            <GestaoCupons />
           </Tabs.Content>
 
           {/* Estoque */}

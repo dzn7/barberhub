@@ -387,44 +387,49 @@ export default function PaginaBarbearia() {
             </motion.div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {servicos.slice(0, 6).map((servico, index) => (
-                <motion.div
-                  key={servico.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="group p-5 rounded-xl border transition-all hover:scale-[1.01]"
-                  style={{ 
-                    backgroundColor: cores.destaque + '08',
-                    borderColor: cores.destaque + '20'
-                  }}
-                >
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-1" style={{ color: cores.secundaria }}>
-                        {servico.nome}
-                      </h3>
-                      {servico.descricao && (
-                        <p className="text-sm mb-3 line-clamp-2" style={{ color: cores.destaque }}>
-                          {servico.descricao}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm" style={{ color: cores.destaque }}>
-                          <Clock className="w-3.5 h-3.5 inline mr-1" />
-                          {servico.duracao} min
+              {servicos.slice(0, 6).map((servico, index) => {
+                const comentario = (servico.descricao || '').trim()
+                const exibirComentario = comentario.length > 0 && comentario.toLowerCase() !== servico.nome.trim().toLowerCase()
+
+                return (
+                  <motion.div
+                    key={servico.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="group p-5 rounded-xl border transition-all hover:scale-[1.01]"
+                    style={{ 
+                      backgroundColor: cores.destaque + '08',
+                      borderColor: cores.destaque + '20'
+                    }}
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold mb-1" style={{ color: cores.secundaria }}>
+                          {servico.nome}
+                        </h3>
+                        {exibirComentario && (
+                          <p className="text-sm mb-3 leading-relaxed line-clamp-3 md:line-clamp-2" style={{ color: cores.destaque }}>
+                            {comentario}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm" style={{ color: cores.destaque }}>
+                            <Clock className="w-3.5 h-3.5 inline mr-1" />
+                            {servico.duracao} min
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xl font-bold" style={{ color: cores.secundaria }}>
+                          R$ {servico.preco.toFixed(2)}
                         </span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xl font-bold" style={{ color: cores.secundaria }}>
-                        R$ {servico.preco.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                )
+              })}
             </div>
 
             <motion.div 

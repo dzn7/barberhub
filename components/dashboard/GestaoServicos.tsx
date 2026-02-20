@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Scissors, Edit2, Save, X, DollarSign, Clock, TrendingUp, TrendingDown, Plus, Trash2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button, TextField, TextArea } from "@radix-ui/themes";
+import { Button } from "@radix-ui/themes";
 import { useToast } from "@/hooks/useToast";
 import { useTerminologia } from "@/hooks/useTerminologia";
 import { ModalPortal } from "@/components/ui/modal-portal";
@@ -87,7 +87,7 @@ export function GestaoServicos() {
         nome: servico.nome,
         preco: servico.preco,
         duracao: servico.duracao,
-        descricao: servico.descricao,
+        descricao: servico.descricao || "",
       },
     });
   };
@@ -105,12 +105,16 @@ export function GestaoServicos() {
 
       if (!servicoAtual || !novosValores) return;
 
+      const comentario = typeof novosValores.descricao === "string"
+        ? novosValores.descricao.trim()
+        : "";
+
       // Preparar dados para atualização
       const dadosAtualizacao: any = {
         nome: novosValores.nome,
         preco: novosValores.preco,
         duracao: novosValores.duracao,
-        descricao: novosValores.descricao,
+        descricao: comentario || null,
       };
 
       // Se o preço mudou, salvar o anterior
@@ -231,7 +235,7 @@ export function GestaoServicos() {
         .insert([{
           tenant_id: tenant.id,
           nome: novoServico.nome.trim(),
-          descricao: novoServico.descricao.trim() || novoServico.nome.trim(),
+          descricao: novoServico.descricao.trim() || null,
           preco: precoNumerico,
           duracao: duracaoNumerica,
           categoria: novoServico.categoria,
@@ -340,12 +344,12 @@ export function GestaoServicos() {
             {/* Descrição */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Descrição <span className="text-zinc-400 font-normal">(opcional)</span>
+                Comentário para o cliente <span className="text-zinc-400 font-normal">(opcional)</span>
               </label>
               <textarea
                 value={novoServico.descricao}
                 onChange={(e) => setNovoServico({ ...novoServico, descricao: e.target.value })}
-                placeholder="Descreva o serviço para seus clientes..."
+                placeholder="Ex.: inclui lavagem e finalização"
                 rows={3}
                 className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all resize-none"
               />
@@ -531,6 +535,10 @@ export function GestaoServicos() {
             const estaEditando = editando === servico.id;
             const valoresEdicao = valores[servico.id] || servico;
             const variacao = calcularVariacao(servico);
+            const comentarioPublico = (servico.descricao || "").trim();
+            const exibirComentario =
+              comentarioPublico.length > 0 &&
+              comentarioPublico.toLowerCase() !== servico.nome.trim().toLowerCase();
 
             return (
               <motion.div
@@ -607,6 +615,24 @@ export function GestaoServicos() {
                       </div>
                     </div>
 
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                        Comentário para o cliente
+                      </label>
+                      <textarea
+                        value={typeof valoresEdicao.descricao === "string" ? valoresEdicao.descricao : ""}
+                        onChange={(e) =>
+                          setValores({
+                            ...valores,
+                            [servico.id]: { ...valoresEdicao, descricao: e.target.value },
+                          })
+                        }
+                        rows={3}
+                        placeholder="Ex.: inclui lavagem e finalização"
+                        className="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all resize-none"
+                      />
+                    </div>
+
                     <div className="flex gap-2 justify-end">
                       <Button
                         onClick={cancelarEdicao}
@@ -669,6 +695,12 @@ export function GestaoServicos() {
                           <span>{servico.duracao} min</span>
                         </div>
                       </div>
+
+                      {exibirComentario && (
+                        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
+                          {comentarioPublico}
+                        </p>
+                      )}
 
                       {servico.data_alteracao_preco && (
                         <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-2">

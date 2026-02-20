@@ -73,6 +73,11 @@ interface LayoutAgendamento {
   paddingBottom: number;
 }
 
+interface ProfissionalResumo {
+  id: string;
+  nome: string;
+}
+
 type TipoVisualizacao = 'dia' | '3dias' | 'semana';
 
 // Níveis de zoom granulares (0.5x até 1.5x)
@@ -165,6 +170,8 @@ export function CalendarioSemanalNovo() {
   const [dataBase, setDataBase] = useState(new Date());
   const [isMobile, setIsMobile] = useState(false);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [profissionais, setProfissionais] = useState<ProfissionalResumo[]>([]);
+  const [profissionalFiltro, setProfissionalFiltro] = useState<string>("todos");
   const [carregando, setCarregando] = useState(true);
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
@@ -188,6 +195,35 @@ export function CalendarioSemanalNovo() {
 
   const visualizacaoEfetiva: TipoVisualizacao = isMobile ? 'dia' : visualizacao;
   const modoVisualizacaoEfetivo: ModoVisualizacao = isMobile ? 'lista' : modoVisualizacao;
+
+  const diaEhAberto = useCallback((data: Date) => {
+    if (!diasFuncionamento.length) return true;
+    return diasFuncionamento.includes(DIAS_SEMANA_MAP[data.getDay()]);
+  }, [diasFuncionamento]);
+
+  const normalizarData = useCallback((data: Date) => {
+    const normalizada = new Date(data);
+    normalizada.setHours(12, 0, 0, 0);
+    return normalizada;
+  }, []);
+
+  const encontrarDiaAberto = useCallback((
+    dataReferencia: Date,
+    direcao: 1 | -1 = 1,
+    permitirAtual = true
+  ) => {
+    let cursor = normalizarData(dataReferencia);
+    if (!permitirAtual) {
+      cursor = addDays(cursor, direcao);
+    }
+
+    for (let i = 0; i < 21; i += 1) {
+      if (diaEhAberto(cursor)) return cursor;
+      cursor = addDays(cursor, direcao);
+    }
+
+    return normalizarData(dataReferencia);
+  }, [diaEhAberto, normalizarData]);
 
   // Calcular altura e largura baseadas no zoom
   const alturaHora = Math.round(ALTURA_BASE * nivelZoom);
@@ -213,6 +249,39 @@ export function CalendarioSemanalNovo() {
   }, [tenant?.id]);
 
   useEffect(() => {
+    const buscarProfissionais = async () => {
+      if (!tenant?.id) return;
+
+      const { data, error } = await supabase
+        .from("barbeiros")
+        .select("id, nome")
+        .eq("tenant_id", tenant.id)
+        .eq("ativo", true)
+        .order("nome", { ascending: true });
+
+      if (error) {
+        console.error("Erro ao buscar profissionais:", error);
+        setProfissionais([]);
+        setProfissionalFiltro("todos");
+        return;
+      }
+
+      const lista = (data || []) as ProfissionalResumo[];
+      setProfissionais(lista);
+      setProfissionalFiltro((atual) =>
+        atual === "todos" || lista.some((profissional) => profissional.id === atual) ? atual : "todos"
+      );
+    };
+
+    buscarProfissionais();
+  }, [tenant?.id]);
+
+  useEffect(() => {
+    if (!diasFuncionamento.length) return;
+    setDataBase((atual) => encontrarDiaAberto(atual, 1, true));
+  }, [diasFuncionamento, encontrarDiaAberto]);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia(BREAKPOINT_MOBILE);
     const atualizarModoMobile = () => setIsMobile(mediaQuery.matches);
 
@@ -234,26 +303,31 @@ export function CalendarioSemanalNovo() {
 
   // Calcular dias a exibir baseado na visualização e dias de funcionamento
   const diasExibidos = useMemo(() => {
+    const baseAberta = encontrarDiaAberto(dataBase, 1, true);
+
     if (visualizacaoEfetiva === 'dia') {
-      return [dataBase];
+      return [baseAberta];
     }
+
     if (visualizacaoEfetiva === '3dias') {
-      return [subDays(dataBase, 1), dataBase, addDays(dataBase, 1)];
+      const diaAnterior = encontrarDiaAberto(baseAberta, -1, false);
+      const diaPosterior = encontrarDiaAberto(baseAberta, 1, false);
+      const candidatos = [diaAnterior, baseAberta, diaPosterior];
+      const mapaUnico = new Map<string, Date>();
+      candidatos.forEach((dia) => mapaUnico.set(format(dia, 'yyyy-MM-dd'), dia));
+      return Array.from(mapaUnico.values()).sort((a, b) => a.getTime() - b.getTime());
     }
+
     // Semana - filtrar apenas dias de funcionamento
-    const inicio = startOfWeek(dataBase, { weekStartsOn: 0 });
+    const inicio = startOfWeek(baseAberta, { weekStartsOn: 0 });
     const todosDias = Array.from({ length: 7 }, (_, i) => addDays(inicio, i));
 
     // Filtrar apenas os dias que a barbearia funciona
-    const diasFiltrados = todosDias.filter(dia => {
-      const diaSemana = dia.getDay();
-      const abreviacao = DIAS_SEMANA_MAP[diaSemana];
-      return diasFuncionamento.includes(abreviacao);
-    });
+    const diasFiltrados = todosDias.filter((dia) => diaEhAberto(dia));
 
     // Se não houver dias filtrados (configuração vazia), mostrar todos
     return diasFiltrados.length > 0 ? diasFiltrados : todosDias;
-  }, [dataBase, visualizacaoEfetiva, diasFuncionamento]);
+  }, [dataBase, visualizacaoEfetiva, encontrarDiaAberto, diaEhAberto]);
 
   // Título do período
   const tituloPeriodo = useMemo(() => {
@@ -394,7 +468,7 @@ export function CalendarioSemanalNovo() {
     }
 
     const canal = supabase
-      .channel('calendario-realtime')
+      .channel(`calendario-realtime-${tenant.id}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -439,8 +513,16 @@ export function CalendarioSemanalNovo() {
     }
   }, [carregando, alturaHora, horasDia, modoVisualizacaoEfetivo]);
 
+  const agendamentosFiltrados = useMemo(() => {
+    if (profissionalFiltro === "todos") return agendamentos;
+    return agendamentos.filter(
+      (agendamento) =>
+        agendamento.barbeiro_id === profissionalFiltro || agendamento.barbeiros?.id === profissionalFiltro
+    );
+  }, [agendamentos, profissionalFiltro]);
+
   const agendamentosProcessados = useMemo<AgendamentoProcessado[]>(() => {
-    return agendamentos
+    return agendamentosFiltrados
       .map((agendamento) => {
         const dataBrasilia = toZonedTime(parseISO(agendamento.data_hora), TIMEZONE_BRASILIA);
         const infoServicos = obterInfoServicos(agendamento);
@@ -458,7 +540,7 @@ export function CalendarioSemanalNovo() {
         };
       })
       .sort((a, b) => a.inicioMin - b.inicioMin);
-  }, [agendamentos]);
+  }, [agendamentosFiltrados]);
 
   // Agrupar agendamentos por dia
   const agendamentosPorDia = useMemo(() => {
@@ -557,15 +639,31 @@ export function CalendarioSemanalNovo() {
 
   // Navegação
   const navegarAnterior = () => {
-    if (visualizacaoEfetiva === 'dia') setDataBase(prev => subDays(prev, 1));
-    else if (visualizacaoEfetiva === '3dias') setDataBase(prev => subDays(prev, 3));
-    else setDataBase(prev => subWeeks(prev, 1));
+    if (visualizacaoEfetiva === 'dia') {
+      setDataBase((prev) => encontrarDiaAberto(subDays(prev, 1), -1, true));
+      return;
+    }
+
+    if (visualizacaoEfetiva === '3dias') {
+      setDataBase((prev) => encontrarDiaAberto(subDays(prev, 3), -1, true));
+      return;
+    }
+
+    setDataBase((prev) => encontrarDiaAberto(subWeeks(prev, 1), -1, true));
   };
 
   const navegarProximo = () => {
-    if (visualizacaoEfetiva === 'dia') setDataBase(prev => addDays(prev, 1));
-    else if (visualizacaoEfetiva === '3dias') setDataBase(prev => addDays(prev, 3));
-    else setDataBase(prev => addWeeks(prev, 1));
+    if (visualizacaoEfetiva === 'dia') {
+      setDataBase((prev) => encontrarDiaAberto(addDays(prev, 1), 1, true));
+      return;
+    }
+
+    if (visualizacaoEfetiva === '3dias') {
+      setDataBase((prev) => encontrarDiaAberto(addDays(prev, 3), 1, true));
+      return;
+    }
+
+    setDataBase((prev) => encontrarDiaAberto(addWeeks(prev, 1), 1, true));
   };
 
   const labelAnterior = visualizacaoEfetiva === 'dia'
@@ -772,7 +870,8 @@ export function CalendarioSemanalNovo() {
               value={format(dataBase, 'yyyy-MM-dd')}
               onChange={(e) => {
                 if (!e.target.value) return;
-                setDataBase(new Date(`${e.target.value}T12:00:00`));
+                const novaData = new Date(`${e.target.value}T12:00:00`);
+                setDataBase(encontrarDiaAberto(novaData, 1, true));
               }}
               className="hidden md:block px-3 py-2 text-sm font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white"
             />
@@ -884,15 +983,46 @@ export function CalendarioSemanalNovo() {
               </div>
             )}
 
-            {/* Botão Novo */}
+            {!isMobile && (
+              <button
+                onClick={() => setModalNovoAberto(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-90 transition-opacity font-medium text-sm"
+                type="button"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Novo</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3 overflow-x-auto pb-1">
+          <div className="flex min-w-max gap-2">
             <button
-              onClick={() => setModalNovoAberto(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:opacity-90 transition-opacity font-medium text-sm"
               type="button"
+              onClick={() => setProfissionalFiltro("todos")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                profissionalFiltro === "todos"
+                  ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                  : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Novo</span>
+              Todos
             </button>
+            {profissionais.map((profissional) => (
+              <button
+                key={profissional.id}
+                type="button"
+                onClick={() => setProfissionalFiltro(profissional.id)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  profissionalFiltro === profissional.id
+                    ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                }`}
+              >
+                {profissional.nome}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -918,7 +1048,7 @@ export function CalendarioSemanalNovo() {
                 return (
                   <button
                     key={idx}
-                    onClick={() => setDataBase(dia)}
+                    onClick={() => setDataBase(encontrarDiaAberto(dia, 1, true))}
                     className={`flex-none px-4 py-3.5 text-left border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 transition-colors active:scale-[0.99] ${isSelecionado
                       ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
                       : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-900 dark:text-white'
@@ -1173,6 +1303,17 @@ export function CalendarioSemanalNovo() {
           </div>
         )}
       </div>
+
+      {isMobile && (
+        <button
+          type="button"
+          onClick={() => setModalNovoAberto(true)}
+          aria-label="Novo agendamento"
+          className="fixed bottom-6 right-6 z-30 inline-flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg transition hover:scale-105 active:scale-95 dark:bg-white dark:text-zinc-900"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
 
       {/* Modal de Detalhes */}
       <PortalModal
