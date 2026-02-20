@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import Cropper, { Area } from 'react-easy-crop'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -56,7 +57,25 @@ export function EditorLogo({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
   const [processando, setProcessando] = useState(false)
   const [uploadando, setUploadando] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
+  // Bloquear scroll do body quando modal está aberto
+  useEffect(() => {
+    if (imagemParaCrop) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [imagemParaCrop])
 
   // Callback quando o crop é completado
   const onCropComplete = useCallback((_: Area, areaPixels: Area) => {
@@ -252,121 +271,154 @@ export function EditorLogo({
         </p>
       </div>
 
-      {/* Modal de Crop */}
-      <AnimatePresence>
-        {imagemParaCrop && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          >
+      {/* Modal de Crop via Portal */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {imagemParaCrop && (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-lg bg-zinc-900 rounded-2xl overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-                <h3 className="text-lg font-semibold text-white">
-                  Ajustar Logo
-                </h3>
-                <button
-                  onClick={handleCancelarCrop}
-                  className="p-2 text-zinc-400 hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Área de Crop */}
-              <div className="relative h-80 bg-zinc-950">
-                <Cropper
-                  image={imagemParaCrop}
-                  crop={crop}
-                  zoom={zoom}
-                  rotation={rotacao}
-                  aspect={1}
-                  cropShape="round"
-                  showGrid={false}
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
-                  onCropComplete={onCropComplete}
-                />
-              </div>
-
-              {/* Controles */}
-              <div className="p-4 space-y-4 border-t border-zinc-800">
-                {/* Zoom */}
-                <div className="flex items-center gap-4">
-                  <ZoomOut className="w-4 h-4 text-zinc-500" />
-                  <input
-                    type="range"
-                    min={1}
-                    max={3}
-                    step={0.1}
-                    value={zoom}
-                    onChange={(e) => setZoom(Number(e.target.value))}
-                    className="flex-1 h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
-                  />
-                  <ZoomIn className="w-4 h-4 text-zinc-500" />
-                </div>
-
-                {/* Rotação */}
-                <div className="flex items-center gap-4">
-                  <RotateCw className="w-4 h-4 text-zinc-500" />
-                  <input
-                    type="range"
-                    min={0}
-                    max={360}
-                    step={1}
-                    value={rotacao}
-                    onChange={(e) => setRotacao(Number(e.target.value))}
-                    className="flex-1 h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
-                  />
-                  <span className="text-xs text-zinc-500 w-12 text-right">
-                    {rotacao}°
-                  </span>
-                </div>
-
-                {/* Botões */}
-                <div className="flex gap-3 pt-2">
+              <motion.div
+                initial={{ y: 40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 40, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="w-full sm:max-w-lg bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
+                  <div>
+                    <h3 className="text-base font-semibold text-zinc-900 dark:text-white">
+                      Ajustar Logo
+                    </h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      Arraste para reposicionar · Pinça para zoom
+                    </p>
+                  </div>
                   <button
                     onClick={handleCancelarCrop}
-                    className="flex-1 py-3 px-4 bg-zinc-800 text-white rounded-xl font-medium hover:bg-zinc-700 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleConfirmarCrop}
                     disabled={processando}
-                    className="flex-1 py-3 px-4 bg-white text-black rounded-xl font-medium hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
                   >
-                    {processando ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Salvando...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        Aplicar
-                      </>
-                    )}
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
-              </div>
+
+                {/* Área de Crop */}
+                <div className="relative h-72 sm:h-80 bg-zinc-100 dark:bg-zinc-950">
+                  <Cropper
+                    image={imagemParaCrop}
+                    crop={crop}
+                    zoom={zoom}
+                    rotation={rotacao}
+                    aspect={1}
+                    cropShape="round"
+                    showGrid={false}
+                    onCropChange={setCrop}
+                    onZoomChange={setZoom}
+                    onCropComplete={onCropComplete}
+                    classes={{
+                      containerClassName: 'bg-zinc-100 dark:bg-zinc-950',
+                      cropAreaClassName: 'border-[3px] border-white/80 dark:border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]'
+                    }}
+                  />
+                </div>
+
+                {/* Controles */}
+                <div className="px-5 py-4 space-y-4 border-t border-zinc-200 dark:border-zinc-800 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                  {/* Zoom */}
+                  <div className="flex items-center gap-3">
+                    <ZoomOut className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
+                    <input
+                      type="range"
+                      min={1}
+                      max={3}
+                      step={0.05}
+                      value={zoom}
+                      onChange={(e) => setZoom(Number(e.target.value))}
+                      className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none
+                        [&::-webkit-slider-thumb]:w-4
+                        [&::-webkit-slider-thumb]:h-4
+                        [&::-webkit-slider-thumb]:bg-zinc-900
+                        dark:[&::-webkit-slider-thumb]:bg-white
+                        [&::-webkit-slider-thumb]:rounded-full
+                        [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-webkit-slider-thumb]:transition-transform
+                        [&::-webkit-slider-thumb]:hover:scale-110"
+                    />
+                    <ZoomIn className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
+                  </div>
+
+                  {/* Rotação */}
+                  <div className="flex items-center gap-3">
+                    <RotateCw className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      step={1}
+                      value={rotacao}
+                      onChange={(e) => setRotacao(Number(e.target.value))}
+                      className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer
+                        [&::-webkit-slider-thumb]:appearance-none
+                        [&::-webkit-slider-thumb]:w-4
+                        [&::-webkit-slider-thumb]:h-4
+                        [&::-webkit-slider-thumb]:bg-zinc-900
+                        dark:[&::-webkit-slider-thumb]:bg-white
+                        [&::-webkit-slider-thumb]:rounded-full
+                        [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-webkit-slider-thumb]:transition-transform
+                        [&::-webkit-slider-thumb]:hover:scale-110"
+                    />
+                    <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 w-10 text-right shrink-0">
+                      {rotacao}°
+                    </span>
+                  </div>
+
+                  {/* Botões */}
+                  <div className="flex gap-3 pt-1">
+                    <button
+                      onClick={handleCancelarCrop}
+                      disabled={processando}
+                      className="flex-1 py-3 px-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 transition-colors disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleConfirmarCrop}
+                      disabled={processando}
+                      className="flex-1 py-3 px-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {processando ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Aplicar
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Preview e Controles */}
       <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-4">
         <div className="flex items-center gap-4">
         {/* Preview da Logo */}
-        <div 
+        <div
           className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center"
           style={{ backgroundColor: corPrimaria }}
         >

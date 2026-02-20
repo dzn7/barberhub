@@ -4,11 +4,11 @@ import { useState, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Cropper, { Area, Point } from 'react-easy-crop'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Check, 
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Check,
   X,
   Loader2
 } from 'lucide-react'
@@ -43,7 +43,7 @@ export function RecorteImagem({
     setMounted(true)
     document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = 'auto'
+      document.body.style.overflow = ''
     }
   }, [])
 
@@ -77,12 +77,12 @@ export function RecorteImagem({
 
     const imagem = new Image()
     imagem.crossOrigin = 'anonymous'
-    
+
     return new Promise((resolve, reject) => {
       imagem.onload = () => {
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
-        
+
         if (!ctx) {
           reject(new Error('Não foi possível criar contexto do canvas'))
           return
@@ -97,7 +97,7 @@ export function RecorteImagem({
         if (rotacao !== 0) {
           const canvasTemp = document.createElement('canvas')
           const ctxTemp = canvasTemp.getContext('2d')
-          
+
           if (!ctxTemp) {
             reject(new Error('Não foi possível criar contexto temporário'))
             return
@@ -187,15 +187,20 @@ export function RecorteImagem({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col"
+      className="fixed inset-0 z-[100] bg-white/[0.97] dark:bg-black/95 backdrop-blur-md flex flex-col"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-        <h3 className="text-lg font-semibold text-white">Ajustar Foto</h3>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
+        <div>
+          <h3 className="text-base font-semibold text-zinc-900 dark:text-white">Ajustar Foto</h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            Arraste para reposicionar · Pinça para zoom
+          </p>
+        </div>
         <button
           onClick={onCancelar}
           disabled={processando}
-          className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
+          className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
           aria-label="Cancelar recorte"
         >
           <X className="w-5 h-5" />
@@ -203,7 +208,7 @@ export function RecorteImagem({
       </div>
 
       {/* Área de Recorte */}
-      <div className="flex-1 relative bg-zinc-950">
+      <div className="flex-1 relative bg-zinc-100 dark:bg-zinc-950">
         <Cropper
           image={imagemOriginal}
           crop={crop}
@@ -216,27 +221,27 @@ export function RecorteImagem({
           onZoomChange={setZoom}
           onCropComplete={aoCompletarRecorte}
           classes={{
-            containerClassName: 'bg-zinc-950',
-            cropAreaClassName: formatoCircular 
-              ? 'border-2 border-white/50' 
-              : 'border-2 border-white/50 rounded-lg'
+            containerClassName: 'bg-zinc-100 dark:bg-zinc-950',
+            cropAreaClassName: formatoCircular
+              ? 'border-[3px] border-white/80 dark:border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]'
+              : 'border-[3px] border-white/80 dark:border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)] rounded-xl'
           }}
         />
       </div>
 
       {/* Controles */}
-      <div className="p-4 sm:p-6 border-t border-zinc-800 space-y-6 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="px-5 py-5 sm:px-6 border-t border-zinc-200 dark:border-zinc-800 space-y-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
         {/* Controle de Zoom */}
-        <div className="flex items-center gap-4 max-w-md mx-auto w-full">
+        <div className="flex items-center gap-3 max-w-md mx-auto w-full">
           <button
             onClick={diminuirZoom}
             disabled={zoom <= 1 || processando}
-            className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Diminuir zoom"
           >
             <ZoomOut className="w-5 h-5" />
           </button>
-          
+
           <div className="flex-1 flex items-center">
             <input
               type="range"
@@ -246,11 +251,12 @@ export function RecorteImagem({
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
               disabled={processando}
-              className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer
+              className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer
                 [&::-webkit-slider-thumb]:appearance-none
                 [&::-webkit-slider-thumb]:w-4
                 [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:bg-white
+                [&::-webkit-slider-thumb]:bg-zinc-900
+                dark:[&::-webkit-slider-thumb]:bg-white
                 [&::-webkit-slider-thumb]:rounded-full
                 [&::-webkit-slider-thumb]:cursor-pointer
                 [&::-webkit-slider-thumb]:transition-transform
@@ -258,22 +264,22 @@ export function RecorteImagem({
                 disabled:opacity-50"
             />
           </div>
-          
+
           <button
             onClick={aumentarZoom}
             disabled={zoom >= 3 || processando}
-            className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Aumentar zoom"
           >
             <ZoomIn className="w-5 h-5" />
           </button>
 
-          <div className="w-px h-6 bg-zinc-700 hidden sm:block" />
+          <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-700 hidden sm:block" />
 
           <button
             onClick={rotacionarImagem}
             disabled={processando}
-            className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
+            className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
             aria-label="Rotacionar imagem"
           >
             <RotateCcw className="w-5 h-5" />
@@ -283,7 +289,7 @@ export function RecorteImagem({
             <button
               onClick={resetarRotacao}
               disabled={processando}
-              className="px-2 py-1 text-xs text-zinc-500 hover:text-white transition-colors disabled:opacity-50"
+              className="px-2 py-1 text-xs font-mono text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors disabled:opacity-50"
             >
               {rotacao}°
             </button>
@@ -295,14 +301,14 @@ export function RecorteImagem({
           <button
             onClick={onCancelar}
             disabled={processando}
-            className="flex-1 px-4 py-3.5 text-sm font-medium text-white border border-zinc-700 hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-3.5 text-sm font-medium text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={confirmarRecorte}
             disabled={processando || !areaRecortada}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium text-black bg-white hover:bg-zinc-200 rounded-xl transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-medium bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 rounded-xl transition-colors disabled:opacity-50"
           >
             {processando ? (
               <>

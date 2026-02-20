@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/useToast'
-import { obterCategoriasServicos, obterTerminologia } from '@/lib/configuracoes-negocio'
+import { obterTerminologia } from '@/lib/configuracoes-negocio'
 import { TipoNegocio } from '@/lib/tipos-negocio'
 import {
   Scissors,
@@ -35,6 +35,29 @@ interface ServicosMiniGestaoProps {
   onTotalChange?: (total: number) => void
   tipoNegocio?: TipoNegocio
 }
+
+interface CategoriaOption {
+  valor: string
+  label: string
+}
+
+const formatarLabelCategoria = (categoria: string): string =>
+  categoria
+    .split('_')
+    .filter(Boolean)
+    .map(parte => parte.charAt(0).toUpperCase() + parte.slice(1))
+    .join(' ')
+
+const normalizarIdCategoria = (categoria: string): string =>
+  categoria
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s_-]/g, '')
+    .replace(/[-\s]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
 
 /**
  * Categorias de serviços para Barbearias
@@ -146,6 +169,8 @@ export function ServicosMiniGestao({
   const [salvando, setSalvando] = useState(false)
   const [editando, setEditando] = useState<string | null>(null)
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
+  const [novaCategoria, setNovaCategoria] = useState('')
+  const [categoriasCustomizadas, setCategoriasCustomizadas] = useState<CategoriaOption[]>([])
   
   // Categorias e serviços dinâmicos baseados no tipo de negócio
   const { CATEGORIAS, SERVICOS_SUGERIDOS, categoriaInicial, placeholderNome } = useMemo(() => {
@@ -184,6 +209,27 @@ export function ServicosMiniGestao({
     }
   }, [tipoNegocio])
   
+  const categoriasDisponiveis = useMemo<CategoriaOption[]>(() => {
+    const porValor = new Map<string, CategoriaOption>()
+
+    CATEGORIAS.forEach(categoria => {
+      porValor.set(categoria.valor, categoria)
+    })
+
+    servicos.forEach(servico => {
+      const categoria = servico.categoria?.trim()
+      if (!categoria || porValor.has(categoria)) return
+      porValor.set(categoria, { valor: categoria, label: formatarLabelCategoria(categoria) })
+    })
+
+    categoriasCustomizadas.forEach(categoria => {
+      if (porValor.has(categoria.valor)) return
+      porValor.set(categoria.valor, categoria)
+    })
+
+    return Array.from(porValor.values())
+  }, [CATEGORIAS, servicos, categoriasCustomizadas])
+
   const [formulario, setFormulario] = useState({
     nome: '',
     descricao: '',
@@ -193,12 +239,53 @@ export function ServicosMiniGestao({
   })
 
   useEffect(() => {
+    setFormulario(prev => {
+      const categoriaValida = categoriasDisponiveis.some(cat => cat.valor === prev.categoria)
+      if (categoriaValida) return prev
+      return { ...prev, categoria: categoriaInicial }
+    })
+  }, [categoriasDisponiveis, categoriaInicial])
+
+  useEffect(() => {
     buscarServicos()
   }, [tenantId])
 
   useEffect(() => {
     onTotalChange?.(servicos.filter(s => s.ativo).length)
   }, [servicos, onTotalChange])
+
+  const resetarFormulario = () => {
+    setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: categoriaInicial })
+    setNovaCategoria('')
+  }
+
+  const obterLabelCategoria = (categoria: string) =>
+    categoriasDisponiveis.find(cat => cat.valor === categoria)?.label || formatarLabelCategoria(categoria)
+
+  const adicionarCategoriaCustomizada = () => {
+    const nomeCategoria = novaCategoria.trim()
+    if (!nomeCategoria) return
+
+    const valorNormalizado = normalizarIdCategoria(nomeCategoria)
+    if (!valorNormalizado || valorNormalizado.length < 2) {
+      toast({ tipo: 'erro', mensagem: 'Digite um nome válido para a categoria' })
+      return
+    }
+
+    const categoriaExistente = categoriasDisponiveis.find(cat => cat.valor === valorNormalizado)
+    if (categoriaExistente) {
+      setFormulario(prev => ({ ...prev, categoria: categoriaExistente.valor }))
+      setNovaCategoria('')
+      toast({ tipo: 'aviso', mensagem: 'Essa categoria já existe e foi selecionada' })
+      return
+    }
+
+    const categoriaCriada = { valor: valorNormalizado, label: nomeCategoria }
+    setCategoriasCustomizadas(prev => [...prev, categoriaCriada])
+    setFormulario(prev => ({ ...prev, categoria: categoriaCriada.valor }))
+    setNovaCategoria('')
+    toast({ tipo: 'sucesso', mensagem: 'Categoria criada com sucesso' })
+  }
 
   const buscarServicos = async () => {
     try {
@@ -252,7 +339,7 @@ export function ServicosMiniGestao({
       if (error) throw error
 
       setServicos([...servicos, data])
-      setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: categoriaInicial })
+      resetarFormulario()
       setMostrarFormulario(false)
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao adicionar serviço' })
@@ -285,7 +372,7 @@ export function ServicosMiniGestao({
           : s
       ))
       setEditando(null)
-      setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: categoriaInicial })
+      resetarFormulario()
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao atualizar serviço' })
     } finally {
@@ -324,7 +411,7 @@ export function ServicosMiniGestao({
 
   const cancelarEdicao = () => {
     setEditando(null)
-    setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: categoriaInicial })
+    resetarFormulario()
   }
 
   const adicionarSugerido = async (sugerido: typeof SERVICOS_SUGERIDOS[0]) => {
@@ -485,12 +572,34 @@ export function ServicosMiniGestao({
                     onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
                     className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                   >
-                    {CATEGORIAS.map((cat) => (
+                    {categoriasDisponiveis.map((cat) => (
                       <option key={cat.valor} value={cat.valor}>
                         {cat.label}
                       </option>
                     ))}
                   </select>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={novaCategoria}
+                      onChange={(e) => setNovaCategoria(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          adicionarCategoriaCustomizada()
+                        }
+                      }}
+                      placeholder="Nova categoria (ex: terapia capilar)"
+                      className="flex-1 px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={adicionarCategoriaCustomizada}
+                      className="px-3 py-2 text-xs font-medium bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                    >
+                      Criar
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -498,7 +607,7 @@ export function ServicosMiniGestao({
                 <button
                   onClick={() => {
                     setMostrarFormulario(false)
-                    setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
+                    resetarFormulario()
                   }}
                   className="px-4 py-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
                 >
@@ -574,6 +683,19 @@ export function ServicosMiniGestao({
                         className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
                       />
                     </div>
+                    <div className="sm:col-span-2">
+                      <select
+                        value={formulario.categoria}
+                        onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
+                        className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                      >
+                        {categoriasDisponiveis.map((cat) => (
+                          <option key={cat.valor} value={cat.valor}>
+                            {cat.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="flex gap-2 justify-end">
                     <button
@@ -616,7 +738,7 @@ export function ServicosMiniGestao({
                       {servico.duracao} min
                     </span>
                     <span>
-                      Categoria: {CATEGORIAS.find(c => c.valor === servico.categoria)?.label || 'Outro'}
+                      Categoria: {obterLabelCategoria(servico.categoria)}
                     </span>
                   </div>
                 </div>
