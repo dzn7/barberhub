@@ -40,7 +40,7 @@ import { ptBR } from "date-fns/locale";
 export default function DashboardCompleto() {
   const router = useRouter();
   const { user, tenant, carregando: carregandoAuth, sair } = useAuth();
-  const { profissional, estabelecimento, ehNailDesigner } = useTerminologia();
+  const { profissional, estabelecimento } = useTerminologia();
   const [abaAtiva, setAbaAtiva] = useState("visao-geral");
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [filtroAberto, setFiltroAberto] = useState(false);

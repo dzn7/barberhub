@@ -10,7 +10,11 @@
 /**
  * Tipos de negócio suportados pelo sistema
  */
-export type TipoNegocio = 'barbearia' | 'nail_designer'
+export type TipoNegocio =
+  | 'barbearia'
+  | 'nail_designer'
+  | 'lash_designer'
+  | 'cabeleireira'
 
 /**
  * Interface para terminologia específica de cada tipo de negócio
@@ -77,7 +81,12 @@ export interface CategoriaServico {
  * Verifica se um valor é um tipo de negócio válido
  */
 export function ehTipoNegocioValido(valor: string): valor is TipoNegocio {
-  return valor === 'barbearia' || valor === 'nail_designer'
+  return (
+    valor === 'barbearia' ||
+    valor === 'nail_designer' ||
+    valor === 'lash_designer' ||
+    valor === 'cabeleireira'
+  )
 }
 
 /**
@@ -92,8 +101,27 @@ export function tipoNegocioPadrao(): TipoNegocio {
  */
 export const TIPOS_NEGOCIO_DISPONIVEIS: TipoNegocio[] = [
   'barbearia',
-  'nail_designer'
+  'nail_designer',
+  'lash_designer',
+  'cabeleireira'
 ]
+
+/**
+ * Tipos de negócio com tom e gramática feminina no produto
+ */
+export const TIPOS_NEGOCIO_FEMININOS: TipoNegocio[] = [
+  'nail_designer',
+  'lash_designer',
+  'cabeleireira'
+]
+
+/**
+ * Verifica se o tipo pertence ao segmento feminino
+ */
+export function ehTipoNegocioFeminino(tipo: TipoNegocio | string | null | undefined): boolean {
+  if (!tipo || !ehTipoNegocioValido(tipo)) return false
+  return TIPOS_NEGOCIO_FEMININOS.includes(tipo)
+}
 
 /**
  * Informações básicas sobre cada tipo para seleção
@@ -120,5 +148,19 @@ export const OPCOES_TIPO_NEGOCIO: OpcaoTipoNegocio[] = [
     descricao: 'Unhas em gel, alongamentos, nail art, manicure',
     imagem: '/naildesign.png',
     cor: '#ec4899'
+  },
+  {
+    tipo: 'lash_designer',
+    titulo: 'Lash Designer',
+    descricao: 'Extensão de cílios, lash lifting, volume brasileiro',
+    imagem: '/naildesign.png',
+    cor: '#f43f5e'
+  },
+  {
+    tipo: 'cabeleireira',
+    titulo: 'Cabeleireira',
+    descricao: 'Corte feminino, escova, hidratação, coloração',
+    imagem: '/barber.png',
+    cor: '#db2777'
   }
 ]

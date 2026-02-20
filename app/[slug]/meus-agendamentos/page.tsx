@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { format, parseISO, isPast, isFuture, isToday } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { TipoNegocio } from '@/lib/tipos-negocio'
+import { TipoNegocio, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
 import { obterTerminologia } from '@/lib/configuracoes-negocio'
 
 interface Tenant {
@@ -357,6 +357,7 @@ export default function PaginaMeusAgendamentos() {
   }
 
   const terminologia = obterTerminologia(tenant.tipo_negocio)
+  const segmentoFeminino = ehTipoNegocioFeminino(tenant.tipo_negocio)
 
   // Separar agendamentos futuros e passados
   const agendamentosFuturos = agendamentos.filter(ag => {
@@ -407,7 +408,7 @@ export default function PaginaMeusAgendamentos() {
                   className="w-10 h-10 rounded-xl flex items-center justify-center"
                   style={{ backgroundColor: cores.destaque + '20' }}
                 >
-                  {tenant.tipo_negocio === 'nail_designer' ? (
+                  {segmentoFeminino ? (
                     <Hand className="w-5 h-5" style={{ color: cores.secundaria }} />
                   ) : (
                     <Scissors className="w-5 h-5" style={{ color: cores.secundaria }} />
@@ -689,7 +690,7 @@ export default function PaginaMeusAgendamentos() {
                                 className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                                 style={{ backgroundColor: cores.destaque + '15' }}
                               >
-                                {tenant.tipo_negocio === 'nail_designer' ? (
+                                {segmentoFeminino ? (
                                   <Hand className="w-5 h-5" style={{ color: cores.destaque }} />
                                 ) : (
                                   <Scissors className="w-5 h-5" style={{ color: cores.destaque }} />

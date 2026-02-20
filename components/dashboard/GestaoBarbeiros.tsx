@@ -9,7 +9,7 @@ import { RecorteImagem } from "@/components/ui/recorte-imagem";
 import { useToast } from "@/hooks/useToast";
 import { useTerminologia } from "@/hooks/useTerminologia";
 import { obterEspecialidadesSugeridas, obterEmojiPrincipal } from "@/lib/configuracoes-negocio";
-import { TipoNegocio } from "@/lib/tipos-negocio";
+import { TipoNegocio, ehTipoNegocioFeminino } from "@/lib/tipos-negocio";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -60,6 +60,7 @@ export function GestaoBarbeiros() {
   
   // Obtém tipo de negócio e especialidades dinâmicas
   const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
+  const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoNegocio);
   const especialidadesSugeridas = useMemo(() => obterEspecialidadesSugeridas(tipoNegocio), [tipoNegocio]);
   const emoji = useMemo(() => obterEmojiPrincipal(tipoNegocio), [tipoNegocio]);
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([]);
@@ -366,7 +367,7 @@ export function GestaoBarbeiros() {
           className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:opacity-90 transition-opacity"
         >
           <Plus className="w-5 h-5" />
-          Nov{tipoNegocio === 'nail_designer' ? 'a' : 'o'} {terminologia.profissional.singular}
+          Nov{ehSegmentoFeminino ? 'a' : 'o'} {terminologia.profissional.singular}
         </button>
       </div>
 
@@ -778,7 +779,7 @@ export function GestaoBarbeiros() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                      {terminologia.profissional.singular} Criad{tipoNegocio === 'nail_designer' ? 'a' : 'o'} com Sucesso!
+                      {terminologia.profissional.singular} Criad{ehSegmentoFeminino ? 'a' : 'o'} com Sucesso!
                     </h3>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
                       Envie as instruções de acesso para {nomeBarbeiroToken}
@@ -823,7 +824,7 @@ export function GestaoBarbeiros() {
                   <div className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
 {`Olá ${nomeBarbeiroToken}! 👋
 
-Você foi cadastrad${tipoNegocio === 'nail_designer' ? 'a' : 'o'} como ${terminologia.profissional.singular.toLowerCase()} ${tipoNegocio === 'nail_designer' ? 'no' : 'na'} *${tenant?.nome || `noss${tipoNegocio === 'nail_designer' ? 'o' : 'a'} ${terminologia.estabelecimento.singular.toLowerCase()}`}*! 🎉
+Você foi cadastrad${ehSegmentoFeminino ? 'a' : 'o'} como ${terminologia.profissional.singular.toLowerCase()} ${ehSegmentoFeminino ? 'no' : 'na'} *${tenant?.nome || `noss${ehSegmentoFeminino ? 'o' : 'a'} ${terminologia.estabelecimento.singular.toLowerCase()}`}*! 🎉
 
 Para acessar seu painel de ${terminologia.profissional.singular.toLowerCase()}, siga os passos:
 
@@ -847,7 +848,7 @@ Qualquer dúvida, estamos à disposição! ${emoji}`}
                   onClick={() => {
                     const mensagem = `Olá ${nomeBarbeiroToken}! 👋
 
-Você foi cadastrad${tipoNegocio === 'nail_designer' ? 'a' : 'o'} como ${terminologia.profissional.singular.toLowerCase()} ${tipoNegocio === 'nail_designer' ? 'no' : 'na'} *${tenant?.nome || `noss${tipoNegocio === 'nail_designer' ? 'o' : 'a'} ${terminologia.estabelecimento.singular.toLowerCase()}`}*! 🎉
+Você foi cadastrad${ehSegmentoFeminino ? 'a' : 'o'} como ${terminologia.profissional.singular.toLowerCase()} ${ehSegmentoFeminino ? 'no' : 'na'} *${tenant?.nome || `noss${ehSegmentoFeminino ? 'o' : 'a'} ${terminologia.estabelecimento.singular.toLowerCase()}`}*! 🎉
 
 Para acessar seu painel de ${terminologia.profissional.singular.toLowerCase()}, siga os passos:
 
@@ -885,7 +886,7 @@ Qualquer dúvida, estamos à disposição! ${emoji}`;
                 {/* Info */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
                   <p className="text-xs text-blue-700 dark:text-blue-300">
-                    💡 <strong>Dica:</strong> Cole esta mensagem diretamente no WhatsApp d{tipoNegocio === 'nail_designer' ? 'a' : 'o'} {terminologia.profissional.singular.toLowerCase()} para facilitar o acesso.
+                    💡 <strong>Dica:</strong> Cole esta mensagem diretamente no WhatsApp d{ehSegmentoFeminino ? 'a' : 'o'} {terminologia.profissional.singular.toLowerCase()} para facilitar o acesso.
                   </p>
                 </div>
               </div>

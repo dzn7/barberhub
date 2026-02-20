@@ -29,6 +29,7 @@ import {
   useDiasFuncionamento
 } from '@/hooks/useHorariosDisponiveis'
 import { obterTerminologia } from '@/lib/configuracoes-negocio'
+import { TipoNegocio } from '@/lib/tipos-negocio'
 
 interface Tenant {
   id: string
@@ -38,7 +39,7 @@ interface Tenant {
   cor_primaria: string
   cor_secundaria: string
   cor_destaque: string
-  tipo_negocio: 'barbearia' | 'nail_designer'
+  tipo_negocio: TipoNegocio
   endereco: string | null
   cidade: string | null
   whatsapp: string | null

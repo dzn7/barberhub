@@ -12,7 +12,7 @@ import { PreviewSite } from "@/components/configuracao/PreviewSite";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTerminologia } from "@/hooks/useTerminologia";
-import { TipoNegocio } from "@/lib/tipos-negocio";
+import { TipoNegocio, ehTipoNegocioFeminino } from "@/lib/tipos-negocio";
 
 interface ConfiguracaoBarbeariaProps {
   onSalvar?: () => void;
@@ -73,7 +73,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
   const { tenant, atualizarTenant } = useAuth();
   const { terminologia } = useTerminologia();
   const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
-  const ehNail = tipoNegocio === 'nail_designer';
+  const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoNegocio);
   const inputFileRef = useRef<HTMLInputElement>(null);
   
   const [carregando, setCarregando] = useState(false);
@@ -215,7 +215,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
 
   // Aplicar paleta predefinida
   // Obter cores baseadas no tipo de negócio
-  const coresPredefinidas = ehNail ? CORES_NAIL_DESIGNER : CORES_BARBEARIA;
+  const coresPredefinidas = ehSegmentoFeminino ? CORES_NAIL_DESIGNER : CORES_BARBEARIA;
   
   const aplicarPaleta = (paleta: typeof CORES_BARBEARIA[0]) => {
     setDados((prev) => ({
@@ -538,7 +538,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
               Tipografia
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              Escolha as fontes que representam {ehNail ? 'seu estúdio' : 'sua barbearia'}
+              Escolha as fontes que representam {ehSegmentoFeminino ? 'seu estúdio' : 'sua barbearia'}
             </p>
 
             <div className="space-y-4">
@@ -616,13 +616,13 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                   className={`text-lg font-bold ${obterClasseFonte(dados.fonte_titulos)}`}
                   style={{ color: dados.cor_texto }}
                 >
-                  {dados.nome || (ehNail ? "Seu Estúdio" : "Sua Barbearia")}
+                  {dados.nome || (ehSegmentoFeminino ? "Seu Estúdio" : "Sua Barbearia")}
                 </h4>
                 <p 
                   className={`text-sm opacity-80 ${obterClasseFonte(dados.fonte_principal)}`}
                   style={{ color: dados.cor_texto }}
                 >
-                  {ehNail ? 'Bem-vinda ao nosso espaço' : 'Bem-vindo ao nosso espaço'}
+                  {ehSegmentoFeminino ? 'Bem-vinda ao nosso espaço' : 'Bem-vindo ao nosso espaço'}
                 </p>
               </div>
 
@@ -636,13 +636,13 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     className={`font-medium text-sm ${obterClasseFonte(dados.fonte_principal)}`}
                     style={{ color: dados.cor_primaria }}
                   >
-                    {ehNail ? '💅 Unhas em Gel' : '✂️ Corte Masculino'}
+                    {ehSegmentoFeminino ? '💅 Unhas em Gel' : '✂️ Corte Masculino'}
                   </p>
                   <p 
                     className="text-xs opacity-70"
                     style={{ color: dados.cor_primaria }}
                   >
-                    {ehNail ? '60 min • R$ 120,00' : '30 min • R$ 35,00'}
+                    {ehSegmentoFeminino ? '60 min • R$ 120,00' : '30 min • R$ 35,00'}
                   </p>
                 </div>
 
@@ -654,13 +654,13 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     className={`font-medium text-sm ${obterClasseFonte(dados.fonte_principal)}`}
                     style={{ color: dados.cor_primaria }}
                   >
-                    {ehNail ? '✨ Esmaltação' : '🧔 Barba Completa'}
+                    {ehSegmentoFeminino ? '✨ Esmaltação' : '🧔 Barba Completa'}
                   </p>
                   <p 
                     className="text-xs opacity-70"
                     style={{ color: dados.cor_primaria }}
                   >
-                    {ehNail ? '30 min • R$ 45,00' : '20 min • R$ 25,00'}
+                    {ehSegmentoFeminino ? '30 min • R$ 45,00' : '20 min • R$ 25,00'}
                   </p>
                 </div>
 
@@ -685,19 +685,19 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
               <Store className="w-5 h-5" />
-              Dados {ehNail ? 'do' : 'da'} {terminologia.estabelecimento.singular}
+              Dados {ehSegmentoFeminino ? 'do' : 'da'} {terminologia.estabelecimento.singular}
             </h3>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Nome {ehNail ? 'do' : 'da'} {terminologia.estabelecimento.singular}
+                  Nome {ehSegmentoFeminino ? 'do' : 'da'} {terminologia.estabelecimento.singular}
                 </label>
                 <input
                   type="text"
                   value={dados.nome}
                   onChange={(e) => setDados({ ...dados, nome: e.target.value })}
-                  placeholder={ehNail ? 'Ex: Studio Nails Premium' : 'Ex: Barbearia Premium'}
+                  placeholder={ehSegmentoFeminino ? 'Ex: Studio Nails Premium' : 'Ex: Barbearia Premium'}
                   className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                 />
               </div>
@@ -712,7 +712,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     type="email"
                     value={dados.email}
                     onChange={(e) => setDados({ ...dados, email: e.target.value })}
-                    placeholder={ehNail ? 'contato@seuestudio.com' : 'contato@barbearia.com'}
+                    placeholder={ehSegmentoFeminino ? 'contato@seuestudio.com' : 'contato@barbearia.com'}
                     className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                   />
                 </div>
@@ -764,7 +764,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                     type="text"
                     value={dados.instagram}
                     onChange={(e) => setDados({ ...dados, instagram: e.target.value })}
-                    placeholder={ehNail ? '@seuestudionails' : '@suabarbearia'}
+                    placeholder={ehSegmentoFeminino ? '@seuestudionails' : '@suabarbearia'}
                     className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
                   />
                 </div>

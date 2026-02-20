@@ -25,7 +25,7 @@ interface TenantBarbeiro {
   id: string
   slug: string
   nome: string
-  tipo_negocio: 'barbearia' | 'nail_designer'
+  tipo_negocio: 'barbearia' | 'nail_designer' | 'lash_designer' | 'cabeleireira'
   logo_url: string | null
   cor_primaria: string
   cor_secundaria: string

@@ -3,7 +3,11 @@
 export type PlanoAssinatura = 'trial' | 'basico' | 'profissional' | 'enterprise'
 export type StatusAssinatura = 'ativa' | 'pendente' | 'cancelada' | 'expirada' | 'suspensa'
 export type RoleUsuario = 'super_admin' | 'owner' | 'admin' | 'manager' | 'operator'
-export type TipoNegocio = 'barbearia' | 'nail_designer'
+export type TipoNegocio =
+  | 'barbearia'
+  | 'nail_designer'
+  | 'lash_designer'
+  | 'cabeleireira'
 
 export interface Tenant {
   id: string

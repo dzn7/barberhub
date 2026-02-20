@@ -21,7 +21,7 @@ import {
   ClipboardList
 } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/WhatsAppIcon'
-import { TipoNegocio } from '@/lib/tipos-negocio'
+import { TipoNegocio, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
 import { obterTerminologia, obterIconePrincipal } from '@/lib/configuracoes-negocio'
 import { Hand } from 'lucide-react'
 
@@ -162,6 +162,7 @@ export default function PaginaBarbearia() {
   const whatsappLink = tenant.whatsapp 
     ? `https://wa.me/55${tenant.whatsapp.replace(/\D/g, '')}` 
     : null
+  const segmentoFeminino = ehTipoNegocioFeminino(tenant.tipo_negocio)
 
   return (
     <div 
@@ -200,7 +201,7 @@ export default function PaginaBarbearia() {
                 className="w-24 h-24 mx-auto mb-6 rounded-2xl flex items-center justify-center"
                 style={{ backgroundColor: cores.destaque + '20' }}
               >
-                {tenant.tipo_negocio === 'nail_designer' ? (
+                {segmentoFeminino ? (
                   <Hand className="w-10 h-10" style={{ color: cores.secundaria }} />
                 ) : (
                   <Scissors className="w-10 h-10" style={{ color: cores.secundaria }} />
@@ -311,7 +312,7 @@ export default function PaginaBarbearia() {
                 className="w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: cores.destaque + '20' }}
               >
-                {tenant.tipo_negocio === 'nail_designer' ? (
+                {segmentoFeminino ? (
                   <Hand className="w-5 h-5" style={{ color: cores.secundaria }} />
                 ) : (
                   <Scissors className="w-5 h-5" style={{ color: cores.secundaria }} />

@@ -33,7 +33,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { obterCategoriasEspecialidades, obterTerminologia } from '@/lib/configuracoes-negocio'
-import { TipoNegocio } from '@/lib/tipos-negocio'
+import { TipoNegocio, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
 
 interface Barbeiro {
   id: string
@@ -86,7 +86,7 @@ export function CadastroBarbeirosOnboarding({
   // Obter terminologia e categorias dinâmicas baseadas no tipo de negócio
   const terminologia = obterTerminologia(tipoNegocio)
   const categoriasEspecialidades = obterCategoriasEspecialidades(tipoNegocio)
-  const ehNail = tipoNegocio === 'nail_designer'
+  const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoNegocio)
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
   const [carregando, setCarregando] = useState(true)
   const [salvando, setSalvando] = useState(false)
@@ -97,7 +97,13 @@ export function CadastroBarbeirosOnboarding({
   const [editando, setEditando] = useState<string | null>(null)
   const [uploadandoFoto, setUploadandoFoto] = useState(false)
   const inputFotoRef = useRef<HTMLInputElement>(null)
-  const [categoriaAberta, setCategoriaAberta] = useState<string | null>(tipoNegocio === 'nail_designer' ? 'Alongamento' : 'Cortes')
+  const [categoriaAberta, setCategoriaAberta] = useState<string | null>(
+    tipoNegocio === 'nail_designer'
+      ? 'Alongamento'
+      : tipoNegocio === 'lash_designer'
+        ? 'Extensão de Cílios'
+        : 'Cortes'
+  )
   const [novaEspecialidade, setNovaEspecialidade] = useState('')
   const [especialidadesCustomizadas, setEspecialidadesCustomizadas] = useState<string[]>([])
   
@@ -421,7 +427,7 @@ export function CadastroBarbeirosOnboarding({
       setTokenGerado(novoToken)
       setEtapa('token')
       resetarFormulario()
-      toast({ tipo: 'sucesso', mensagem: `${terminologia.profissional.singular} adicionado${ehNail ? 'a' : ''} com sucesso!` })
+      toast({ tipo: 'sucesso', mensagem: `${terminologia.profissional.singular} adicionado${ehSegmentoFeminino ? 'a' : ''} com sucesso!` })
     } catch (erro: any) {
       console.error('[CadastroBarbeiros] Erro inesperado:', erro)
       toast({ tipo: 'erro', mensagem: erro?.message || `Erro ao adicionar ${terminologia.profissional.singular.toLowerCase()}` })
@@ -455,7 +461,7 @@ export function CadastroBarbeirosOnboarding({
       setEditando(null)
       setEtapa('lista')
       resetarFormulario()
-      toast({ tipo: 'sucesso', mensagem: `${terminologia.profissional.singular} atualizado${ehNail ? 'a' : ''}` })
+      toast({ tipo: 'sucesso', mensagem: `${terminologia.profissional.singular} atualizado${ehSegmentoFeminino ? 'a' : ''}` })
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: `Erro ao atualizar ${terminologia.profissional.singular.toLowerCase()}` })
     } finally {
@@ -469,7 +475,7 @@ export function CadastroBarbeirosOnboarding({
       toast({ tipo: 'erro', mensagem: 'Não é possível remover o proprietário' })
       return
     }
-    if (!confirm(`Remover ${ehNail ? 'esta' : 'este'} ${terminologia.profissional.singular.toLowerCase()}?`)) return
+    if (!confirm(`Remover ${ehSegmentoFeminino ? 'esta' : 'este'} ${terminologia.profissional.singular.toLowerCase()}?`)) return
 
     try {
       const { error } = await supabase
@@ -1006,7 +1012,7 @@ function EtapaPerguntaEquipe({
   tipoNegocio: TipoNegocio
   terminologia: ReturnType<typeof obterTerminologia>
 }) {
-  const ehNail = tipoNegocio === 'nail_designer'
+  const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoNegocio)
   const profissionalPlural = terminologia.profissional.plural.toLowerCase()
   const profissionalSingular = terminologia.profissional.singular.toLowerCase()
   const artigoPlural = terminologia.profissional.artigoPlural
@@ -1026,10 +1032,10 @@ function EtapaPerguntaEquipe({
         </div>
         
         <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mb-2">
-          Você tem outr{ehNail ? 'as' : 'os'} {profissionalPlural} na equipe?
+          Você tem outr{ehSegmentoFeminino ? 'as' : 'os'} {profissionalPlural} na equipe?
         </h3>
         <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8 max-w-md mx-auto">
-          Cada {profissionalSingular} terá seu próprio acesso pelo <strong>/colaborador</strong> e será notificad{ehNail ? 'a' : 'o'} via WhatsApp com o link e código de acesso.
+          Cada {profissionalSingular} terá seu próprio acesso pelo <strong>/colaborador</strong> e será notificad{ehSegmentoFeminino ? 'a' : 'o'} via WhatsApp com o link e código de acesso.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -1044,7 +1050,7 @@ function EtapaPerguntaEquipe({
             onClick={onNao}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           >
-            Não, trabalho sozinh{ehNail ? 'a' : 'o'}
+            Não, trabalho sozinh{ehSegmentoFeminino ? 'a' : 'o'}
           </button>
         </div>
       </div>
@@ -1054,7 +1060,7 @@ function EtapaPerguntaEquipe({
         <div className="text-sm">
           <p className="text-emerald-700 dark:text-emerald-300 font-medium mb-1">Notificação automática via WhatsApp</p>
           <p className="text-emerald-600/80 dark:text-emerald-200/70">
-            Cada {profissionalSingular} cadastrad{ehNail ? 'a' : 'o'} receberá uma mensagem no WhatsApp com o link de acesso e código único.
+            Cada {profissionalSingular} cadastrad{ehSegmentoFeminino ? 'a' : 'o'} receberá uma mensagem no WhatsApp com o link de acesso e código único.
           </p>
         </div>
       </div>

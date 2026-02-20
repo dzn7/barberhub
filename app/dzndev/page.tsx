@@ -11,7 +11,7 @@ import {
   Scissors, Building2, FileText, Power, Download, UserCog, Bot,
   AlertCircle, Globe, ChevronDown, MoreVertical, Copy, Mail,
   MessageSquare, CreditCard, Settings, Activity, TrendingUp,
-  Pause, Play, RotateCcw, Link2, QrCode, Bell, X, Plus, Minus,
+  Pause, Play, RotateCcw, Link2, QrCode, Bell, X, Plus, Minus, Sparkles,
   Receipt, Key, Send, CalendarPlus, CalendarMinus, Banknote
 } from 'lucide-react'
 import { LogoMarca } from '@/components/ui/logo-marca'
@@ -23,12 +23,13 @@ import {
 } from '@/components/superadmin'
 import { ModalPagamentoPix } from '@/components/pagamentos'
 import { Hand } from 'lucide-react'
+import { TipoNegocio } from '@/lib/tipos-negocio'
 
 const ADMIN_USUARIO = 'dzndev'
 const ADMIN_SENHA = '1503'
 
 type AbaAtiva = 'visao-geral' | 'negocios' | 'cobrancas' | 'usuarios' | 'relatorios' | 'bot' | 'infraestrutura' | 'backup'
-type FiltroTipoNegocio = 'todos' | 'barbearia' | 'nail_designer'
+type FiltroTipoNegocio = 'todos' | TipoNegocio
 
 interface Tenant {
   id: string
@@ -45,7 +46,7 @@ interface Tenant {
   trial_fim: string | null
   criado_em: string
   atualizado_em: string
-  tipo_negocio: 'barbearia' | 'nail_designer'
+  tipo_negocio: TipoNegocio
   total_barbeiros: number
   total_servicos: number
   total_agendamentos: number
@@ -69,6 +70,8 @@ interface Estatisticas {
   totalBarbeiros: number
   totalBarbearias: number
   totalNailDesigners: number
+  totalLashDesigners: number
+  totalCabeleireiras: number
 }
 
 interface StatusBot {
@@ -83,6 +86,37 @@ interface MetricasInfra {
     tabelas: { total_registros: number }
   }
   r2?: { tamanho_total_mb: number; total_objetos: number; percentual: number }
+}
+
+function obterCorTipoNegocio(tipo: TipoNegocio) {
+  if (tipo === 'barbearia') {
+    return {
+      badge: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600',
+      iconBg: 'bg-blue-100 dark:bg-blue-900/30',
+      iconText: 'text-blue-500',
+      solid: 'bg-blue-500'
+    }
+  }
+
+  return {
+    badge: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600',
+    iconBg: 'bg-pink-100 dark:bg-pink-900/30',
+    iconText: 'text-pink-500',
+    solid: 'bg-pink-500'
+  }
+}
+
+function obterRotuloTipoNegocio(tipo: TipoNegocio) {
+  if (tipo === 'barbearia') return 'Barber'
+  if (tipo === 'nail_designer') return 'Nail'
+  if (tipo === 'lash_designer') return 'Lash'
+  return 'Cabelo'
+}
+
+function obterIconeTipoNegocio(tipo: TipoNegocio) {
+  if (tipo === 'nail_designer') return Hand
+  if (tipo === 'lash_designer') return Sparkles
+  return Scissors
 }
 
 /**
@@ -195,6 +229,8 @@ export default function PainelSuperAdmin() {
         totalBarbeiros: tenantsComStats.reduce((acc, t) => acc + t.total_barbeiros, 0),
         totalBarbearias: tenantsComStats.filter(t => t.tipo_negocio === 'barbearia' || !t.tipo_negocio).length,
         totalNailDesigners: tenantsComStats.filter(t => t.tipo_negocio === 'nail_designer').length,
+        totalLashDesigners: tenantsComStats.filter(t => t.tipo_negocio === 'lash_designer').length,
+        totalCabeleireiras: tenantsComStats.filter(t => t.tipo_negocio === 'cabeleireira').length,
       })
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -422,9 +458,11 @@ export default function PainelSuperAdmin() {
       t.slug.toLowerCase().includes(busca.toLowerCase())
     
     // Filtro por tipo de negócio
-    const matchTipoNegocio = filtroTipoNegocio === 'todos' || 
-      (filtroTipoNegocio === 'barbearia' && (t.tipo_negocio === 'barbearia' || !t.tipo_negocio)) ||
-      (filtroTipoNegocio === 'nail_designer' && t.tipo_negocio === 'nail_designer')
+    const matchTipoNegocio = filtroTipoNegocio === 'todos'
+      ? true
+      : filtroTipoNegocio === 'barbearia'
+        ? (t.tipo_negocio === 'barbearia' || !t.tipo_negocio)
+        : t.tipo_negocio === filtroTipoNegocio
     
     if (!matchTipoNegocio) return false
     if (filtroPlano === 'todos') return matchBusca
@@ -635,10 +673,12 @@ export default function PainelSuperAdmin() {
             {abaAtiva === 'visao-geral' && (
               <motion.div key="visao-geral" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
                 {/* Cards por Tipo de Negócio */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                   <CardStat titulo="Total Negócios" valor={estatisticas?.totalTenants || 0} icone={Store} cor="bg-zinc-900 dark:bg-white" corIcone="text-white dark:text-zinc-900" />
                   <CardStat titulo="Barbearias" valor={estatisticas?.totalBarbearias || 0} icone={Scissors} cor="bg-blue-500" />
                   <CardStat titulo="Nail Designers" valor={estatisticas?.totalNailDesigners || 0} icone={Hand} cor="bg-pink-500" />
+                  <CardStat titulo="Lash Designers" valor={estatisticas?.totalLashDesigners || 0} icone={Sparkles} cor="bg-pink-500" />
+                  <CardStat titulo="Cabeleireiras" valor={estatisticas?.totalCabeleireiras || 0} icone={Scissors} cor="bg-pink-500" />
                   <CardStat titulo="Planos Pagos" valor={estatisticas?.planosPagos || 0} icone={CheckCircle} cor="bg-emerald-500" />
                 </div>
 
@@ -756,6 +796,32 @@ export default function PainelSuperAdmin() {
                       <span className="hidden sm:inline">Nail Designers</span>
                       <span className="sm:hidden">Nail</span>
                       <span className="text-xs opacity-60">({estatisticas?.totalNailDesigners || 0})</span>
+                    </button>
+                    <button
+                      onClick={() => setFiltroTipoNegocio('lash_designer')}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                        filtroTipoNegocio === 'lash_designer'
+                          ? 'bg-pink-500 text-white shadow-sm'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-pink-50 dark:hover:bg-pink-900/20'
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="hidden sm:inline">Lash Designers</span>
+                      <span className="sm:hidden">Lash</span>
+                      <span className="text-xs opacity-60">({estatisticas?.totalLashDesigners || 0})</span>
+                    </button>
+                    <button
+                      onClick={() => setFiltroTipoNegocio('cabeleireira')}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                        filtroTipoNegocio === 'cabeleireira'
+                          ? 'bg-pink-500 text-white shadow-sm'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-pink-50 dark:hover:bg-pink-900/20'
+                      }`}
+                    >
+                      <Scissors className="w-4 h-4" />
+                      <span className="hidden sm:inline">Cabeleireiras</span>
+                      <span className="sm:hidden">Cabelo</span>
+                      <span className="text-xs opacity-60">({estatisticas?.totalCabeleireiras || 0})</span>
                     </button>
                   </div>
                 </div>
@@ -924,17 +990,14 @@ export default function PainelSuperAdmin() {
                       .map(tenant => {
                         const dataVencimento = tenant.data_proximo_pagamento || tenant.trial_fim
                         const vencido = dataVencimento ? new Date(dataVencimento) <= new Date() : false
+                        const tipoAtual = tenant.tipo_negocio || 'barbearia'
+                        const tipoVisual = obterCorTipoNegocio(tipoAtual)
+                        const IconeTipo = obterIconeTipoNegocio(tipoAtual)
                         return (
                           <div key={tenant.id} className="p-4 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
                             <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                tenant.tipo_negocio === 'nail_designer' ? 'bg-pink-100 dark:bg-pink-900/30' : 'bg-blue-100 dark:bg-blue-900/30'
-                              }`}>
-                                {tenant.tipo_negocio === 'nail_designer' ? (
-                                  <Hand className="w-5 h-5 text-pink-500" />
-                                ) : (
-                                  <Scissors className="w-5 h-5 text-blue-500" />
-                                )}
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tipoVisual.iconBg}`}>
+                                <IconeTipo className={`w-5 h-5 ${tipoVisual.iconText}`} />
                               </div>
                               <div>
                                 <p className="font-medium text-zinc-900 dark:text-white">{tenant.nome}</p>
@@ -1320,6 +1383,10 @@ function CardTenantItem({
   const buttonRef = useRef<HTMLButtonElement>(null)
   const plano = PLANOS_CONFIG[tenant.plano] || PLANOS_CONFIG.trial
   const diasTrial = tenant.trial_fim ? differenceInDays(new Date(tenant.trial_fim), new Date()) : null
+  const tipoAtual = tenant.tipo_negocio || 'barbearia'
+  const tipoVisual = obterCorTipoNegocio(tipoAtual)
+  const rotuloTipo = obterRotuloTipoNegocio(tipoAtual)
+  const IconeTipo = obterIconeTipoNegocio(tipoAtual)
 
   const abrirMenu = () => {
     if (buttonRef.current) {
@@ -1372,38 +1439,26 @@ function CardTenantItem({
         !tenant.ativo ? 'opacity-60 grayscale-[30%]' : 'hover:shadow-lg hover:shadow-zinc-200/50 dark:hover:shadow-zinc-900/50'
       } border-zinc-200 dark:border-zinc-800`}
       role="article"
-      aria-label={`Barbearia ${tenant.nome}`}
+      aria-label={`Negócio ${tenant.nome}`}
     >
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="relative w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
             {tenant.logo_url ? (
               <Image src={tenant.logo_url} alt={`Logo de ${tenant.nome}`} width={48} height={48} className="object-cover w-full h-full" unoptimized />
-            ) : tenant.tipo_negocio === 'nail_designer' ? (
-              <Hand className="w-6 h-6 text-pink-400" aria-hidden="true" />
             ) : (
-              <Scissors className="w-6 h-6 text-blue-400" aria-hidden="true" />
+              <IconeTipo className={`w-6 h-6 ${tipoVisual.iconText}`} aria-hidden="true" />
             )}
             {/* Badge de tipo */}
-            <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center ${
-              tenant.tipo_negocio === 'nail_designer' ? 'bg-pink-500' : 'bg-blue-500'
-            }`}>
-              {tenant.tipo_negocio === 'nail_designer' ? (
-                <Hand className="w-2.5 h-2.5 text-white" />
-              ) : (
-                <Scissors className="w-2.5 h-2.5 text-white" />
-              )}
+            <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center ${tipoVisual.solid}`}>
+              <IconeTipo className="w-2.5 h-2.5 text-white" />
             </div>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{tenant.nome}</h3>
-              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
-                tenant.tipo_negocio === 'nail_designer' 
-                  ? 'bg-pink-100 dark:bg-pink-900/30 text-pink-600' 
-                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
-              }`}>
-                {tenant.tipo_negocio === 'nail_designer' ? 'Nail' : 'Barber'}
+              <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${tipoVisual.badge}`}>
+                {rotuloTipo}
               </span>
             </div>
             <p className="text-xs text-zinc-500 truncate">/{tenant.slug}</p>

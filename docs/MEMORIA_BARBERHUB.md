@@ -80,11 +80,21 @@ No cadastro (`app/registrar/page.tsx`), após criar o usuário no Supabase Auth,
 
 - `rpc('criar_novo_tenant', { p_slug, p_nome, p_email, p_telefone, p_user_id, p_tipo_negocio })`
 
+Tipos oficiais de `p_tipo_negocio`/`tenants.tipo_negocio`:
+- `barbearia`
+- `nail_designer`
+- `lash_designer`
+- `cabeleireira`
+
 A função do banco (ver seção de “funções”) cria:
 - registro em `tenants`
 - registro em `proprietarios` (vinculando `auth.uid()`/`user_id` ao tenant)
 - registro padrão em `configuracoes_barbearia`
 - serviços exemplo + categorias exemplo
+
+No cadastro web, o tema visual muda conforme tipo:
+- `barbearia`: tom neutro atual
+- `nail_designer`, `lash_designer`, `cabeleireira`: variação rosa suave (segmento feminino)
 
 ## 5) Modelo de dados (Supabase / Postgres — schema `public`)
 
@@ -174,7 +184,11 @@ Funções observadas e relevantes:
   - cria proprietário (se `p_user_id` não nulo)
   - cria `configuracoes_barbearia`
   - cria serviços e categorias exemplo
-  - possui versão com `p_tipo_negocio` (ex.: `nail_designer` gera serviços/categorias diferentes)
+  - possui versão com `p_tipo_negocio` com seed por tipo:
+    - `barbearia`
+    - `nail_designer`
+    - `lash_designer`
+    - `cabeleireira`
 
 - `usuario_pertence_tenant(tid uuid) RETURNS boolean` (**SECURITY DEFINER**)
   - retorna `EXISTS` em `proprietarios` com `user_id = auth.uid()` e `tenant_id = tid`
@@ -242,6 +256,7 @@ Pasta `bot-barberhub/`:
 - Escuta mudanças (Realtime/polling) em:
   - `tenants` (boas-vindas quando WhatsApp é cadastrado)
   - `agendamentos` (confirmação, cancelamento, remarcação)
+- Terminologia dinâmica por tipo de negócio (`barbearia`, `nail_designer`, `lash_designer`, `cabeleireira`)
 - Registra idempotência/status em `notificacoes_enviadas`
 
 ## 11) Variáveis de ambiente (principais)
@@ -284,4 +299,3 @@ Bot (`bot-barberhub`): ver `bot-barberhub/README.md` para lista completa.
 - `docs/INTEGRACAO_PAGAMENTOS.md`
 - `docs/TERMINOLOGIA_DINAMICA.md`
 - `PLANO_NAIL_DESIGNER.md`
-

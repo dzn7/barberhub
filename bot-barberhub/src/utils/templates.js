@@ -1,7 +1,7 @@
 /**
  * Templates de Mensagens Dinâmicos
  * Mensagens personalizadas por tenant para envio via WhatsApp
- * Suporta múltiplos tipos de negócio: barbearia, nail_designer
+ * Suporta múltiplos tipos de negócio: barbearia, nail_designer, lash_designer e cabeleireira
  */
 
 import { format } from 'date-fns';
@@ -13,8 +13,11 @@ import {
   obterEmojiServico,
   obterSaudacaoFinal,
   obterDespedida,
-  ehNailDesigner,
-  obterTextosProximosPassos
+  obterTextosProximosPassos,
+  ehTipoNegocioFeminino,
+  obterPreposicaoEstabelecimento,
+  obterPronomePossessivoEstabelecimento,
+  obterSufixoGeneroEstabelecimento
 } from './terminologia.js';
 
 const TIMEZONE_BRASIL = 'America/Sao_Paulo';
@@ -32,20 +35,20 @@ function formatarDataHora(dataHora, formato = "dd 'de' MMMM 'às' HH:mm") {
  */
 export function templateBoasVindasTenant({ nomeBarbearia, nomeProprietario, slug, tipoNegocio = 'barbearia' }) {
   const termo = obterTerminologia(tipoNegocio);
-  const ehNail = ehNailDesigner(tipoNegocio);
+  const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoNegocio);
   const textos = obterTextosProximosPassos(tipoNegocio);
   const despedida = obterDespedida(tipoNegocio);
   
-  const artigoEstabelecimento = ehNail ? 'Seu' : 'Sua';
-  const estabelecimentoOnline = ehNail 
-    ? `Seu ${termo.estabelecimento.singular.toLowerCase()} está online!`
-    : `Sua ${termo.estabelecimento.singular.toLowerCase()} está online!`;
+  const pronomeEstabelecimento = obterPronomePossessivoEstabelecimento(tipoNegocio);
+  const sufixoGeneroEstabelecimento = obterSufixoGeneroEstabelecimento(tipoNegocio);
+  const pronomeClientes = ehSegmentoFeminino ? 'suas clientes' : 'seus clientes';
+  const estabelecimentoOnline = `${pronomeEstabelecimento} ${termo.estabelecimento.singular.toLowerCase()} está online!`;
   
   return `🎉 *Parabéns! ${estabelecimentoOnline}*
 
 Olá, *${nomeProprietario}*! 👋
 
-${artigoEstabelecimento} ${termo.estabelecimento.singular.toLowerCase()} *${nomeBarbearia}* foi cadastrad${ehNail ? 'o' : 'a'} com sucesso no BarberHub! 🎊
+${pronomeEstabelecimento} ${termo.estabelecimento.singular.toLowerCase()} *${nomeBarbearia}* foi cadastrad${sufixoGeneroEstabelecimento} com sucesso no BarberHub! 🎊
 
 ━━━━━━━━━━━━━━━━━━━
 🌐 *SEU SITE DE AGENDAMENTOS:*
@@ -63,8 +66,8 @@ barberhub.online/${slug}
    ${textos.configurarHorarios}
    ${textos.personalizarLogo}
 
-3️⃣ *Compartilhe com seus clientes:*
-   Envie o link do seu site para seus clientes agendarem!
+3️⃣ *Compartilhe com ${pronomeClientes}:*
+   Envie o link do seu site para ${pronomeClientes} agendarem!
 
 ✨ *RECURSOS INCLUSOS:*
 • Agendamentos online 24h
@@ -114,11 +117,10 @@ export function templateConfirmacaoCliente({
 }) {
   const dataFormatada = formatarDataHora(dataHora);
   const termo = obterTerminologia(tipoNegocio);
-  const ehNail = ehNailDesigner(tipoNegocio);
   const emojiServico = obterEmojiServico(tipoNegocio);
   const saudacao = obterSaudacaoFinal(tipoNegocio);
   
-  const preposicao = ehNail ? 'no' : 'na';
+  const preposicao = obterPreposicaoEstabelecimento(tipoNegocio);
   const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
   const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
   
@@ -226,11 +228,10 @@ export function templateLembreteCliente({
   const horaFormatada = formatarDataHora(dataHora, "HH:mm");
   const diaFormatado = formatarDataHora(dataHora, "dd/MM");
   const termo = obterTerminologia(tipoNegocio);
-  const ehNail = ehNailDesigner(tipoNegocio);
   const emojiServico = obterEmojiServico(tipoNegocio);
   const despedida = obterDespedida(tipoNegocio);
   
-  const preposicao = ehNail ? 'no' : 'na';
+  const preposicao = obterPreposicaoEstabelecimento(tipoNegocio);
   const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
   const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
   
@@ -279,10 +280,9 @@ export function templateCancelamentoCliente({
 }) {
   const dataFormatada = formatarDataHora(dataHora);
   const termo = obterTerminologia(tipoNegocio);
-  const ehNail = ehNailDesigner(tipoNegocio);
   const emojiServico = obterEmojiServico(tipoNegocio);
   
-  const preposicao = ehNail ? 'no' : 'na';
+  const preposicao = obterPreposicaoEstabelecimento(tipoNegocio);
   const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
   const labelServico = Array.isArray(nomeServico) && nomeServico.length > 1 ? 'Serviços' : 'Serviço';
   
@@ -337,12 +337,11 @@ export function templateRemarcacaoCliente({
   const dataAntigaFormatada = formatarDataHora(dataHoraAntiga);
   const dataNovaFormatada = formatarDataHora(dataHoraNova);
   const termo = obterTerminologia(tipoNegocio);
-  const ehNail = ehNailDesigner(tipoNegocio);
   const emojiServico = obterEmojiServico(tipoNegocio);
   const saudacao = obterSaudacaoFinal(tipoNegocio);
   
-  const preposicao = ehNail ? 'no' : 'na';
-  const contatoEstabelecimento = ehNail 
+  const preposicao = obterPreposicaoEstabelecimento(tipoNegocio);
+  const contatoEstabelecimento = termo.estabelecimento.artigo === 'o'
     ? `📞 *Contato do ${termo.estabelecimento.singular.toLowerCase()}:*`
     : `📞 *Contato da ${termo.estabelecimento.singular.toLowerCase()}:*`;
   const servicosFormatados = formatarServicos(nomeServico, duracaoTotal);
@@ -409,13 +408,14 @@ export function templateBoasVindasBarbeiro({
   slug,
   tipoNegocio = 'barbearia'
 }) {
-  const ehNail = tipoNegocio === 'nail_designer';
-  const termo = ehNail ? 'nail designer' : 'barbeiro';
-  const emoji = ehNail ? '💅' : '💈';
+  const terminologia = obterTerminologia(tipoNegocio);
+  const termo = terminologia.profissional.singular.toLowerCase();
+  const emoji = obterEmoji(tipoNegocio);
+  const preposicaoEstabelecimento = obterPreposicaoEstabelecimento(tipoNegocio);
   
   return `👋 *Bem-vindo(a) à equipe, ${nomeBarbeiro}!*
 
-Você foi cadastrado(a) como ${termo} no(a) *${nomeBarbearia}*! 🎉
+Você foi cadastrado(a) como ${termo} ${preposicaoEstabelecimento} *${nomeBarbearia}*! 🎉
 
 ━━━━━━━━━━━━━━━━━━━
 🔐 *ACESSE SEU PAINEL:*
@@ -542,10 +542,9 @@ export function templateHorarioLiberadoSemPreferencia({
 }) {
   const dataFormatada = formatarDataHora(dataHora);
   const termo = obterTerminologia(tipoNegocio);
-  const ehNail = ehNailDesigner(tipoNegocio);
   const emoji = obterEmoji(tipoNegocio);
   
-  const preposicao = ehNail ? 'no' : 'na';
+  const preposicao = obterPreposicaoEstabelecimento(tipoNegocio);
   
   return `🔔 *Horário Disponível!*
 
@@ -580,10 +579,9 @@ export function templateHorarioLiberado({
 }) {
   const dataFormatada = formatarDataHora(dataHora);
   const termo = obterTerminologia(tipoNegocio);
-  const ehNail = ehNailDesigner(tipoNegocio);
   const emoji = obterEmoji(tipoNegocio);
   
-  const preposicao = ehNail ? 'no' : 'na';
+  const preposicao = obterPreposicaoEstabelecimento(tipoNegocio);
   
   return `🔔 *Horário Liberado!*
 

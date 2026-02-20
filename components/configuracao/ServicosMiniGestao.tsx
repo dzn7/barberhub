@@ -62,6 +62,31 @@ const CATEGORIAS_NAIL = [
 ]
 
 /**
+ * Categorias de serviços para Lash Designers
+ */
+const CATEGORIAS_LASH = [
+  { valor: 'extensao', label: 'Extensão de Cílios' },
+  { valor: 'volume', label: 'Volume' },
+  { valor: 'lifting', label: 'Lash Lifting' },
+  { valor: 'manutencao', label: 'Manutenção' },
+  { valor: 'sobrancelhas', label: 'Sobrancelhas' },
+  { valor: 'outros', label: 'Outros' },
+]
+
+/**
+ * Categorias de serviços para Cabeleireiras
+ */
+const CATEGORIAS_CABELEIREIRA = [
+  { valor: 'corte', label: 'Corte' },
+  { valor: 'escova', label: 'Escova' },
+  { valor: 'coloracao', label: 'Coloração' },
+  { valor: 'tratamento', label: 'Tratamento' },
+  { valor: 'penteado', label: 'Penteado' },
+  { valor: 'quimica', label: 'Química' },
+  { valor: 'outros', label: 'Outros' },
+]
+
+/**
  * Serviços sugeridos para Barbearias
  */
 const SERVICOS_SUGERIDOS_BARBEARIA = [
@@ -84,6 +109,28 @@ const SERVICOS_SUGERIDOS_NAIL = [
 ]
 
 /**
+ * Serviços sugeridos para Lash Designers
+ */
+const SERVICOS_SUGERIDOS_LASH = [
+  { nome: 'Fio a Fio', descricao: 'Extensão clássica fio a fio', preco: 180, duracao: 120, categoria: 'extensao' },
+  { nome: 'Volume Brasileiro', descricao: 'Técnica de volume brasileiro', preco: 220, duracao: 150, categoria: 'volume' },
+  { nome: 'Lash Lifting', descricao: 'Curvatura e elevação de cílios naturais', preco: 140, duracao: 75, categoria: 'lifting' },
+  { nome: 'Manutenção de Cílios', descricao: 'Manutenção em até 21 dias', preco: 120, duracao: 90, categoria: 'manutencao' },
+  { nome: 'Design de Sobrancelhas', descricao: 'Design e finalização', preco: 60, duracao: 40, categoria: 'sobrancelhas' },
+]
+
+/**
+ * Serviços sugeridos para Cabeleireiras
+ */
+const SERVICOS_SUGERIDOS_CABELEIREIRA = [
+  { nome: 'Corte Feminino', descricao: 'Corte personalizado feminino', preco: 90, duracao: 60, categoria: 'corte' },
+  { nome: 'Escova Modelada', descricao: 'Escova com finalização', preco: 70, duracao: 50, categoria: 'escova' },
+  { nome: 'Hidratação Capilar', descricao: 'Tratamento de hidratação profunda', preco: 85, duracao: 60, categoria: 'tratamento' },
+  { nome: 'Coloração', descricao: 'Coloração completa', preco: 180, duracao: 120, categoria: 'coloracao' },
+  { nome: 'Penteado', descricao: 'Penteado para eventos', preco: 150, duracao: 90, categoria: 'penteado' },
+]
+
+/**
  * Componente de gestão simplificada de serviços para onboarding
  * Permite criar, editar e remover serviços de forma rápida
  */
@@ -100,11 +147,41 @@ export function ServicosMiniGestao({
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   
   // Categorias e serviços dinâmicos baseados no tipo de negócio
-  const ehNail = tipoNegocio === 'nail_designer'
-  const CATEGORIAS = useMemo(() => ehNail ? CATEGORIAS_NAIL : CATEGORIAS_BARBEARIA, [ehNail])
-  const SERVICOS_SUGERIDOS = useMemo(() => ehNail ? SERVICOS_SUGERIDOS_NAIL : SERVICOS_SUGERIDOS_BARBEARIA, [ehNail])
-  const categoriaInicial = ehNail ? 'alongamento' : 'corte'
-  const placeholderNome = ehNail ? 'Ex: Alongamento em Gel' : 'Ex: Corte Degradê'
+  const { CATEGORIAS, SERVICOS_SUGERIDOS, categoriaInicial, placeholderNome } = useMemo(() => {
+    if (tipoNegocio === 'nail_designer') {
+      return {
+        CATEGORIAS: CATEGORIAS_NAIL,
+        SERVICOS_SUGERIDOS: SERVICOS_SUGERIDOS_NAIL,
+        categoriaInicial: 'alongamento',
+        placeholderNome: 'Ex: Alongamento em Gel'
+      }
+    }
+
+    if (tipoNegocio === 'lash_designer') {
+      return {
+        CATEGORIAS: CATEGORIAS_LASH,
+        SERVICOS_SUGERIDOS: SERVICOS_SUGERIDOS_LASH,
+        categoriaInicial: 'extensao',
+        placeholderNome: 'Ex: Volume Brasileiro'
+      }
+    }
+
+    if (tipoNegocio === 'cabeleireira') {
+      return {
+        CATEGORIAS: CATEGORIAS_CABELEIREIRA,
+        SERVICOS_SUGERIDOS: SERVICOS_SUGERIDOS_CABELEIREIRA,
+        categoriaInicial: 'corte',
+        placeholderNome: 'Ex: Corte Feminino'
+      }
+    }
+
+    return {
+      CATEGORIAS: CATEGORIAS_BARBEARIA,
+      SERVICOS_SUGERIDOS: SERVICOS_SUGERIDOS_BARBEARIA,
+      categoriaInicial: 'corte',
+      placeholderNome: 'Ex: Corte Degradê'
+    }
+  }, [tipoNegocio])
   
   const [formulario, setFormulario] = useState({
     nome: '',
@@ -174,7 +251,7 @@ export function ServicosMiniGestao({
       if (error) throw error
 
       setServicos([...servicos, data])
-      setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
+      setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: categoriaInicial })
       setMostrarFormulario(false)
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao adicionar serviço' })
@@ -207,7 +284,7 @@ export function ServicosMiniGestao({
           : s
       ))
       setEditando(null)
-      setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
+      setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: categoriaInicial })
     } catch (erro) {
       toast({ tipo: 'erro', mensagem: 'Erro ao atualizar serviço' })
     } finally {
@@ -239,14 +316,14 @@ export function ServicosMiniGestao({
       descricao: servico.descricao || '',
       preco: String(servico.preco),
       duracao: String(servico.duracao),
-      categoria: servico.categoria || 'corte'
+      categoria: servico.categoria || categoriaInicial
     })
     setMostrarFormulario(false)
   }
 
   const cancelarEdicao = () => {
     setEditando(null)
-    setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: 'corte' })
+    setFormulario({ nome: '', descricao: '', preco: '', duracao: '30', categoria: categoriaInicial })
   }
 
   const adicionarSugerido = async (sugerido: typeof SERVICOS_SUGERIDOS[0]) => {

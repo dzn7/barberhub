@@ -1,43 +1,50 @@
 /**
- * Serviço WhatsApp - Baileys v7
+ * Serviço WhatsApp - Baileys v7.0.0-rc.9
  * Conexão e envio de mensagens via WhatsApp Web
  * 
- * SOLUÇÃO DEFINITIVA PARA WHATSAPP BUSINESS v3.0 (Baileys v7):
+ * ARQUITETURA v4.0 - Otimizada para produção:
  * 
- * Melhorias do v7:
- * - Suporte completo a LIDs (Local Identifiers)
- * - ACKs automáticos removidos (evita bans)
- * - Meta Coexistence suportado
- * - ESM nativo
+ * 1. AUTH STATE NO SUPABASE
+ *    - Substitui useMultiFileAuthState (não recomendado para produção)
+ *    - Persiste credenciais e chaves de criptografia no banco
+ *    - Suporta LIDs, device-list e tctoken do Baileys v7
  * 
- * O problema "Aguardando mensagem" ocorre quando:
- * 1. O destinatário não consegue descriptografar a mensagem
- * 2. Ele solicita a mensagem original via callback getMessage
- * 3. Se getMessage não retorna o proto.Message correto, falha
+ * 2. QR CODE NO TERMINAL
+ *    - Exibe QR Code diretamente no terminal (usando qrcode package)
+ *    - Também disponível via endpoint HTTP /health/qr
  * 
- * Esta solução implementa:
- * - Armazenamento PRÉ-ENVIO da mensagem
- * - Formato proto.Message.create() correto para getMessage
- * - Store em memória + Supabase com TTL
- * - Sincronização de sessão forçada antes de cada envio
+ * 3. RECONEXÃO ROBUSTA
+ *    - Backoff exponencial com jitter
+ *    - Detecção de logout vs desconexão temporária
+ *    - Limite de tentativas para evitar loops infinitos
+ * 
+ * 4. PROTEÇÃO ANTI-SPAM
+ *    - Rate limiting entre mensagens
+ *    - Delays adaptativos baseados em erros
+ *    - Não envia ACKs (evita bans - padrão do v7)
+ * 
+ * 5. getMessage ROBUSTO
+ *    - Store em memória + Supabase
+ *    - Pré-armazenamento antes do envio
+ *    - Evita "Aguardando mensagem" em WA Business
  */
 
 import makeWASocket, { 
   DisconnectReason, 
-  useMultiFileAuthState,
   fetchLatestBaileysVersion,
   makeCacheableSignalKeyStore,
   proto,
   generateMessageID,
   Browsers
 } from 'baileys';
-import { existsSync, rmSync, mkdirSync, readdirSync } from 'fs';
+import { existsSync, rmSync, mkdirSync, readdirSync, writeFileSync } from 'fs';
 import path from 'path';
 import qrcode from 'qrcode-terminal';
 import NodeCache from 'node-cache';
 import logger from '../utils/logger.js';
 import { supabase } from '../config/database.js';
 import { formatarParaJid, validarTelefone } from '../utils/telefone.js';
+import { useSupabaseAuthState, limparAuthSupabase, existeSessaoSalva } from './supabase-auth-state.js';
 
 let sock = null;
 let qrCodeAtual = null;
@@ -45,9 +52,23 @@ let statusConexao = 'disconnected';
 let conectando = false;
 let callbackQR = null;
 
+// Controle de reconexão com backoff exponencial
+let tentativasReconexao = 0;
+const MAX_TENTATIVAS_RECONEXAO = 10;
+const BACKOFF_BASE_MS = 2000;
+const BACKOFF_MAX_MS = 60000;
+
+// Controle de rate limiting
+let ultimoEnvio = 0;
+const DELAY_MINIMO_ENTRE_MENSAGENS = 1500; // 1.5s entre mensagens
+
+// Identificador da sessão (pode ser configurado via env)
+const SESSION_ID = process.env.WHATSAPP_SESSION_ID || 'bot-principal';
+
+// Diretório de auth local (fallback, preferir Supabase)
 const AUTH_DIR = './auth_info';
 
-// Garantir que o diretório de auth existe
+// Garantir que o diretório de auth existe (fallback)
 if (!existsSync(AUTH_DIR)) {
   mkdirSync(AUTH_DIR, { recursive: true });
 }
@@ -204,14 +225,25 @@ export function registrarCallbackQR(callback) {
   callbackQR = callback;
 }
 
+
 /**
- * Limpa credenciais de autenticação
- * No Fly.io o volume é montado em /app/auth_info
+ * Calcula delay de reconexão com backoff exponencial e jitter
  */
-function limparAuth() {
+function calcularDelayReconexao() {
+  const exponencial = Math.min(BACKOFF_BASE_MS * Math.pow(2, tentativasReconexao), BACKOFF_MAX_MS);
+  const jitter = Math.random() * 1000; // Adiciona até 1s de variação
+  return exponencial + jitter;
+}
+
+/**
+ * Limpa credenciais de autenticação (local + Supabase)
+ */
+async function limparAuth() {
   try {
-    // Limpar apenas os arquivos dentro do diretório, não o diretório em si
-    // (pois é um volume montado no Fly.io)
+    // 1. Limpar do Supabase
+    await limparAuthSupabase(SESSION_ID);
+    
+    // 2. Limpar arquivos locais (fallback)
     if (existsSync(AUTH_DIR)) {
       const arquivos = readdirSync(AUTH_DIR);
       for (const arquivo of arquivos) {
@@ -222,8 +254,9 @@ function limparAuth() {
           logger.warn(`⚠️ Não foi possível remover ${arquivo}: ${e.message}`);
         }
       }
-      logger.info('✅ Auth limpo com sucesso');
     }
+    
+    logger.info('✅ Auth limpo com sucesso (Supabase + local)');
   } catch (error) {
     logger.error(`❌ Erro ao limpar auth: ${error.message}`);
   }
@@ -231,7 +264,7 @@ function limparAuth() {
 
 /**
  * Inicia conexão com WhatsApp
- * Configuração otimizada para evitar "Aguardando mensagem" em WA Business
+ * Usa auth state do Supabase (recomendado para produção)
  */
 export async function iniciarWhatsApp() {
   if (conectando) {
@@ -243,8 +276,10 @@ export async function iniciarWhatsApp() {
   
   try {
     logger.info('🚀 Iniciando WhatsApp...');
+    logger.info(`📋 Sessão: ${SESSION_ID}`);
     
-    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+    // Usar auth state do Supabase (mais robusto que useMultiFileAuthState)
+    const { state, saveCreds } = await useSupabaseAuthState(SESSION_ID);
     const { version } = await fetchLatestBaileysVersion();
     
     logger.info(`📱 Baileys v${version.join('.')}`);
@@ -299,14 +334,42 @@ export async function iniciarWhatsApp() {
 
       if (qr) {
         qrCodeAtual = qr;
-        console.log('');
-        console.log('═══════════════════════════════════════════');
-        console.log('📱 ESCANEIE O QR CODE ABAIXO:');
-        console.log('═══════════════════════════════════════════');
-        qrcode.generate(qr, { small: true });
-        console.log('═══════════════════════════════════════════');
-        console.log('');
-        logger.info('📱 QR Code gerado - escaneie para conectar');
+        
+        // Gerar QR Code e capturar a saída
+        qrcode.generate(qr, { small: true }, (qrAscii) => {
+          // Remover códigos de escape ANSI (cores) para compatibilidade com PM2
+          const qrLimpo = qrAscii.replace(/\x1b\[[0-9;]*m/g, '');
+          
+          // Exibir no terminal
+          console.log('\n');
+          console.log('================================================================');
+          console.log('        ESCANEIE O QR CODE ABAIXO NO WHATSAPP');
+          console.log('================================================================');
+          console.log('');
+          console.log(qrLimpo);
+          console.log('');
+          console.log('Como conectar:');
+          console.log('   1. Abra o WhatsApp no celular');
+          console.log('   2. Menu > Aparelhos conectados');
+          console.log('   3. Conectar um aparelho');
+          console.log('   4. Aponte a camera para o QR Code acima');
+          console.log('');
+          console.log(`Ou acesse: http://localhost:${process.env.PORT || 3001}/health/qr`);
+          console.log('================================================================\n');
+          
+          // Salvar em arquivo
+          try {
+            const qrDir = './logs';
+            if (!existsSync(qrDir)) {
+              mkdirSync(qrDir, { recursive: true });
+            }
+            const qrFilePath = path.join(qrDir, 'qrcode-atual.txt');
+            writeFileSync(qrFilePath, `QR Code gerado em: ${new Date().toLocaleString('pt-BR')}\n\n${qrLimpo}\n\nString: ${qr}`, 'utf8');
+          } catch (err) {
+            logger.error(`Erro ao salvar QR code: ${err.message}`);
+          }
+        });
+        
         if (callbackQR) callbackQR(qr);
       }
 
@@ -314,8 +377,10 @@ export async function iniciarWhatsApp() {
         conectando = false;
         statusConexao = 'connected';
         qrCodeAtual = null;
+        tentativasReconexao = 0; // Reset contador de reconexão
         logger.info('✅ WhatsApp conectado!');
         logger.info(`📱 Número: ${sock.user?.id || 'desconhecido'}`);
+        logger.info(`💾 Auth persistido no Supabase (sessão: ${SESSION_ID})`);
       }
 
       if (connection === 'close') {
@@ -326,16 +391,41 @@ export async function iniciarWhatsApp() {
         
         logger.warn(`❌ Desconectado: ${reason} (código: ${statusCode})`);
 
+        // Logout - limpar auth e reconectar
         if (statusCode === DisconnectReason.loggedOut) {
           logger.info('🔄 Logout detectado, limpando auth...');
-          limparAuth();
+          tentativasReconexao = 0;
+          await limparAuth();
           setTimeout(() => iniciarWhatsApp(), 3000);
-        } else if (statusCode === DisconnectReason.restartRequired) {
+        } 
+        // Restart necessário - reconectar imediatamente
+        else if (statusCode === DisconnectReason.restartRequired) {
           logger.info('🔄 Restart necessário...');
+          tentativasReconexao = 0;
           setTimeout(() => iniciarWhatsApp(), 1000);
-        } else {
-          logger.info('🔄 Reconectando em 5s...');
-          setTimeout(() => iniciarWhatsApp(), 5000);
+        }
+        // Conexão perdida - reconectar com backoff exponencial
+        else if (statusCode === DisconnectReason.connectionLost || 
+                 statusCode === DisconnectReason.connectionClosed ||
+                 statusCode === DisconnectReason.timedOut) {
+          tentativasReconexao++;
+          
+          if (tentativasReconexao > MAX_TENTATIVAS_RECONEXAO) {
+            logger.error(`❌ Máximo de tentativas (${MAX_TENTATIVAS_RECONEXAO}) atingido. Parando reconexão.`);
+            logger.error('   Execute /health/restart para tentar novamente.');
+            return;
+          }
+          
+          const delayMs = calcularDelayReconexao();
+          logger.info(`🔄 Reconectando em ${Math.round(delayMs/1000)}s (tentativa ${tentativasReconexao}/${MAX_TENTATIVAS_RECONEXAO})...`);
+          setTimeout(() => iniciarWhatsApp(), delayMs);
+        }
+        // Outros erros - reconectar com delay fixo
+        else {
+          tentativasReconexao++;
+          const delayMs = Math.min(5000 * tentativasReconexao, 30000);
+          logger.info(`🔄 Reconectando em ${Math.round(delayMs/1000)}s...`);
+          setTimeout(() => iniciarWhatsApp(), delayMs);
         }
       }
 
@@ -389,7 +479,7 @@ export async function iniciarWhatsApp() {
             from_me: true,
             message_content: protoMsg,
             criado_em: new Date().toISOString()
-          }, { onConflict: 'message_id,remote_jid' }).catch(() => {});
+          }, { onConflict: 'message_id,remote_jid' }).then(() => {}).catch(() => {});
           
           logger.debug(`📤 Mensagem registrada pós-envio: ${msg.key.id}`);
         }
@@ -418,14 +508,13 @@ function gerarJid(telefone) {
 }
 
 /**
- * Envia mensagem - SOLUÇÃO DEFINITIVA PARA WA BUSINESS
+ * Envia mensagem com proteção anti-spam e rate limiting
  * 
- * O segredo para evitar "Aguardando mensagem":
- * 1. Gerar ID da mensagem ANTES do envio
- * 2. Armazenar mensagem ANTES do envio (para getMessage funcionar)
- * 3. Sincronizar sessão de criptografia
- * 4. Enviar mensagem
- * 5. Retry com recriação completa de sessão em falhas
+ * Estratégias implementadas:
+ * 1. Rate limiting global (delay mínimo entre mensagens)
+ * 2. Pré-armazenamento para getMessage (evita "Aguardando mensagem")
+ * 3. Retry com backoff exponencial
+ * 4. Detecção e recuperação de erros de sessão
  */
 export async function enviarMensagem(telefone, mensagem, tentativa = 1) {
   const MAX_TENTATIVAS = 5;
@@ -438,48 +527,51 @@ export async function enviarMensagem(telefone, mensagem, tentativa = 1) {
     if (!telefone || !mensagem) throw new Error('Telefone e mensagem são obrigatórios');
     if (!validarTelefone(telefone)) throw new Error('Número inválido');
 
+    // Rate limiting global - garantir delay mínimo entre mensagens
+    const agora = Date.now();
+    const tempoDesdeUltimoEnvio = agora - ultimoEnvio;
+    if (tempoDesdeUltimoEnvio < DELAY_MINIMO_ENTRE_MENSAGENS) {
+      const esperarMs = DELAY_MINIMO_ENTRE_MENSAGENS - tempoDesdeUltimoEnvio;
+      logger.info(`⏳ Rate limiting: aguardando ${esperarMs}ms...`);
+      await delay(esperarMs);
+    }
+
     logger.info(`📤 Enviando para ${telefone} (tentativa ${tentativa}/${MAX_TENTATIVAS})`);
     
     // 1. Gerar JID
     const jid = gerarJid(telefone);
     if (!jid) throw new Error('Número inválido para gerar JID');
     
-    logger.info(`📱 JID: ${jid}`);
-    
-    // 2. Sincronizar sessão de criptografia
-    // Em retries ou primeira tentativa, forçar recriação da sessão
-    const forcarRecriacao = tentativa > 1;
-    try {
-      logger.info(`🔐 Sincronizando sessão (forçar=${forcarRecriacao})...`);
-      await sock.assertSessions([jid], forcarRecriacao);
-      await delay(300);
-    } catch (sessionError) {
-      logger.warn(`⚠️ Erro ao sincronizar sessão: ${sessionError.message}`);
-      // Continuar mesmo com erro, o envio pode funcionar
+    // 2. Sincronizar sessão de criptografia (apenas em retries)
+    if (tentativa > 1) {
+      try {
+        logger.info(`🔐 Recriando sessão para retry...`);
+        await sock.assertSessions([jid], true);
+        await delay(500);
+      } catch (sessionError) {
+        logger.warn(`⚠️ Erro ao sincronizar sessão: ${sessionError.message}`);
+      }
     }
     
-    // 3. Preparar conteúdo da mensagem no formato correto
+    // 3. Preparar conteúdo da mensagem
     const conteudoMensagem = { text: mensagem };
     const protoMessage = converterParaProtoMessage(conteudoMensagem);
     
-    // 4. Gerar ID único para a mensagem ANTES do envio
-    // Isso permite armazenar a mensagem antes de enviar
+    // 4. Gerar ID único ANTES do envio
     const messageId = generateMessageID();
     
     // 5. PRÉ-ARMAZENAR a mensagem (CRÍTICO para getMessage)
     await armazenarMensagemPreEnvio(messageId, jid, protoMessage);
     
-    // 6. Simular presença (opcional, mas ajuda com rate limiting)
+    // 6. Simular presença (reduzido para evitar spam)
     try {
-      await sock.sendPresenceUpdate('available', jid);
-      await delay(150);
       await sock.sendPresenceUpdate('composing', jid);
-      await delay(300);
+      await delay(200);
     } catch (e) {
       // Ignorar erros de presença
     }
     
-    // 7. Enviar mensagem com ID pré-gerado
+    // 7. Enviar mensagem
     const resultado = await sock.sendMessage(jid, conteudoMensagem, {
       messageId: messageId
     });
@@ -489,20 +581,20 @@ export async function enviarMensagem(telefone, mensagem, tentativa = 1) {
       await sock.sendPresenceUpdate('paused', jid);
     } catch (e) {}
     
-    // 9. Verificar se o envio foi bem-sucedido
+    // 9. Verificar sucesso
     if (!resultado?.key?.id) {
       throw new Error('Envio falhou - sem confirmação de ID');
     }
     
-    // 10. Atualizar store com o ID real (caso seja diferente)
+    // 10. Atualizar store com ID real
     if (resultado.key.id !== messageId) {
       await armazenarMensagemPreEnvio(resultado.key.id, jid, protoMessage);
     }
     
-    logger.info(`✅ Mensagem enviada: ${resultado.key.id}`);
+    // Atualizar timestamp do último envio
+    ultimoEnvio = Date.now();
     
-    // Delay entre mensagens para evitar rate limiting
-    await delay(500);
+    logger.info(`✅ Mensagem enviada: ${resultado.key.id}`);
     
     return { 
       sucesso: true, 
@@ -513,24 +605,35 @@ export async function enviarMensagem(telefone, mensagem, tentativa = 1) {
   } catch (error) {
     logger.error(`❌ Erro no envio (${tentativa}/${MAX_TENTATIVAS}): ${error.message}`);
     
-    // Detectar erros específicos que indicam problema de sessão
+    // Detectar erros de sessão/criptografia
     const erroSessao = error.message?.includes('session') || 
                        error.message?.includes('decrypt') ||
-                       error.message?.includes('prekey');
+                       error.message?.includes('prekey') ||
+                       error.message?.includes('signal');
     
-    if (erroSessao && sock) {
-      logger.info(`🔧 Erro de sessão detectado, limpando sessão do contato...`);
+    // Detectar erros de rate limiting/spam
+    const erroRateLimit = error.message?.includes('rate') ||
+                          error.message?.includes('spam') ||
+                          error.message?.includes('blocked') ||
+                          error.message?.includes('ban');
+    
+    if (erroRateLimit) {
+      logger.warn(`⚠️ Possível rate limiting detectado. Aumentando delay...`);
+      // Aumentar delay significativamente
+      await delay(10000 + (tentativa * 5000));
+    } else if (erroSessao && sock) {
+      logger.info(`🔧 Erro de sessão detectado, recriando...`);
       try {
         const jid = gerarJid(telefone);
         await sock.assertSessions([jid], true);
       } catch (e) {
-        logger.warn(`⚠️ Falha ao limpar sessão: ${e.message}`);
+        logger.warn(`⚠️ Falha ao recriar sessão: ${e.message}`);
       }
     }
     
     // Retry com backoff exponencial
     if (tentativa < MAX_TENTATIVAS) {
-      const tempoEspera = Math.min(tentativa * 2000, 10000);
+      const tempoEspera = Math.min(tentativa * 3000, 15000);
       logger.info(`🔄 Retry em ${tempoEspera/1000}s...`);
       await delay(tempoEspera);
       return enviarMensagem(telefone, mensagem, tentativa + 1);
@@ -574,7 +677,8 @@ export async function forcarNovoQRCode() {
     sock = null;
   }
   
-  limparAuth();
+  tentativasReconexao = 0; // Reset contador
+  await limparAuth();
   setTimeout(() => iniciarWhatsApp(), 1000);
 }
 

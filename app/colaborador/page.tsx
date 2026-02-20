@@ -18,6 +18,7 @@ import {
 import { Tabs } from '@radix-ui/themes'
 import { useBarbeiroAuth } from '@/contexts/BarbeiroAuthContext'
 import { AlternadorTema } from '@/components/AlternadorTema'
+import { ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
 
 // Componentes do dashboard do barbeiro
 import { VisaoGeralBarbeiro } from '@/components/barbeiro/VisaoGeralBarbeiro'
@@ -32,6 +33,7 @@ import { ConfiguracoesBarbeiro } from '@/components/barbeiro/ConfiguracoesBarbei
 export default function DashboardBarbeiro() {
   const router = useRouter()
   const { barbeiro, tenant, carregando, autenticado, sair } = useBarbeiroAuth()
+  const segmentoFeminino = ehTipoNegocioFeminino(tenant?.tipo_negocio)
   
   const [abaAtiva, setAbaAtiva] = useState('visao-geral')
   const [menuMobileAberto, setMenuMobileAberto] = useState(false)
@@ -53,7 +55,7 @@ export default function DashboardBarbeiro() {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          {tenant?.tipo_negocio === 'nail_designer' 
+          {segmentoFeminino
             ? <Hand className="w-12 h-12 text-emerald-500 animate-pulse" />
             : <Scissors className="w-12 h-12 text-emerald-500 animate-pulse" />
           }
@@ -88,7 +90,7 @@ export default function DashboardBarbeiro() {
                     className="object-cover"
                   />
                 ) : (
-                  tenant.tipo_negocio === 'nail_designer' 
+                  segmentoFeminino
                     ? <Hand className="w-5 h-5 text-zinc-500" />
                     : <Scissors className="w-5 h-5 text-zinc-500" />
                 )}

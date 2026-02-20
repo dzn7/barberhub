@@ -8,7 +8,8 @@
 import { 
   TipoNegocio, 
   Terminologia, 
-  CategoriaServico 
+  CategoriaServico,
+  ehTipoNegocioFeminino
 } from './tipos-negocio'
 
 /**
@@ -41,6 +42,38 @@ const ESPECIALIDADES_NAIL: string[] = [
   'Banho de Gel',
   'Unhas de Porcelana',
   'Spa dos Pés'
+]
+
+/**
+ * Especialidades sugeridas para Lash Designers
+ */
+const ESPECIALIDADES_LASH: string[] = [
+  'Fio a Fio',
+  'Volume Brasileiro',
+  'Volume Russo',
+  'Lash Lifting',
+  'Manutenção de Cílios',
+  'Remoção de Cílios',
+  'Henna para Sobrancelhas',
+  'Design de Sobrancelhas',
+  'Laminação de Sobrancelhas',
+  'Brow Lamination'
+]
+
+/**
+ * Especialidades sugeridas para Cabeleireiras
+ */
+const ESPECIALIDADES_CABELEIREIRA: string[] = [
+  'Corte Feminino',
+  'Escova',
+  'Hidratação',
+  'Coloração',
+  'Mechas',
+  'Progressiva',
+  'Botox Capilar',
+  'Penteados',
+  'Tratamento Capilar',
+  'Finalização'
 ]
 
 /**
@@ -147,14 +180,100 @@ export const CATEGORIAS_ESPECIALIDADES_NAIL: Record<string, string[]> = {
 }
 
 /**
+ * Categorias de especialidades para Lash Designers
+ */
+export const CATEGORIAS_ESPECIALIDADES_LASH: Record<string, string[]> = {
+  'Extensão de Cílios': [
+    'Fio a Fio',
+    'Volume Brasileiro',
+    'Volume Russo',
+    'Volume Egípcio',
+    'Mega Volume',
+    'Híbrido'
+  ],
+  'Lash Lifting': [
+    'Lash Lifting',
+    'Lash Bottox',
+    'Tintura de Cílios',
+    'Hidratação de Cílios'
+  ],
+  'Sobrancelhas': [
+    'Design de Sobrancelhas',
+    'Henna para Sobrancelhas',
+    'Brow Lamination',
+    'Coloração de Sobrancelhas'
+  ],
+  'Manutenção': [
+    'Manutenção 15 dias',
+    'Manutenção 21 dias',
+    'Remoção de Cílios',
+    'Avaliação Técnica'
+  ],
+  'Outros': [
+    'Consultoria de Visagismo',
+    'Combo Cílios + Sobrancelhas'
+  ]
+}
+
+/**
+ * Categorias de especialidades para Cabeleireiras
+ */
+export const CATEGORIAS_ESPECIALIDADES_CABELEIREIRA: Record<string, string[]> = {
+  'Cortes': [
+    'Corte Feminino',
+    'Corte Long Bob',
+    'Corte em Camadas',
+    'Franja',
+    'Corte Curto Feminino'
+  ],
+  'Coloração': [
+    'Coloração Global',
+    'Retoque de Raiz',
+    'Mechas',
+    'Morena Iluminada',
+    'Tonalização'
+  ],
+  'Tratamentos': [
+    'Hidratação',
+    'Nutrição',
+    'Reconstrução',
+    'Botox Capilar',
+    'Cauterização'
+  ],
+  'Escova e Finalização': [
+    'Escova Modelada',
+    'Escova Lisa',
+    'Babyliss',
+    'Prancha',
+    'Finalização'
+  ],
+  'Química': [
+    'Progressiva',
+    'Selagem',
+    'Relaxamento',
+    'Permanente'
+  ],
+  'Outros': [
+    'Penteados',
+    'Penteado de Festa',
+    'Dia da Noiva'
+  ]
+}
+
+/**
  * Obtém as categorias de especialidades para um tipo de negócio
  * @param tipo - O tipo de negócio
  * @returns Objeto com categorias e suas especialidades
  */
 export function obterCategoriasEspecialidades(tipo: TipoNegocio): Record<string, string[]> {
-  return tipo === 'nail_designer' 
-    ? CATEGORIAS_ESPECIALIDADES_NAIL 
-    : CATEGORIAS_ESPECIALIDADES_BARBEARIA
+  const categoriasPorTipo: Record<TipoNegocio, Record<string, string[]>> = {
+    barbearia: CATEGORIAS_ESPECIALIDADES_BARBEARIA,
+    nail_designer: CATEGORIAS_ESPECIALIDADES_NAIL,
+    lash_designer: CATEGORIAS_ESPECIALIDADES_LASH,
+    cabeleireira: CATEGORIAS_ESPECIALIDADES_CABELEIREIRA
+  }
+
+  return categoriasPorTipo[tipo] ?? CATEGORIAS_ESPECIALIDADES_BARBEARIA
 }
 
 /**
@@ -181,6 +300,31 @@ const CATEGORIAS_NAIL: CategoriaServico[] = [
   { id: 'nail_art', nome: 'Nail Art', icone: 'Palette', ordem: 5 },
   { id: 'manutencao', nome: 'Manutenção', icone: 'RefreshCw', ordem: 6 },
   { id: 'spa', nome: 'Spa dos Pés', icone: 'Heart', ordem: 7 },
+  { id: 'outros', nome: 'Outros', icone: 'MoreHorizontal', ordem: 99 }
+]
+
+/**
+ * Categorias de serviços para Lash Designers
+ */
+const CATEGORIAS_LASH: CategoriaServico[] = [
+  { id: 'extensao', nome: 'Extensão de Cílios', icone: 'Sparkles', ordem: 1 },
+  { id: 'volume', nome: 'Volume', icone: 'Gem', ordem: 2 },
+  { id: 'lifting', nome: 'Lash Lifting', icone: 'WandSparkles', ordem: 3 },
+  { id: 'manutencao', nome: 'Manutenção', icone: 'RefreshCw', ordem: 4 },
+  { id: 'sobrancelhas', nome: 'Sobrancelhas', icone: 'Eye', ordem: 5 },
+  { id: 'outros', nome: 'Outros', icone: 'MoreHorizontal', ordem: 99 }
+]
+
+/**
+ * Categorias de serviços para Cabeleireiras
+ */
+const CATEGORIAS_CABELEIREIRA: CategoriaServico[] = [
+  { id: 'corte', nome: 'Corte', icone: 'Scissors', ordem: 1 },
+  { id: 'escova', nome: 'Escova', icone: 'Wind', ordem: 2 },
+  { id: 'coloracao', nome: 'Coloração', icone: 'Palette', ordem: 3 },
+  { id: 'tratamento', nome: 'Tratamento', icone: 'Droplets', ordem: 4 },
+  { id: 'penteado', nome: 'Penteado', icone: 'Sparkles', ordem: 5 },
+  { id: 'quimica', nome: 'Química', icone: 'FlaskConical', ordem: 6 },
   { id: 'outros', nome: 'Outros', icone: 'MoreHorizontal', ordem: 99 }
 ]
 
@@ -279,11 +423,107 @@ const TERMINOLOGIA_NAIL: Terminologia = {
 }
 
 /**
+ * Configuração completa de terminologia para Lash Designers
+ */
+const TERMINOLOGIA_LASH: Terminologia = {
+  tipo: 'lash_designer',
+  nomeExibicao: 'Estúdio de Cílios',
+
+  profissional: {
+    singular: 'Lash Designer',
+    plural: 'Lash Designers',
+    artigo: 'a',
+    artigoPlural: 'as'
+  },
+
+  estabelecimento: {
+    singular: 'Estúdio',
+    plural: 'Estúdios',
+    artigo: 'o'
+  },
+
+  servicosExemplo: [
+    'Fio a Fio',
+    'Volume Brasileiro',
+    'Lash Lifting',
+    'Manutenção de Cílios',
+    'Design de Sobrancelhas'
+  ],
+
+  categoriasServicos: CATEGORIAS_LASH,
+
+  icone: 'Sparkles',
+
+  cores: {
+    primaria: '#1f1a1f',
+    secundaria: '#faf5ff',
+    destaque: '#e879f9'
+  },
+
+  textos: {
+    bemVindo: 'Bem-vinda ao',
+    selecioneProfissional: 'Escolha a Profissional',
+    selecioneServico: 'Escolha o Serviço',
+    agendamentoConfirmado: 'Agendamento Confirmado',
+    semProfissionais: 'Nenhuma lash designer cadastrada'
+  }
+}
+
+/**
+ * Configuração completa de terminologia para Cabeleireiras
+ */
+const TERMINOLOGIA_CABELEIREIRA: Terminologia = {
+  tipo: 'cabeleireira',
+  nomeExibicao: 'Salão de Beleza',
+
+  profissional: {
+    singular: 'Cabeleireira',
+    plural: 'Cabeleireiras',
+    artigo: 'a',
+    artigoPlural: 'as'
+  },
+
+  estabelecimento: {
+    singular: 'Salão',
+    plural: 'Salões',
+    artigo: 'o'
+  },
+
+  servicosExemplo: [
+    'Corte Feminino',
+    'Escova',
+    'Hidratação',
+    'Coloração',
+    'Penteado'
+  ],
+
+  categoriasServicos: CATEGORIAS_CABELEIREIRA,
+
+  icone: 'Sparkles',
+
+  cores: {
+    primaria: '#2a1f1f',
+    secundaria: '#fff7ed',
+    destaque: '#fb7185'
+  },
+
+  textos: {
+    bemVindo: 'Bem-vinda ao',
+    selecioneProfissional: 'Escolha a Profissional',
+    selecioneServico: 'Escolha o Serviço',
+    agendamentoConfirmado: 'Agendamento Confirmado',
+    semProfissionais: 'Nenhuma cabeleireira cadastrada'
+  }
+}
+
+/**
  * Mapa de configurações por tipo de negócio
  */
 const CONFIGURACOES: Record<TipoNegocio, Terminologia> = {
   barbearia: TERMINOLOGIA_BARBEARIA,
-  nail_designer: TERMINOLOGIA_NAIL
+  nail_designer: TERMINOLOGIA_NAIL,
+  lash_designer: TERMINOLOGIA_LASH,
+  cabeleireira: TERMINOLOGIA_CABELEIREIRA
 }
 
 /**
@@ -385,7 +625,14 @@ export function obterCoresSugeridas(tipo: TipoNegocio): Terminologia['cores'] {
  * @returns Array de especialidades sugeridas
  */
 export function obterEspecialidadesSugeridas(tipo: TipoNegocio): string[] {
-  return tipo === 'nail_designer' ? ESPECIALIDADES_NAIL : ESPECIALIDADES_BARBEARIA
+  const especialidadesPorTipo: Record<TipoNegocio, string[]> = {
+    barbearia: ESPECIALIDADES_BARBEARIA,
+    nail_designer: ESPECIALIDADES_NAIL,
+    lash_designer: ESPECIALIDADES_LASH,
+    cabeleireira: ESPECIALIDADES_CABELEIREIRA
+  }
+
+  return especialidadesPorTipo[tipo] ?? ESPECIALIDADES_BARBEARIA
 }
 
 /**
@@ -396,7 +643,10 @@ export function obterEspecialidadesSugeridas(tipo: TipoNegocio): string[] {
  * @returns Emoji representativo
  */
 export function obterEmojiPrincipal(tipo: TipoNegocio): string {
-  return tipo === 'nail_designer' ? '💅' : '✂️'
+  if (tipo === 'barbearia') return '✂️'
+  if (tipo === 'lash_designer') return '✨'
+  if (tipo === 'cabeleireira') return '💇‍♀️'
+  return '💅'
 }
 
 /**
@@ -408,13 +658,14 @@ export function obterEmojiPrincipal(tipo: TipoNegocio): string {
 export function obterTextosNotificacao(tipo: TipoNegocio) {
   const terminologia = obterTerminologia(tipo)
   const emoji = obterEmojiPrincipal(tipo)
+  const iconeServico = ehTipoNegocioFeminino(tipo) ? emoji : '✂️'
   
   return {
     emoji,
     profissional: terminologia.profissional.singular,
     profissionalPlural: terminologia.profissional.plural,
     estabelecimento: terminologia.estabelecimento.singular,
-    iconeServico: emoji,
+    iconeServico,
     ...terminologia.textos
   }
 }
@@ -425,9 +676,15 @@ export function obterTextosNotificacao(tipo: TipoNegocio) {
 export {
   CATEGORIAS_BARBEARIA,
   CATEGORIAS_NAIL,
+  CATEGORIAS_LASH,
+  CATEGORIAS_CABELEIREIRA,
   ESPECIALIDADES_BARBEARIA,
   ESPECIALIDADES_NAIL,
+  ESPECIALIDADES_LASH,
+  ESPECIALIDADES_CABELEIREIRA,
   TERMINOLOGIA_BARBEARIA,
   TERMINOLOGIA_NAIL,
+  TERMINOLOGIA_LASH,
+  TERMINOLOGIA_CABELEIREIRA,
   CONFIGURACOES
 }

@@ -14,7 +14,9 @@ import {
   obterIconePrincipal,
   obterCoresSugeridas,
   CATEGORIAS_BARBEARIA,
-  CATEGORIAS_NAIL
+  CATEGORIAS_NAIL,
+  CATEGORIAS_LASH,
+  CATEGORIAS_CABELEIREIRA
 } from '../configuracoes-negocio'
 
 describe('configuracoes-negocio', () => {
@@ -36,6 +38,24 @@ describe('configuracoes-negocio', () => {
       expect(terminologia.profissional.plural).toBe('Nail Designers')
       expect(terminologia.estabelecimento.singular).toBe('Estúdio')
     })
+
+    it('deve retornar terminologia correta para lash_designer', () => {
+      const terminologia = obterTerminologia('lash_designer')
+
+      expect(terminologia.tipo).toBe('lash_designer')
+      expect(terminologia.profissional.singular).toBe('Lash Designer')
+      expect(terminologia.profissional.plural).toBe('Lash Designers')
+      expect(terminologia.estabelecimento.singular).toBe('Estúdio')
+    })
+
+    it('deve retornar terminologia correta para cabeleireira', () => {
+      const terminologia = obterTerminologia('cabeleireira')
+
+      expect(terminologia.tipo).toBe('cabeleireira')
+      expect(terminologia.profissional.singular).toBe('Cabeleireira')
+      expect(terminologia.profissional.plural).toBe('Cabeleireiras')
+      expect(terminologia.estabelecimento.singular).toBe('Salão')
+    })
   })
 
   describe('obterCategoriasServicos', () => {
@@ -54,27 +74,51 @@ describe('configuracoes-negocio', () => {
       expect(categorias.some(c => c.id === 'alongamento')).toBe(true)
       expect(categorias.some(c => c.id === 'nail_art')).toBe(true)
     })
+
+    it('deve retornar categorias de lash designer', () => {
+      const categorias = obterCategoriasServicos('lash_designer')
+
+      expect(categorias).toEqual(CATEGORIAS_LASH)
+      expect(categorias.some(c => c.id === 'extensao')).toBe(true)
+      expect(categorias.some(c => c.id === 'lifting')).toBe(true)
+    })
+
+    it('deve retornar categorias de cabeleireira', () => {
+      const categorias = obterCategoriasServicos('cabeleireira')
+
+      expect(categorias).toEqual(CATEGORIAS_CABELEIREIRA)
+      expect(categorias.some(c => c.id === 'corte')).toBe(true)
+      expect(categorias.some(c => c.id === 'coloracao')).toBe(true)
+    })
   })
 
   describe('obterTermoProfissional', () => {
     it('deve retornar termo singular sem artigo', () => {
       expect(obterTermoProfissional('barbearia')).toBe('Barbeiro')
       expect(obterTermoProfissional('nail_designer')).toBe('Nail Designer')
+      expect(obterTermoProfissional('lash_designer')).toBe('Lash Designer')
+      expect(obterTermoProfissional('cabeleireira')).toBe('Cabeleireira')
     })
 
     it('deve retornar termo plural sem artigo', () => {
       expect(obterTermoProfissional('barbearia', true)).toBe('Barbeiros')
       expect(obterTermoProfissional('nail_designer', true)).toBe('Nail Designers')
+      expect(obterTermoProfissional('lash_designer', true)).toBe('Lash Designers')
+      expect(obterTermoProfissional('cabeleireira', true)).toBe('Cabeleireiras')
     })
 
     it('deve retornar termo com artigo', () => {
       expect(obterTermoProfissional('barbearia', false, true)).toBe('o Barbeiro')
       expect(obterTermoProfissional('nail_designer', false, true)).toBe('a Nail Designer')
+      expect(obterTermoProfissional('lash_designer', false, true)).toBe('a Lash Designer')
+      expect(obterTermoProfissional('cabeleireira', false, true)).toBe('a Cabeleireira')
     })
 
     it('deve retornar termo plural com artigo', () => {
       expect(obterTermoProfissional('barbearia', true, true)).toBe('os Barbeiros')
       expect(obterTermoProfissional('nail_designer', true, true)).toBe('as Nail Designers')
+      expect(obterTermoProfissional('lash_designer', true, true)).toBe('as Lash Designers')
+      expect(obterTermoProfissional('cabeleireira', true, true)).toBe('as Cabeleireiras')
     })
   })
 
@@ -82,11 +126,15 @@ describe('configuracoes-negocio', () => {
     it('deve retornar termo sem artigo', () => {
       expect(obterTermoEstabelecimento('barbearia')).toBe('Barbearia')
       expect(obterTermoEstabelecimento('nail_designer')).toBe('Estúdio')
+      expect(obterTermoEstabelecimento('lash_designer')).toBe('Estúdio')
+      expect(obterTermoEstabelecimento('cabeleireira')).toBe('Salão')
     })
 
     it('deve retornar termo com artigo', () => {
       expect(obterTermoEstabelecimento('barbearia', true)).toBe('a Barbearia')
       expect(obterTermoEstabelecimento('nail_designer', true)).toBe('o Estúdio')
+      expect(obterTermoEstabelecimento('lash_designer', true)).toBe('o Estúdio')
+      expect(obterTermoEstabelecimento('cabeleireira', true)).toBe('o Salão')
     })
   })
 
@@ -94,6 +142,8 @@ describe('configuracoes-negocio', () => {
     it('deve retornar ícone correto por tipo', () => {
       expect(obterIconePrincipal('barbearia')).toBe('Scissors')
       expect(obterIconePrincipal('nail_designer')).toBe('Hand')
+      expect(obterIconePrincipal('lash_designer')).toBe('Sparkles')
+      expect(obterIconePrincipal('cabeleireira')).toBe('Sparkles')
     })
   })
 
@@ -112,6 +162,15 @@ describe('configuracoes-negocio', () => {
       
       // O destaque deve ser diferente (rosa para nail)
       expect(coresNail.destaque).not.toBe(coresBarbearia.destaque)
+    })
+
+    it('deve retornar cores diferentes para lash_designer e cabeleireira', () => {
+      const coresBarbearia = obterCoresSugeridas('barbearia')
+      const coresLash = obterCoresSugeridas('lash_designer')
+      const coresCabelo = obterCoresSugeridas('cabeleireira')
+
+      expect(coresLash.destaque).not.toBe(coresBarbearia.destaque)
+      expect(coresCabelo.destaque).not.toBe(coresBarbearia.destaque)
     })
   })
 
@@ -134,6 +193,26 @@ describe('configuracoes-negocio', () => {
       expect(ids).toContain('nail_art')
       expect(ids).toContain('manicure')
       expect(ids).toContain('pedicure')
+    })
+  })
+
+  describe('CATEGORIAS_LASH', () => {
+    it('deve ter categorias típicas de lash designer', () => {
+      const ids = CATEGORIAS_LASH.map(c => c.id)
+
+      expect(ids).toContain('extensao')
+      expect(ids).toContain('lifting')
+      expect(ids).toContain('manutencao')
+    })
+  })
+
+  describe('CATEGORIAS_CABELEIREIRA', () => {
+    it('deve ter categorias típicas de cabeleireira', () => {
+      const ids = CATEGORIAS_CABELEIREIRA.map(c => c.id)
+
+      expect(ids).toContain('corte')
+      expect(ids).toContain('escova')
+      expect(ids).toContain('coloracao')
     })
   })
 })

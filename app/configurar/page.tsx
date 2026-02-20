@@ -41,9 +41,9 @@ import {
   Hand
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { useTerminologia } from '@/hooks/useTerminologia'
+import { obterTerminologia } from '@/lib/configuracoes-negocio'
 
-import { TipoNegocio } from '@/lib/tipos-negocio'
+import { TipoNegocio, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
 
 /**
  * Paletas de cores para Barbearias (tons masculinos e neutros)
@@ -85,14 +85,23 @@ const PALETAS_NAIL = [
  * Retorna as paletas de cores baseadas no tipo de negócio
  */
 function obterPaletas(tipoNegocio: TipoNegocio | undefined) {
-  return tipoNegocio === 'nail_designer' ? PALETAS_NAIL : PALETAS_BARBEARIA
+  return ehTipoNegocioFeminino(tipoNegocio) ? PALETAS_NAIL : PALETAS_BARBEARIA
 }
 
 /**
  * Retorna as etapas do onboarding baseadas no tipo de negócio
  */
 function obterEtapas(tipoNegocio: TipoNegocio | undefined) {
-  const ehNail = tipoNegocio === 'nail_designer'
+  const tipoAtual = tipoNegocio || 'barbearia'
+  const terminologia = obterTerminologia(tipoAtual)
+  const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoAtual)
+  const estabelecimento = terminologia.estabelecimento.singular.toLowerCase()
+  const artigoEstabelecimento = terminologia.estabelecimento.artigo === 'a' ? 'da' : 'do'
+  const pronomeEstabelecimento = terminologia.estabelecimento.artigo === 'a' ? 'sua' : 'seu'
+  const profissionais = terminologia.profissional.plural.toLowerCase()
+  const profissional = terminologia.profissional.singular.toLowerCase()
+  const pronomeClientes = ehSegmentoFeminino ? 'suas clientes' : 'seus clientes'
+  const cadaProfissional = ehSegmentoFeminino ? 'cada uma' : 'cada um'
   
   return [
     { 
@@ -100,15 +109,11 @@ function obterEtapas(tipoNegocio: TipoNegocio | undefined) {
       titulo: 'Identidade', 
       icone: Store, 
       descricao: 'Nome e logo',
-      tituloCompleto: ehNail ? 'Identidade do seu estúdio' : 'Identidade da sua barbearia',
-      subtitulo: 'Vamos começar pelo básico: como seus clientes vão conhecer você',
+      tituloCompleto: `Identidade ${artigoEstabelecimento} ${pronomeEstabelecimento} ${estabelecimento}`,
+      subtitulo: 'Vamos começar pelo básico: como clientes vão conhecer seu trabalho',
       tempoEstimado: '1 min',
-      dicas: ehNail ? [
-        'Use o nome oficial do seu estúdio',
-        'A logo aparecerá no site e nos agendamentos',
-        'Você pode alterar depois a qualquer momento'
-      ] : [
-        'Use o nome oficial da sua barbearia',
+      dicas: [
+        `Use o nome oficial ${artigoEstabelecimento} ${pronomeEstabelecimento} ${estabelecimento}`,
         'A logo aparecerá no site e nos agendamentos',
         'Você pode alterar depois a qualquer momento'
       ]
@@ -119,17 +124,11 @@ function obterEtapas(tipoNegocio: TipoNegocio | undefined) {
       icone: Phone, 
       descricao: 'Telefone e redes',
       tituloCompleto: 'Informações de contato',
-      subtitulo: ehNail 
-        ? 'Como suas clientes podem entrar em contato com você'
-        : 'Como seus clientes podem entrar em contato com você',
+      subtitulo: `Como ${pronomeClientes} podem entrar em contato com você`,
       tempoEstimado: '1 min',
-      dicas: ehNail ? [
+      dicas: [
         'O WhatsApp é essencial para receber notificações de agendamentos',
-        'Instagram é fundamental para mostrar seu portfólio de nail art',
-        'E-mail é usado para comunicações importantes'
-      ] : [
-        'O WhatsApp é essencial para receber notificações de agendamentos',
-        'Instagram ajuda clientes a conhecerem seu trabalho',
+        'Instagram é ótimo para mostrar seu portfólio e atrair novos agendamentos',
         'E-mail é usado para comunicações importantes'
       ]
     },
@@ -138,10 +137,8 @@ function obterEtapas(tipoNegocio: TipoNegocio | undefined) {
       titulo: 'Localização', 
       icone: MapPin, 
       descricao: 'Endereço',
-      tituloCompleto: ehNail ? 'Onde fica seu estúdio' : 'Onde fica sua barbearia',
-      subtitulo: ehNail 
-        ? 'Ajude suas clientes a te encontrarem facilmente'
-        : 'Ajude seus clientes a te encontrarem facilmente',
+      tituloCompleto: `Onde fica ${pronomeEstabelecimento} ${estabelecimento}`,
+      subtitulo: `Ajude ${pronomeClientes} a te encontrarem facilmente`,
       tempoEstimado: '30 seg',
       dicas: [
         'Endereço completo facilita a navegação GPS',
@@ -157,7 +154,7 @@ function obterEtapas(tipoNegocio: TipoNegocio | undefined) {
       tituloCompleto: 'Aparência do seu site',
       subtitulo: 'Escolha as cores que representam a identidade da sua marca',
       tempoEstimado: '30 seg',
-      dicas: ehNail ? [
+      dicas: ehSegmentoFeminino ? [
         'Cores suaves transmitem delicadeza e sofisticação',
         'Tons rosados e nude são populares no segmento',
         'Veja o preview ao lado para conferir como ficará'
@@ -170,19 +167,13 @@ function obterEtapas(tipoNegocio: TipoNegocio | undefined) {
     { 
       id: 5, 
       titulo: 'Serviços', 
-      icone: ehNail ? Hand : Scissors, 
+      icone: ehSegmentoFeminino ? Hand : Scissors, 
       descricao: 'Seus serviços',
       tituloCompleto: 'Cadastre seus serviços',
-      subtitulo: ehNail 
-        ? 'Defina o que seu estúdio oferece, preços e duração de cada serviço'
-        : 'Defina o que sua barbearia oferece, preços e duração de cada serviço',
+      subtitulo: `Defina o que ${pronomeEstabelecimento} ${estabelecimento} oferece, com preço e duração`,
       tempoEstimado: '2-3 min',
-      dicas: ehNail ? [
-        'Adicione alongamentos, esmaltações, nail art, etc.',
-        'A duração ajuda a organizar a agenda automaticamente',
-        'Você pode adicionar ou editar serviços depois no painel'
-      ] : [
-        'Adicione nome, preço e duração de cada serviço',
+      dicas: [
+        'Adicione os principais serviços que você oferece',
         'A duração ajuda a organizar a agenda automaticamente',
         'Você pode adicionar ou editar serviços depois no painel'
       ]
@@ -192,18 +183,12 @@ function obterEtapas(tipoNegocio: TipoNegocio | undefined) {
       titulo: 'Equipe', 
       icone: Users, 
       descricao: 'Profissionais',
-      tituloCompleto: ehNail ? 'Sua equipe de nail designers' : 'Sua equipe de profissionais',
-      subtitulo: ehNail 
-        ? 'Cadastre as profissionais e gere códigos de acesso para cada uma'
-        : 'Cadastre os barbeiros e gere códigos de acesso para cada um',
+      tituloCompleto: 'Sua equipe de profissionais',
+      subtitulo: `Cadastre ${terminologia.profissional.artigoPlural} ${profissionais} e gere códigos de acesso para ${cadaProfissional}`,
       tempoEstimado: '2-3 min',
-      dicas: ehNail ? [
-        'Cada nail designer recebe um código único de acesso',
-        'Elas poderão ver apenas seus próprios agendamentos',
-        'Você pode gerenciar comissões pelo painel admin'
-      ] : [
-        'Cada barbeiro recebe um código único de acesso',
-        'Eles poderão ver apenas seus próprios agendamentos',
+      dicas: [
+        `Cada ${profissional} recebe um código único de acesso`,
+        'Cada profissional verá apenas os próprios agendamentos',
         'Você pode gerenciar comissões pelo painel admin'
       ]
     },
@@ -504,7 +489,16 @@ function CardPasso({
 function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros, tipoNegocio }: TelaSucessoProps) {
   const [linkCopiado, setLinkCopiado] = useState(false)
   const linkPublico = `barberhub.online/${tenant.slug}`
-  const ehNail = tipoNegocio === 'nail_designer'
+  const tipoAtual = tipoNegocio || 'barbearia'
+  const terminologia = obterTerminologia(tipoAtual)
+  const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoAtual)
+  const estabelecimento = terminologia.estabelecimento.singular.toLowerCase()
+  const artigoEstabelecimento = terminologia.estabelecimento.artigo
+  const possessivoEstabelecimento = artigoEstabelecimento === 'a' ? 'sua' : 'seu'
+  const possessivoEstabelecimentoCapitalizado = `${possessivoEstabelecimento.charAt(0).toUpperCase()}${possessivoEstabelecimento.slice(1)}`
+  const contracaoEstabelecimento = artigoEstabelecimento === 'a' ? 'da' : 'do'
+  const pronomeClientes = ehSegmentoFeminino ? 'suas clientes' : 'seus clientes'
+  const clienteSingular = ehSegmentoFeminino ? 'uma cliente' : 'um cliente'
   const nomeNegocio = dados.nome || tenant.nome
   
   // Scroll para o topo ao montar o componente
@@ -558,10 +552,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
               Parabéns! {nomeNegocio} está pronto
             </h1>
             <p className="text-zinc-600 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
-              {ehNail 
-                ? 'Seu estúdio agora tem uma página própria na internet onde suas clientes podem agendar horários a qualquer momento.'
-                : 'Sua barbearia agora tem uma página própria na internet onde seus clientes podem agendar horários a qualquer momento.'
-              }
+              {`${possessivoEstabelecimentoCapitalizado} ${estabelecimento} agora tem uma página própria na internet onde ${pronomeClientes} podem agendar horários a qualquer momento.`}
             </p>
           </motion.div>
         </div>
@@ -583,10 +574,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
                   Seu endereço na internet
                 </h2>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                  {ehNail 
-                    ? 'Este é o link que você vai compartilhar com suas clientes. Elas podem acessar de qualquer celular ou computador.'
-                    : 'Este é o link que você vai compartilhar com seus clientes. Eles podem acessar de qualquer celular ou computador.'
-                  }
+                  {`Este é o link que você vai compartilhar com ${pronomeClientes}. O acesso funciona em qualquer celular ou computador.`}
                 </p>
                 
                 {/* Link copiável - responsivo */}
@@ -646,10 +634,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
             <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
               <p className="text-3xl font-bold text-zinc-900 dark:text-white mb-1">{totalBarbeiros}</p>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                {totalBarbeiros === 1 
-                  ? (ehNail ? 'Profissional' : 'Profissional')
-                  : (ehNail ? 'Profissionais' : 'Profissionais')
-                }
+                {totalBarbeiros === 1 ? 'Profissional' : 'Profissionais'}
               </p>
             </div>
           </div>
@@ -671,10 +656,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
               numero={1}
               titulo="Acesse seu Painel de Controle"
               descricao="Onde você gerencia tudo do seu negócio"
-              explicacao={ehNail 
-                ? "No painel você vai ver os agendamentos que suas clientes fizerem, controlar os horários disponíveis, ver relatórios de quanto está faturando, e muito mais. É como a central de comando do seu estúdio!"
-                : "No painel você vai ver os agendamentos que seus clientes fizerem, controlar os horários disponíveis, ver relatórios de quanto está faturando, e muito mais. É como a central de comando da sua barbearia!"
-              }
+              explicacao={`No painel você vai ver os agendamentos que ${pronomeClientes} fizerem, controlar os horários disponíveis, ver relatórios de faturamento e muito mais. É como a central de comando ${contracaoEstabelecimento} ${possessivoEstabelecimento} ${estabelecimento}.`}
               link="/admin"
               textoBotao="Entrar no Painel"
               icone={LayoutDashboard}
@@ -685,11 +667,8 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
             <CardPasso
               numero={2}
               titulo="Veja como ficou sua página"
-              descricao="Teste a experiência que seus clientes terão"
-              explicacao={ehNail 
-                ? "Clique para abrir sua página pública em uma nova aba. É exatamente isso que suas clientes vão ver quando acessarem o link. Você pode testar fazer um agendamento para ver como funciona!"
-                : "Clique para abrir sua página pública em uma nova aba. É exatamente isso que seus clientes vão ver quando acessarem o link. Você pode testar fazer um agendamento para ver como funciona!"
-              }
+              descricao={`Teste a experiência que ${pronomeClientes} terão`}
+              explicacao={`Clique para abrir sua página pública em uma nova aba. É exatamente isso que ${pronomeClientes} vão ver quando acessarem o link. Você pode simular um agendamento para validar a experiência.`}
               link={`/${tenant.slug}`}
               textoBotao="Ver minha página"
               icone={Eye}
@@ -701,10 +680,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
               numero={3}
               titulo="Compartilhe nas redes sociais"
               descricao="Divulgue seu link para começar a receber agendamentos"
-              explicacao={ehNail 
-                ? "Cole o link no seu Instagram, WhatsApp, ou onde preferir. Quando uma cliente clicar, ela vai direto para sua página de agendamentos. Simples assim!"
-                : "Cole o link no seu Instagram, WhatsApp, ou onde preferir. Quando um cliente clicar, ele vai direto para sua página de agendamentos. Simples assim!"
-              }
+              explicacao={`Cole o link no seu Instagram, WhatsApp ou onde preferir. Quando ${clienteSingular} clicar, vai direto para sua página de agendamentos.`}
               acao={copiarLink}
               textoBotao={linkCopiado ? "Link copiado!" : "Copiar link"}
               icone={linkCopiado ? Check : Copy}
@@ -732,10 +708,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
               <div>
                 <p className="font-medium text-zinc-900 dark:text-white mb-1">Configure seus horários de funcionamento</p>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                  {ehNail 
-                    ? 'No painel, vá em "Horários" para definir quais dias e horários seu estúdio atende. Assim o sistema só mostra horários disponíveis para suas clientes.'
-                    : 'No painel, vá em "Horários" para definir quais dias e horários sua barbearia atende. Assim o sistema só mostra horários disponíveis para seus clientes.'
-                  }
+                  {`No painel, vá em "Horários" para definir quais dias e horários ${possessivoEstabelecimento} ${estabelecimento} atende. Assim o sistema só mostra horários disponíveis para ${pronomeClientes}.`}
                 </p>
               </div>
             </div>
@@ -747,10 +720,7 @@ function TelaSucessoConfiguracao({ tenant, dados, totalServicos, totalBarbeiros,
               <div>
                 <p className="font-medium text-zinc-900 dark:text-white mb-1">Personalize ainda mais</p>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                  {ehNail 
-                    ? 'Você pode adicionar fotos do seu trabalho, ajustar preços, criar promoções e muito mais. Explore o painel com calma!'
-                    : 'Você pode adicionar fotos do seu trabalho, ajustar preços, criar promoções e muito mais. Explore o painel com calma!'
-                  }
+                  Você pode adicionar fotos do seu trabalho, ajustar preços, criar promoções e muito mais. Explore o painel com calma!
                 </p>
               </div>
             </div>
@@ -796,7 +766,29 @@ export default function ConfigurarPage() {
   const ETAPAS = obterEtapas(tipoNegocio)
   const PALETAS = obterPaletas(tipoNegocio)
   const TOTAL_ETAPAS = ETAPAS.length
-  const ehNail = tipoNegocio === 'nail_designer'
+  const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoNegocio)
+  const tipoNegocioAtual: TipoNegocio = tipoNegocio || 'barbearia'
+  const terminologiaNegocio = obterTerminologia(tipoNegocioAtual)
+  const artigoNomeEstabelecimento = terminologiaNegocio.estabelecimento.artigo === 'a' ? 'da' : 'do'
+  const nomeEstabelecimento = terminologiaNegocio.estabelecimento.singular
+  const placeholderNomePorTipo: Record<TipoNegocio, string> = {
+    barbearia: 'Ex: Barbearia Premium',
+    nail_designer: 'Ex: Estúdio Bella Nails',
+    lash_designer: 'Ex: Estúdio Bella Cílios',
+    cabeleireira: 'Ex: Salão Bella'
+  }
+  const placeholderEmailPorTipo: Record<TipoNegocio, string> = {
+    barbearia: 'contato@barbeariapremium.com',
+    nail_designer: 'contato@estudiobellanails.com',
+    lash_designer: 'contato@estudiobellacilios.com',
+    cabeleireira: 'contato@salaobella.com'
+  }
+  const placeholderInstagramPorTipo: Record<TipoNegocio, string> = {
+    barbearia: '@barbeariapremium',
+    nail_designer: '@estudiobellanails',
+    lash_designer: '@estudiobellacilios',
+    cabeleireira: '@salaobella'
+  }
   
   useEffect(() => {
     setMontado(true)
@@ -1017,7 +1009,18 @@ export default function ConfigurarPage() {
                 <motion.div key="etapa1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <CabecalhoEtapa etapa={ETAPAS[0]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                   <div className="space-y-6">
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">{ehNail ? 'Nome do Estúdio *' : 'Nome da Barbearia *'}</label><input type="text" value={dados.nome} onChange={e => setDados({ ...dados, nome: e.target.value })} placeholder={ehNail ? 'Ex: Studio Nails Premium' : 'Ex: Barbearia Premium'} className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                        {`Nome ${artigoNomeEstabelecimento} ${nomeEstabelecimento} *`}
+                      </label>
+                      <input
+                        type="text"
+                        value={dados.nome}
+                        onChange={e => setDados({ ...dados, nome: e.target.value })}
+                        placeholder={placeholderNomePorTipo[tipoNegocioAtual]}
+                        className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all"
+                      />
+                    </div>
                     <EditorLogo logoUrl={dados.logo_url} tenantId={tenant.id} onLogoChange={(url, iconesPwa) => setDados({ ...dados, logo_url: url, icone_pwa_192: iconesPwa?.icone_192 || '', icone_pwa_512: iconesPwa?.icone_512 || '' })} corPrimaria={dados.cor_primaria} corSecundaria={dados.cor_secundaria} />
                   </div>
                 </motion.div>
@@ -1030,8 +1033,8 @@ export default function ConfigurarPage() {
                       <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Telefone</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.telefone} onChange={e => setDados({ ...dados, telefone: formatarTelefone(e.target.value) })} placeholder="(00) 0000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
                       <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">WhatsApp *</label><div className="relative"><Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="tel" value={dados.whatsapp} onChange={e => setDados({ ...dados, whatsapp: formatarTelefone(e.target.value) })} placeholder="(00) 00000-0000" className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div><p className="text-xs text-zinc-500 dark:text-zinc-600 mt-1">Usado para agendamentos</p></div>
                     </div>
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">E-mail</label><div className="relative"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="email" value={dados.email} onChange={e => setDados({ ...dados, email: e.target.value })} placeholder={ehNail ? 'contato@seuestudio.com' : 'contato@barbearia.com'} className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
-                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Instagram</label><div className="relative"><Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.instagram} onChange={e => setDados({ ...dados, instagram: e.target.value })} placeholder={ehNail ? '@seuestudionails' : '@suabarbearia'} className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">E-mail</label><div className="relative"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="email" value={dados.email} onChange={e => setDados({ ...dados, email: e.target.value })} placeholder={placeholderEmailPorTipo[tipoNegocioAtual]} className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
+                    <div><label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Instagram</label><div className="relative"><Instagram className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" /><input type="text" value={dados.instagram} onChange={e => setDados({ ...dados, instagram: e.target.value })} placeholder={placeholderInstagramPorTipo[tipoNegocioAtual]} className="w-full pl-12 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 focus:border-zinc-400 dark:focus:border-zinc-700 transition-all" /></div></div>
                   </div>
                 </motion.div>
               )}

@@ -13,7 +13,8 @@ import {
   TipoNegocio, 
   Terminologia,
   ehTipoNegocioValido,
-  tipoNegocioPadrao 
+  tipoNegocioPadrao,
+  ehTipoNegocioFeminino
 } from '@/lib/tipos-negocio'
 import { 
   obterTerminologia,
@@ -45,6 +46,9 @@ export interface UseTerminologiaRetorno {
   // Verifica se é um tipo específico
   ehBarbearia: boolean
   ehNailDesigner: boolean
+  ehLashDesigner: boolean
+  ehCabeleireira: boolean
+  ehSegmentoFeminino: boolean
 }
 
 /**
@@ -120,7 +124,10 @@ export function useTerminologia(tipoOverride?: TipoNegocio): UseTerminologiaReto
     categorias,
     textos: terminologia.textos,
     ehBarbearia: tipoNegocio === 'barbearia',
-    ehNailDesigner: tipoNegocio === 'nail_designer'
+    ehNailDesigner: tipoNegocio === 'nail_designer',
+    ehLashDesigner: tipoNegocio === 'lash_designer',
+    ehCabeleireira: tipoNegocio === 'cabeleireira',
+    ehSegmentoFeminino: ehTipoNegocioFeminino(tipoNegocio)
   }
 }
 
