@@ -9,7 +9,13 @@ import {
   Oswald, 
   Lato, 
   Raleway, 
-  Nunito 
+  Nunito,
+  DM_Sans,
+  Manrope,
+  Space_Grotesk,
+  Bebas_Neue,
+  Merriweather,
+  Cormorant_Garamond
 } from 'next/font/google'
 import './globals.css'
 import '@radix-ui/themes/styles.css'
@@ -88,6 +94,48 @@ const nunito = Nunito({
   variable: '--font-nunito',
 })
 
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+  variable: '--font-dm-sans',
+})
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+  variable: '--font-manrope',
+})
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+  variable: '--font-space-grotesk',
+})
+
+const bebasNeue = Bebas_Neue({
+  subsets: ['latin'],
+  weight: ['400'],
+  display: 'swap',
+  variable: '--font-bebas-neue',
+})
+
+const merriweather = Merriweather({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+  variable: '--font-merriweather',
+})
+
+const cormorantGaramond = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-cormorant',
+})
+
 // Combina todas as variáveis de fonte
 const fontVariables = [
   inter.variable,
@@ -100,6 +148,12 @@ const fontVariables = [
   lato.variable,
   raleway.variable,
   nunito.variable,
+  dmSans.variable,
+  manrope.variable,
+  spaceGrotesk.variable,
+  bebasNeue.variable,
+  merriweather.variable,
+  cormorantGaramond.variable,
 ].join(' ')
 
 const URL_BASE = 'https://barberhub.online'

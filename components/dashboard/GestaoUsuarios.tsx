@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
-  Users, Search, Phone, Mail, Calendar, Download, 
-  UserPlus, MoreVertical, Eye, Ban, CheckCircle, Upload 
+  Users, Search, Phone, Calendar, Download, 
+  UserPlus, Eye, Ban, CheckCircle, Upload 
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { Button, TextField, Select, Badge } from "@radix-ui/themes";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTerminologia } from "@/hooks/useTerminologia";
 
 interface Cliente {
   id: string;
@@ -24,12 +26,14 @@ interface Cliente {
 }
 
 /**
- * Componente de Gestão de Usuários
+ * Componente de Gestão de Clientes
  * Controle completo de clientes cadastrados
  */
 const ITENS_POR_PAGINA = 20;
 
 export function GestaoUsuarios() {
+  const { tenant } = useAuth();
+  const { terminologia } = useTerminologia();
   const [usuarios, setUsuarios] = useState<Cliente[]>([]);
   const [usuariosFiltrados, setUsuariosFiltrados] = useState<Cliente[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -40,35 +44,32 @@ export function GestaoUsuarios() {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const [totalUsuarios, setTotalUsuarios] = useState(0);
+  const artigoEstabelecimento = terminologia.estabelecimento.artigo;
+  const preposicaoEstabelecimento = artigoEstabelecimento === "a" ? "da" : "do";
+  const nomeEstabelecimento = terminologia.estabelecimento.singular.toLowerCase();
 
-  useEffect(() => {
-    buscarUsuarios();
-  }, []);
+  const buscarUsuarios = useCallback(async () => {
+    if (!tenant?.id) return;
 
-  useEffect(() => {
-    filtrarUsuarios();
-    setPaginaAtual(1);
-  }, [termoBusca, filtroStatus, usuarios]);
-
-  const buscarUsuarios = async () => {
     try {
       const { data, error } = await supabase
         .from("clientes")
         .select("*")
+        .eq("tenant_id", tenant.id)
         .order("data_cadastro", { ascending: false });
 
       if (error) throw error;
 
-      console.log("Usuários carregados:", data);
+      console.log("Clientes carregados:", data);
       setUsuarios(data || []);
     } catch (error) {
-      console.error("Erro ao buscar usuários:", error);
+      console.error("Erro ao buscar clientes:", error);
     } finally {
       setCarregando(false);
     }
-  };
+  }, [tenant?.id]);
 
-  const filtrarUsuarios = () => {
+  const filtrarUsuarios = useCallback(() => {
     let filtrados = [...usuarios];
 
     // Filtrar por termo de busca
@@ -90,16 +91,25 @@ export function GestaoUsuarios() {
     }
 
     setTotalUsuarios(filtrados.length);
-    setTotalPaginas(Math.ceil(filtrados.length / ITENS_POR_PAGINA));
+    setTotalPaginas(Math.max(1, Math.ceil(filtrados.length / ITENS_POR_PAGINA)));
     
     const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
     const fim = inicio + ITENS_POR_PAGINA;
     setUsuariosFiltrados(filtrados.slice(inicio, fim));
-  };
+  }, [usuarios, termoBusca, filtroStatus, paginaAtual]);
+
+  useEffect(() => {
+    if (!tenant?.id) return;
+    buscarUsuarios();
+  }, [tenant?.id, buscarUsuarios]);
+
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [termoBusca, filtroStatus, usuarios]);
 
   useEffect(() => {
     filtrarUsuarios();
-  }, [paginaAtual]);
+  }, [filtrarUsuarios]);
 
   const irParaPagina = (pagina: number) => {
     if (pagina >= 1 && pagina <= totalPaginas) {
@@ -157,11 +167,16 @@ export function GestaoUsuarios() {
       buscarUsuarios();
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
-      alert("Erro ao atualizar status do usuário");
+      alert("Erro ao atualizar status do cliente");
     }
   };
 
   const importarContatos = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!tenant?.id) {
+      alert("Não foi possível identificar o negócio para importar contatos.");
+      return;
+    }
+
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -191,7 +206,7 @@ export function GestaoUsuarios() {
             // Inserir no Supabase
             const { error } = await supabase
               .from("clientes")
-              .insert([{ nome, telefone, email }])
+              .insert([{ nome, telefone, email, tenant_id: tenant?.id }])
               .select();
 
             if (!error) {
@@ -215,7 +230,7 @@ export function GestaoUsuarios() {
   };
 
   const exportarUsuarios = () => {
-    // Criar CSV dos usuários
+    // Criar CSV dos clientes
     const csv = [
       ["Nome", "Email", "Telefone", "Data Cadastro", "Total Agendamentos", "Status"].join(";"),
       ...usuariosFiltrados.map((u) =>
@@ -234,7 +249,7 @@ export function GestaoUsuarios() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `usuarios_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.download = `clientes_${format(new Date(), "yyyy-MM-dd")}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -251,8 +266,16 @@ export function GestaoUsuarios() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-900 dark:border-white mb-4"></div>
-          <p className="text-zinc-600 dark:text-zinc-400">Carregando usuários...</p>
+          <p className="text-zinc-600 dark:text-zinc-400">Carregando clientes...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!tenant?.id) {
+    return (
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 text-sm text-zinc-600 dark:text-zinc-400">
+        Não foi possível carregar os clientes porque o negócio não está identificado.
       </div>
     );
   }
@@ -263,10 +286,10 @@ export function GestaoUsuarios() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            Gestão de Usuários
+            Clientes Cadastrados
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400">
-            {totalUsuarios} {totalUsuarios === 1 ? "usuário" : "usuários"} • Página {paginaAtual} de {totalPaginas}
+            {totalUsuarios} {totalUsuarios === 1 ? "cliente" : "clientes"} cadastrados {preposicaoEstabelecimento} {nomeEstabelecimento} • Página {paginaAtual} de {totalPaginas}
           </p>
         </div>
 
@@ -303,7 +326,7 @@ export function GestaoUsuarios() {
           className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">Total de Usuários</span>
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">Total de Clientes</span>
             <Users className="w-5 h-5 text-blue-600" />
           </div>
           <p className="text-2xl font-bold text-zinc-900 dark:text-white">
@@ -318,7 +341,7 @@ export function GestaoUsuarios() {
           className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800"
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">Usuários Ativos</span>
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">Clientes Ativos</span>
             <CheckCircle className="w-5 h-5 text-green-600" />
           </div>
           <p className="text-2xl font-bold text-zinc-900 dark:text-white">
@@ -392,14 +415,102 @@ export function GestaoUsuarios() {
         </div>
       </div>
 
-      {/* Tabela de Usuários */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+      {/* Lista mobile */}
+      <div className="md:hidden space-y-3">
+        {usuariosFiltrados.length === 0 ? (
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 px-4 py-8 text-center text-zinc-500 dark:text-zinc-400">
+            Nenhum cliente encontrado
+          </div>
+        ) : (
+          usuariosFiltrados.map((usuario) => (
+            <div
+              key={`mobile-${usuario.id}`}
+              className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                    {usuario.nome}
+                  </p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
+                    {usuario.email}
+                  </p>
+                </div>
+                <Badge color={usuario.ativo ? "green" : "gray"} size="2">
+                  {usuario.ativo ? "Ativo" : "Inativo"}
+                </Badge>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <a
+                  href={`tel:${usuario.telefone}`}
+                  className="flex items-center gap-2 text-zinc-800 dark:text-zinc-200"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  {usuario.telefone}
+                </a>
+                <p className="text-zinc-500 dark:text-zinc-400">
+                  Cadastro: {format(new Date(usuario.data_cadastro), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+                <p className="text-zinc-500 dark:text-zinc-400">
+                  Agendamentos: <span className="font-medium text-zinc-800 dark:text-zinc-200">{usuario.total_agendamentos}</span>
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {usuario.telefone && (
+                  <a
+                    href={`https://wa.me/55${usuario.telefone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium"
+                  >
+                    <WhatsAppIcon size={14} />
+                    WhatsApp
+                  </a>
+                )}
+                <Button
+                  size="1"
+                  variant="soft"
+                  onClick={() => verDetalhes(usuario)}
+                  className="cursor-pointer"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  Detalhes
+                </Button>
+                <Button
+                  size="1"
+                  variant="soft"
+                  color={usuario.ativo ? "red" : "green"}
+                  onClick={() => toggleStatusUsuario(usuario.id, usuario.ativo)}
+                  className="cursor-pointer"
+                >
+                  {usuario.ativo ? (
+                    <>
+                      <Ban className="w-4 h-4 mr-1" />
+                      Inativar
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      Ativar
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tabela desktop */}
+      <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-zinc-50 dark:bg-zinc-800">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
-                  Usuário
+                  Cliente
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase">
                   Contato
@@ -425,7 +536,7 @@ export function GestaoUsuarios() {
                     colSpan={6}
                     className="px-6 py-8 text-center text-zinc-500 dark:text-zinc-400"
                   >
-                    Nenhum usuário encontrado
+                    Nenhum cliente encontrado
                   </td>
                 </tr>
               ) : (
@@ -516,12 +627,12 @@ export function GestaoUsuarios() {
 
       {/* Paginação */}
       {totalPaginas > 1 && (
-        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
           <div className="text-sm text-zinc-600 dark:text-zinc-400">
             Mostrando {((paginaAtual - 1) * ITENS_POR_PAGINA) + 1} a {Math.min(paginaAtual * ITENS_POR_PAGINA, totalUsuarios)} de {totalUsuarios}
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <Button
               variant="soft"
               size="1"
@@ -570,7 +681,7 @@ export function GestaoUsuarios() {
             className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full"
           >
             <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">
-              Detalhes do Usuário
+              Detalhes do Cliente
             </h3>
 
             <div className="space-y-4">

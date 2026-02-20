@@ -20,6 +20,9 @@ export interface Tenant {
   cor_primaria: string
   cor_secundaria: string
   cor_destaque: string
+  cor_texto?: string | null
+  fonte_principal?: string | null
+  fonte_titulos?: string | null
   telefone: string | null
   whatsapp: string | null
   email: string

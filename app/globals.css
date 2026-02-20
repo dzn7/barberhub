@@ -23,6 +23,22 @@
 .font-lato { font-family: 'Lato', ui-sans-serif, system-ui, sans-serif; }
 .font-raleway { font-family: 'Raleway', ui-sans-serif, system-ui, sans-serif; }
 .font-nunito { font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif; }
+.font-dm-sans { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; }
+.font-manrope { font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif; }
+.font-space-grotesk { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; }
+.font-bebas-neue { font-family: 'Bebas Neue', 'Arial Narrow', ui-sans-serif, sans-serif; }
+.font-merriweather { font-family: 'Merriweather', ui-serif, Georgia, serif; }
+.font-cormorant { font-family: 'Cormorant Garamond', ui-serif, Georgia, serif; }
+
+/* Tipografia dinâmica por tenant em páginas públicas */
+.tenant-fonts h1,
+.tenant-fonts h2,
+.tenant-fonts h3,
+.tenant-fonts h4,
+.tenant-fonts h5,
+.tenant-fonts h6 {
+  font-family: var(--font-titulos-family, inherit);
+}
 
 @theme inline {
   --animate-cell-ripple: cell-ripple var(--duration, 200ms) ease-out none 1 var(--delay, 0ms);

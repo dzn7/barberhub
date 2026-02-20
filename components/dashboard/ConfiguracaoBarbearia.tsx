@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import {
   Store, Palette, Upload, Trash2, Check, X, Save, Loader2,
-  Eye, RefreshCw, ImageIcon, Link as LinkIcon, Phone, Mail,
-  MapPin, Instagram, Globe, Clock, Smartphone
+  Eye, ImageIcon, Phone, Mail,
+  MapPin, Instagram, Globe, Smartphone, Type, Search, Sparkles
 } from "lucide-react";
 import { PreviewSite } from "@/components/configuracao/PreviewSite";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTerminologia } from "@/hooks/useTerminologia";
 import { TipoNegocio, ehTipoNegocioFeminino } from "@/lib/tipos-negocio";
+import { obterClasseFonte as obterClasseFonteUtil } from "@/lib/fontes";
 
 interface ConfiguracaoBarbeariaProps {
   onSalvar?: () => void;
@@ -67,6 +68,94 @@ const CORES_NAIL_DESIGNER = [
   { nome: "Coral", descricao: "Coral vibrante", primaria: "#1c1412", secundaria: "#fff7ed", destaque: "#f97316" },
   { nome: "Mint Cream", descricao: "Menta cremosa", primaria: "#0f1a17", secundaria: "#ecfdf5", destaque: "#34d399" },
   { nome: "Peach", descricao: "Pêssego delicado", primaria: "#1a1614", secundaria: "#fff8f5", destaque: "#fdba74" },
+];
+
+type CategoriaFonte = "sans" | "serif" | "display";
+type CategoriaFonteFiltro = "todas" | CategoriaFonte;
+
+interface FonteDisponivel {
+  nome: string;
+  descricao: string;
+  categoria: CategoriaFonte;
+  indicadaPara: string;
+}
+
+interface CombinacaoTipografica {
+  id: string;
+  nome: string;
+  descricao: string;
+  fontePrincipal: string;
+  fonteTitulos: string;
+  segmentos: TipoNegocio[];
+}
+
+const FONTES_DISPONIVEIS: FonteDisponivel[] = [
+  { nome: "Inter", descricao: "Limpa e muito legível", categoria: "sans", indicadaPara: "Texto geral" },
+  { nome: "Poppins", descricao: "Geométrica e moderna", categoria: "sans", indicadaPara: "Marca jovem" },
+  { nome: "Roboto", descricao: "Neutra e estável", categoria: "sans", indicadaPara: "Operação do dia a dia" },
+  { nome: "Montserrat", descricao: "Presença forte", categoria: "sans", indicadaPara: "Títulos marcantes" },
+  { nome: "Open Sans", descricao: "Confortável em blocos longos", categoria: "sans", indicadaPara: "Descrições extensas" },
+  { nome: "Lato", descricao: "Amigável e equilibrada", categoria: "sans", indicadaPara: "Atendimento próximo" },
+  { nome: "Raleway", descricao: "Elegante e fina", categoria: "sans", indicadaPara: "Visual refinado" },
+  { nome: "Nunito", descricao: "Arredondada e acolhedora", categoria: "sans", indicadaPara: "Tom leve" },
+  { nome: "DM Sans", descricao: "Contemporânea e premium", categoria: "sans", indicadaPara: "SaaS e marca atual" },
+  { nome: "Manrope", descricao: "Sólida para interfaces", categoria: "sans", indicadaPara: "Painéis e mobile" },
+  { nome: "Playfair Display", descricao: "Serifada clássica", categoria: "serif", indicadaPara: "Percepção de luxo" },
+  { nome: "Merriweather", descricao: "Serifada editorial", categoria: "serif", indicadaPara: "Autoridade e tradição" },
+  { nome: "Cormorant Garamond", descricao: "Sofisticada e autoral", categoria: "serif", indicadaPara: "Estúdios de beleza" },
+  { nome: "Space Grotesk", descricao: "Tech com personalidade", categoria: "display", indicadaPara: "Visual moderno" },
+  { nome: "Oswald", descricao: "Condensada e impactante", categoria: "display", indicadaPara: "Chamadas curtas" },
+  { nome: "Bebas Neue", descricao: "Display forte e direta", categoria: "display", indicadaPara: "Promoções e banners" },
+];
+
+const CATEGORIAS_FONTE: { id: CategoriaFonteFiltro; label: string }[] = [
+  { id: "todas", label: "Todas" },
+  { id: "sans", label: "Sem serifa" },
+  { id: "serif", label: "Serifadas" },
+  { id: "display", label: "Display" },
+];
+
+const COMBINACOES_TIPOGRAFICAS: CombinacaoTipografica[] = [
+  {
+    id: "clean-pro",
+    nome: "Clean Profissional",
+    descricao: "Leitura confortável e visual moderno",
+    fontePrincipal: "Inter",
+    fonteTitulos: "Montserrat",
+    segmentos: ["barbearia", "nail_designer", "lash_designer", "cabeleireira"],
+  },
+  {
+    id: "editorial-luxo",
+    nome: "Editorial Luxo",
+    descricao: "Presença premium para marca sofisticada",
+    fontePrincipal: "DM Sans",
+    fonteTitulos: "Playfair Display",
+    segmentos: ["nail_designer", "lash_designer", "cabeleireira", "barbearia"],
+  },
+  {
+    id: "contemporaneo-tech",
+    nome: "Contemporâneo",
+    descricao: "Energia moderna sem perder clareza",
+    fontePrincipal: "Manrope",
+    fonteTitulos: "Space Grotesk",
+    segmentos: ["barbearia", "lash_designer", "nail_designer", "cabeleireira"],
+  },
+  {
+    id: "tradicao-premium",
+    nome: "Tradição Premium",
+    descricao: "Tom clássico com ar de confiança",
+    fontePrincipal: "Open Sans",
+    fonteTitulos: "Merriweather",
+    segmentos: ["barbearia", "cabeleireira", "nail_designer", "lash_designer"],
+  },
+  {
+    id: "impacto-campanha",
+    nome: "Impacto em Campanhas",
+    descricao: "Chamada forte para promoções e ações",
+    fontePrincipal: "Poppins",
+    fonteTitulos: "Bebas Neue",
+    segmentos: ["barbearia", "lash_designer", "nail_designer", "cabeleireira"],
+  },
 ];
 
 export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) {
@@ -130,11 +219,9 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
   const exemploAtual = EXEMPLOS_POR_TIPO[tipoNegocio];
   const inputFileRef = useRef<HTMLInputElement>(null);
   
-  const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [uploadando, setUploadando] = useState(false);
   const [mensagem, setMensagem] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
-  const [mostrarPreview, setMostrarPreview] = useState(false);
   const [mostrarPreviewMobile, setMostrarPreviewMobile] = useState(false);
   
   const [dados, setDados] = useState({
@@ -155,24 +242,59 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
     instagram: "",
   });
 
-  // Lista de fontes disponíveis com classe CSS correspondente
-  const FONTES_DISPONIVEIS = [
-    { nome: "Inter", classe: "font-inter", descricao: "Moderna e legível" },
-    { nome: "Poppins", classe: "font-poppins", descricao: "Geométrica e elegante" },
-    { nome: "Roboto", classe: "font-roboto", descricao: "Clássica e versátil" },
-    { nome: "Montserrat", classe: "font-montserrat", descricao: "Sofisticada e bold" },
-    { nome: "Open Sans", classe: "font-open-sans", descricao: "Limpa e neutra" },
-    { nome: "Playfair Display", classe: "font-playfair", descricao: "Serifada clássica" },
-    { nome: "Oswald", classe: "font-oswald", descricao: "Condensada impactante" },
-    { nome: "Lato", classe: "font-lato", descricao: "Humanista e amigável" },
-    { nome: "Raleway", classe: "font-raleway", descricao: "Elegante e fina" },
-    { nome: "Nunito", classe: "font-nunito", descricao: "Arredondada e suave" },
-  ];
+  const [buscaFonte, setBuscaFonte] = useState("");
+  const [categoriaFonte, setCategoriaFonte] = useState<CategoriaFonteFiltro>("todas");
+  const [sincronizarFontes, setSincronizarFontes] = useState(false);
+  const [textoPreviewTipografia, setTextoPreviewTipografia] = useState(
+    `${terminologia.estabelecimento.singular} ${tenant?.nome ? `• ${tenant.nome}` : ""}`.trim()
+  );
 
-  // Helper para obter classe CSS da fonte pelo nome
-  const obterClasseFonte = (nomeFonte: string) => {
-    const fonte = FONTES_DISPONIVEIS.find(f => f.nome === nomeFonte);
-    return fonte?.classe || "font-inter";
+  const obterClasseFonte = (nomeFonte: string) => obterClasseFonteUtil(nomeFonte);
+
+  const fontesFiltradas = useMemo(() => {
+    const termo = buscaFonte.trim().toLowerCase();
+
+    return FONTES_DISPONIVEIS.filter((fonte) => {
+      const bateCategoria = categoriaFonte === "todas" || fonte.categoria === categoriaFonte;
+      if (!bateCategoria) return false;
+
+      if (!termo) return true;
+
+      return (
+        fonte.nome.toLowerCase().includes(termo) ||
+        fonte.descricao.toLowerCase().includes(termo) ||
+        fonte.indicadaPara.toLowerCase().includes(termo)
+      );
+    });
+  }, [buscaFonte, categoriaFonte]);
+
+  const combinacoesRecomendadas = useMemo(() => {
+    return COMBINACOES_TIPOGRAFICAS.filter((combinacao) =>
+      combinacao.segmentos.includes(tipoNegocio)
+    );
+  }, [tipoNegocio]);
+
+  const selecionarFontePrincipal = (nomeFonte: string) => {
+    setDados((prev) => ({
+      ...prev,
+      fonte_principal: nomeFonte,
+      ...(sincronizarFontes ? { fonte_titulos: nomeFonte } : {}),
+    }));
+  };
+
+  const selecionarFonteTitulos = (nomeFonte: string) => {
+    setDados((prev) => ({
+      ...prev,
+      fonte_titulos: nomeFonte,
+    }));
+  };
+
+  const aplicarCombinacaoTipografica = (combinacao: CombinacaoTipografica) => {
+    setDados((prev) => ({
+      ...prev,
+      fonte_principal: combinacao.fontePrincipal,
+      fonte_titulos: combinacao.fonteTitulos,
+    }));
   };
 
   // Carregar dados do tenant
@@ -184,9 +306,9 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
         cor_primaria: tenant.cor_primaria || "#18181b",
         cor_secundaria: tenant.cor_secundaria || "#f4f4f5",
         cor_destaque: tenant.cor_destaque || "#a1a1aa",
-        cor_texto: (tenant as any).cor_texto || "#fafafa",
-        fonte_principal: (tenant as any).fonte_principal || "Inter",
-        fonte_titulos: (tenant as any).fonte_titulos || "Inter",
+        cor_texto: tenant.cor_texto || "#fafafa",
+        fonte_principal: tenant.fonte_principal || "Inter",
+        fonte_titulos: tenant.fonte_titulos || "Inter",
         telefone: tenant.telefone || "",
         whatsapp: tenant.whatsapp || "",
         email: tenant.email || "",
@@ -195,8 +317,21 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
         estado: tenant.estado || "",
         instagram: tenant.instagram || "",
       });
+      setTextoPreviewTipografia(`${terminologia.estabelecimento.singular} • ${tenant.nome}`);
     }
-  }, [tenant]);
+  }, [tenant, terminologia.estabelecimento.singular]);
+
+  useEffect(() => {
+    if (!sincronizarFontes) return;
+
+    setDados((prev) => {
+      if (prev.fonte_titulos === prev.fonte_principal) return prev;
+      return {
+        ...prev,
+        fonte_titulos: prev.fonte_principal,
+      };
+    });
+  }, [sincronizarFontes]);
 
   // Upload de logo com deleção da anterior
   const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -588,66 +723,205 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
 
           {/* Fontes */}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-              Tipografia
-            </h3>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              Escolha as fontes que representam {pronomePossessivoEstabelecimento} {terminologia.estabelecimento.singular.toLowerCase()}
-            </p>
-
-            <div className="space-y-4">
-              {/* Fonte Principal */}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                <Type className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
+              </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Fonte Principal (Textos)
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {FONTES_DISPONIVEIS.map((fonte) => (
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                  Tipografia do Site
+                </h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Defina como {pronomePossessivoEstabelecimento} {terminologia.estabelecimento.singular.toLowerCase()} comunica estilo, clareza e personalidade.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              {/* Busca + filtros */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={buscaFonte}
+                    onChange={(e) => setBuscaFonte(e.target.value)}
+                    placeholder="Buscar por nome, estilo ou uso (ex: luxo, leitura, promoção)"
+                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIAS_FONTE.map((categoria) => (
                     <button
-                      key={fonte.nome}
-                      onClick={() => setDados({ ...dados, fonte_principal: fonte.nome })}
-                      className={`p-3 rounded-xl text-left transition-all ${
-                        dados.fonte_principal === fonte.nome
-                          ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ring-2 ring-zinc-900 dark:ring-white"
-                          : "bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                      key={categoria.id}
+                      onClick={() => setCategoriaFonte(categoria.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        categoriaFonte === categoria.id
+                          ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
+                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                       }`}
                     >
-                      <span className={`block font-medium text-sm ${fonte.classe}`}>
-                        {fonte.nome}
-                      </span>
-                      <span className={`text-xs ${
-                        dados.fonte_principal === fonte.nome 
-                          ? "text-white/70 dark:text-zinc-900/70" 
-                          : "text-zinc-500"
-                      }`}>
-                        {fonte.descricao}
-                      </span>
+                      {categoria.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Fonte de Títulos */}
+              {/* Combinações prontas */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Fonte de Títulos (Destaques)
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                    Combinações prontas para aplicar em 1 clique
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {combinacoesRecomendadas.map((combinacao) => {
+                    const ativa =
+                      dados.fonte_principal === combinacao.fontePrincipal &&
+                      dados.fonte_titulos === combinacao.fonteTitulos;
+
+                    return (
+                      <button
+                        key={combinacao.id}
+                        onClick={() => aplicarCombinacaoTipografica(combinacao)}
+                        className={`p-3 rounded-xl text-left border transition-colors ${
+                          ativa
+                            ? "border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
+                            : "border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold">{combinacao.nome}</p>
+                        <p className={`text-xs mt-1 ${ativa ? "text-white/75 dark:text-zinc-900/70" : "text-zinc-500 dark:text-zinc-400"}`}>
+                          {combinacao.descricao}
+                        </p>
+                        <p className={`text-xs mt-2 ${ativa ? "text-white/85 dark:text-zinc-900/80" : "text-zinc-600 dark:text-zinc-300"}`}>
+                          {combinacao.fontePrincipal} + {combinacao.fonteTitulos}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Seleção atual */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-700">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Fonte dos textos</p>
+                  <p className={`text-base font-semibold ${obterClasseFonte(dados.fonte_principal)}`}>
+                    {dados.fonte_principal}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-700">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Fonte dos títulos</p>
+                  <p className={`text-base font-semibold ${obterClasseFonte(dados.fonte_titulos)}`}>
+                    {dados.fonte_titulos}
+                  </p>
+                </div>
+              </div>
+
+              {/* Opção de simplificação */}
+              <label className="flex items-center justify-between gap-3 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/70">
+                <div>
+                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                    Usar a mesma fonte para tudo
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Ideal para um visual mais limpo e fácil de manter.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={sincronizarFontes}
+                  onChange={(e) => setSincronizarFontes(e.target.checked)}
+                  className="w-5 h-5 rounded border-zinc-300 dark:border-zinc-600 text-zinc-900 focus:ring-zinc-900"
+                />
+              </label>
+
+              {/* Escolha das fontes */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Escolha a fonte dos textos
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {fontesFiltradas.map((fonte) => {
+                      const ativa = dados.fonte_principal === fonte.nome;
+                      return (
+                        <button
+                          key={`principal-${fonte.nome}`}
+                          onClick={() => selecionarFontePrincipal(fonte.nome)}
+                          className={`p-3 rounded-xl text-left transition-colors border ${
+                            ativa
+                              ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white"
+                              : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500"
+                          }`}
+                        >
+                          <p className={`text-sm font-semibold ${obterClasseFonte(fonte.nome)}`}>{fonte.nome}</p>
+                          <p className={`text-xs mt-1 ${ativa ? "text-white/70 dark:text-zinc-900/70" : "text-zinc-500 dark:text-zinc-400"}`}>
+                            {fonte.descricao}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {!sincronizarFontes && (
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                      Escolha a fonte dos títulos e destaques
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {fontesFiltradas.map((fonte) => {
+                        const ativa = dados.fonte_titulos === fonte.nome;
+                        return (
+                          <button
+                            key={`titulo-${fonte.nome}`}
+                            onClick={() => selecionarFonteTitulos(fonte.nome)}
+                            className={`p-3 rounded-xl text-left transition-colors border ${
+                              ativa
+                                ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white"
+                                : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500"
+                            }`}
+                          >
+                            <p className={`text-sm font-semibold ${obterClasseFonte(fonte.nome)}`}>{fonte.nome}</p>
+                            <p className={`text-xs mt-1 ${ativa ? "text-white/70 dark:text-zinc-900/70" : "text-zinc-500 dark:text-zinc-400"}`}>
+                              Indicado para: {fonte.indicadaPara}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {fontesFiltradas.length === 0 && (
+                  <div className="p-4 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-sm text-zinc-500 dark:text-zinc-400 text-center">
+                    Nenhuma fonte encontrada para esse filtro. Ajuste a busca ou a categoria.
+                  </div>
+                )}
+              </div>
+
+              {/* Prévia tipográfica */}
+              <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/70 space-y-3">
+                <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                  Texto para testar a tipografia
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {FONTES_DISPONIVEIS.slice(0, 6).map((fonte) => (
-                    <button
-                      key={fonte.nome}
-                      onClick={() => setDados({ ...dados, fonte_titulos: fonte.nome })}
-                      className={`p-3 rounded-xl text-left transition-all ${
-                        dados.fonte_titulos === fonte.nome
-                          ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ring-2 ring-zinc-900 dark:ring-white"
-                          : "bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                      }`}
-                    >
-                      <span className={`block font-bold text-sm ${fonte.classe}`}>
-                        {fonte.nome}
-                      </span>
-                    </button>
-                  ))}
+                <input
+                  type="text"
+                  value={textoPreviewTipografia}
+                  onChange={(e) => setTextoPreviewTipografia(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
+                />
+                <div>
+                  <p className={`text-xl sm:text-2xl leading-tight ${obterClasseFonte(dados.fonte_titulos)}`}>
+                    {textoPreviewTipografia || "Título de destaque"}
+                  </p>
+                  <p className={`mt-2 text-sm text-zinc-600 dark:text-zinc-300 ${obterClasseFonte(dados.fonte_principal)}`}>
+                    Esta frase simula descrições de serviços, horários e instruções para clientes no mobile.
+                  </p>
                 </div>
               </div>
             </div>

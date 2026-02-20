@@ -494,7 +494,7 @@ export default function DashboardCompleto() {
             </button>
           </div>
 
-          {/* Menu Desktop - 8 abas principais reorganizadas */}
+          {/* Menu Desktop - 9 abas principais reorganizadas */}
           <Tabs.List className="mb-8 hidden lg:flex">
             <Tabs.Trigger value="visao-geral">
               <TrendingUp className="w-4 h-4 mr-2" />
@@ -503,6 +503,10 @@ export default function DashboardCompleto() {
             <Tabs.Trigger value="agendamentos">
               <Calendar className="w-4 h-4 mr-2" />
               Agendamentos
+            </Tabs.Trigger>
+            <Tabs.Trigger value="clientes">
+              <Users className="w-4 h-4 mr-2" />
+              Clientes
             </Tabs.Trigger>
             <Tabs.Trigger value="financeiro">
               <DollarSign className="w-4 h-4 mr-2" />
@@ -542,6 +546,7 @@ export default function DashboardCompleto() {
                 {[
                   { value: "visao-geral", icon: TrendingUp, label: "Visão Geral" },
                   { value: "agendamentos", icon: Calendar, label: "Agendamentos" },
+                  { value: "clientes", icon: Users, label: "Clientes" },
                   { value: "financeiro", icon: DollarSign, label: "Financeiro" },
                   { value: "equipe", icon: Users, label: "Equipe" },
                   { value: "servicos", icon: Scissors, label: "Serviços" },
@@ -782,6 +787,24 @@ export default function DashboardCompleto() {
             </div>
           </Tabs.Content>
 
+          {/* Clientes */}
+          <Tabs.Content value="clientes">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Users className="w-8 h-8 text-zinc-700 dark:text-zinc-300" />
+                <div>
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                    Clientes {preposicaoEstabelecimento} {estabelecimento().toLowerCase()}
+                  </h2>
+                  <p className="text-zinc-600 dark:text-zinc-400">
+                    Veja quem já se cadastrou, histórico e status de atividade.
+                  </p>
+                </div>
+              </div>
+              <GestaoUsuarios />
+            </div>
+          </Tabs.Content>
+
           {/* Financeiro */}
           <Tabs.Content value="financeiro">
             <GestaoFinanceira />
@@ -792,7 +815,7 @@ export default function DashboardCompleto() {
             <GestaoEstoque />
           </Tabs.Content>
 
-          {/* Equipe (Barbeiros + Usuários) */}
+          {/* Equipe (Profissionais + Comissões) */}
           <Tabs.Content value="equipe">
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-6">
@@ -802,7 +825,7 @@ export default function DashboardCompleto() {
                     Gestão da Equipe
                   </h2>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Gerencie {profissional(true).toLowerCase()}, usuários e comissões
+                    Gerencie {profissional(true).toLowerCase()} e comissões
                   </p>
                 </div>
               </div>
@@ -813,10 +836,6 @@ export default function DashboardCompleto() {
                     <Scissors className="w-4 h-4 mr-2" />
                     {profissional(true)}
                   </Tabs.Trigger>
-                  <Tabs.Trigger value="usuarios">
-                    <Users className="w-4 h-4 mr-2" />
-                    Usuários
-                  </Tabs.Trigger>
                   <Tabs.Trigger value="comissoes">
                     <Percent className="w-4 h-4 mr-2" />
                     Comissões
@@ -825,10 +844,6 @@ export default function DashboardCompleto() {
 
                 <Tabs.Content value="barbeiros">
                   <GestaoBarbeiros />
-                </Tabs.Content>
-
-                <Tabs.Content value="usuarios">
-                  <GestaoUsuarios />
                 </Tabs.Content>
 
                 <Tabs.Content value="comissoes">

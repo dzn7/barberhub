@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { InstalarPWA, RegistrarServiceWorker } from '@/components/pwa'
-import { obterClasseFonte, gerarUrlFontes } from '@/lib/fontes'
+import { obterClasseFonte, obterFamiliaFonte, gerarUrlFontes } from '@/lib/fontes'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -77,7 +77,7 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
   const fontePrincipal = tenant.fonte_principal || 'Inter'
   const fonteTitulos = tenant.fonte_titulos || 'Inter'
   const classeFontePrincipal = obterClasseFonte(fontePrincipal)
-  const classeFonteTitulos = obterClasseFonte(fonteTitulos)
+  const familiaFonteTitulos = obterFamiliaFonte(fonteTitulos)
   const urlFontes = gerarUrlFontes(fontePrincipal, fonteTitulos)
 
   return (
@@ -91,12 +91,12 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
         </>
       )}
       <div 
-        className={`min-h-screen bg-zinc-900 ${classeFontePrincipal}`}
+        className={`tenant-fonts min-h-screen bg-zinc-900 ${classeFontePrincipal}`}
         style={{
           '--cor-primaria': tenant.cor_primaria || '#18181b',
           '--cor-secundaria': tenant.cor_secundaria || '#f4f4f5',
           '--cor-destaque': tenant.cor_destaque || '#a1a1aa',
-          '--classe-fonte-titulos': classeFonteTitulos,
+          '--font-titulos-family': familiaFonteTitulos,
         } as React.CSSProperties}
       >
         <RegistrarServiceWorker />
