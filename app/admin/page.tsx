@@ -107,6 +107,7 @@ export default function DashboardCompleto() {
   });
   const [carregando, setCarregando] = useState(true);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState<Date | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const trocarAba = (value: string) => {
     setAbaAtiva(value);
@@ -135,6 +136,29 @@ export default function DashboardCompleto() {
       router.push("/entrar");
     }
   }, [carregandoAuth, user, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const atualizar = () => setIsDesktop(mediaQuery.matches);
+
+    atualizar();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", atualizar);
+    } else {
+      mediaQuery.addListener(atualizar);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", atualizar);
+      } else {
+        mediaQuery.removeListener(atualizar);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const abaParam = searchParams.get("aba");
@@ -593,42 +617,44 @@ export default function DashboardCompleto() {
       {/* Conteúdo Principal */}
       <div className="container mx-auto px-4 py-8 max-w-full overflow-x-hidden">
         <Tabs.Root value={abaAtiva} onValueChange={trocarAba}>
-          <Tabs.List className="mb-8 hidden lg:flex">
-            {ABAS_PRINCIPAIS_ADMIN.map((aba) => {
-              const Icone = aba.icon;
-              return (
-                <Tabs.Trigger key={aba.value} value={aba.value}>
-                  <Icone className="w-4 h-4 mr-2" />
-                  {aba.label}
-                </Tabs.Trigger>
-              );
-            })}
-          </Tabs.List>
-
-          <div className="mb-6 lg:hidden">
-            <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="flex min-w-max gap-1">
-                {ABAS_PRINCIPAIS_ADMIN.map((aba) => {
-                  const Icone = aba.icon;
-                  const ativa = abaAtiva === aba.value;
-                  return (
-                    <button
-                      key={aba.value}
-                      onClick={() => trocarAba(aba.value)}
-                      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                        ativa
-                          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
-                          : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                      }`}
-                    >
-                      <Icone className="h-4 w-4" />
-                      {aba.label}
-                    </button>
-                  );
-                })}
+          {isDesktop ? (
+            <Tabs.List className="mb-8">
+              {ABAS_PRINCIPAIS_ADMIN.map((aba) => {
+                const Icone = aba.icon;
+                return (
+                  <Tabs.Trigger key={aba.value} value={aba.value}>
+                    <Icone className="w-4 h-4 mr-2" />
+                    {aba.label}
+                  </Tabs.Trigger>
+                );
+              })}
+            </Tabs.List>
+          ) : (
+            <div className="mb-6">
+              <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="flex min-w-max gap-1">
+                  {ABAS_PRINCIPAIS_ADMIN.map((aba) => {
+                    const Icone = aba.icon;
+                    const ativa = abaAtiva === aba.value;
+                    return (
+                      <button
+                        key={aba.value}
+                        onClick={() => trocarAba(aba.value)}
+                        className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                          ativa
+                            ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                            : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                        }`}
+                      >
+                        <Icone className="h-4 w-4" />
+                        {aba.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Visão Geral */}
           <Tabs.Content value="visao-geral">
@@ -816,32 +842,34 @@ export default function DashboardCompleto() {
               </div>
 
               <Tabs.Root value={abaAgendamentosAtiva} onValueChange={setAbaAgendamentosAtiva}>
-                <div className="mb-4 md:hidden">
-                  <select
-                    value={abaAgendamentosAtiva}
-                    onChange={(e) => setAbaAgendamentosAtiva(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                  >
-                    <option value="agenda">Agenda</option>
-                    <option value="atendimentos">Atendimentos Presenciais</option>
-                    <option value="remarcacao">Remarcação</option>
-                  </select>
-                </div>
-
-                <Tabs.List className="mb-6 hidden flex-wrap md:flex">
-                  <Tabs.Trigger value="agenda">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Agenda
-                  </Tabs.Trigger>
-                  <Tabs.Trigger value="atendimentos">
-                    <Users className="w-4 h-4 mr-2" />
-                    Atendimentos Presenciais
-                  </Tabs.Trigger>
-                  <Tabs.Trigger value="remarcacao">
-                    <Clock className="w-4 h-4 mr-2" />
-                    Remarcação
-                  </Tabs.Trigger>
-                </Tabs.List>
+                {isDesktop ? (
+                  <Tabs.List className="mb-6 flex-wrap">
+                    <Tabs.Trigger value="agenda">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Agenda
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="atendimentos">
+                      <Users className="w-4 h-4 mr-2" />
+                      Atendimentos Presenciais
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="remarcacao">
+                      <Clock className="w-4 h-4 mr-2" />
+                      Remarcação
+                    </Tabs.Trigger>
+                  </Tabs.List>
+                ) : (
+                  <div className="mb-4">
+                    <select
+                      value={abaAgendamentosAtiva}
+                      onChange={(e) => setAbaAgendamentosAtiva(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                    >
+                      <option value="agenda">Agenda</option>
+                      <option value="atendimentos">Atendimentos Presenciais</option>
+                      <option value="remarcacao">Remarcação</option>
+                    </select>
+                  </div>
+                )}
 
                 <Tabs.Content value="agenda">
                   <GestaoAgendamentos />
