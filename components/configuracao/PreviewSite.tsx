@@ -106,19 +106,19 @@ export function PreviewSite({
   const quantidadeCards = totalServicos > 0 ? Math.min(totalServicos, 2) : 2
 
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/80 p-4">
+    <div className="rounded-3xl bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900/85 dark:to-zinc-950/70 p-4 ring-1 ring-zinc-200/70 dark:ring-zinc-800/70 overflow-x-hidden">
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Preview do site</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-500">Visual que o cliente verá ao abrir seu link</p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-zinc-500 dark:text-zinc-500">Modo</p>
-          <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Celular</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-500">Dispositivo</p>
+          <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Mobile</p>
         </div>
       </div>
 
-      <div className="relative mx-auto w-[250px] sm:w-[262px]">
+      <div className="relative mx-auto w-full max-w-[262px]">
         <div className="relative">
           <Iphone />
 

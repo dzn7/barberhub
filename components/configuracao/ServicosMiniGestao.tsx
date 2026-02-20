@@ -458,14 +458,14 @@ export function ServicosMiniGestao({
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 min-w-0 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-5 sm:p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900/80 dark:to-zinc-950/70 ring-1 ring-zinc-200/70 dark:ring-zinc-800/70">
+        <div className="flex items-center gap-4 min-w-0">
           <div className="w-12 h-12 bg-zinc-50 dark:bg-zinc-800 rounded-2xl flex items-center justify-center border border-zinc-100 dark:border-zinc-700/50">
             <Scissors className="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Serviços</h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               {servicos.length} {servicos.length === 1 ? 'cadastrado' : 'cadastrados'}
@@ -475,10 +475,11 @@ export function ServicosMiniGestao({
         {!mostrarFormulario && !editando && (
           <button
             onClick={() => setMostrarFormulario(true)}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm active:scale-[0.98]"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold rounded-full hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all shadow-xl shadow-zinc-900/10 dark:shadow-white/10 active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Novo Serviço</span>
+            <span className="hidden sm:inline">Adicionar Serviço</span>
+            <span className="sm:hidden">Adicionar</span>
           </button>
         )}
       </div>
@@ -486,36 +487,35 @@ export function ServicosMiniGestao({
       {/* Sugestões Rápidas (quando lista vazia) */}
       {servicos.length === 0 && !mostrarFormulario && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-2xl"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="pb-4"
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-amber-100 dark:bg-amber-500/20 rounded-xl flex items-center justify-center">
-              <Plus className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <p className="font-bold text-amber-900 dark:text-amber-300">
-                Adicione seu primeiro serviço
-              </p>
-              <p className="text-sm text-amber-700 dark:text-amber-400/80">
-                Clique nas sugestões abaixo para adicionar rapidamente:
-              </p>
-            </div>
+          <div className="mb-4 text-center sm:text-left">
+            <p className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider mb-1">
+              Catálogo Rápido
+            </p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Toque em uma sugestão para cadastrar em um clique.
+            </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+          <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory">
             {SERVICOS_SUGERIDOS.map((sugerido, index) => (
               <button
                 key={index}
                 onClick={() => adicionarSugerido(sugerido)}
                 disabled={salvando}
-                className="group flex flex-col items-start px-4 py-3 bg-white dark:bg-zinc-900 border border-amber-200/60 dark:border-amber-500/20 rounded-xl hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-sm transition-all text-left disabled:opacity-50"
+                className="snap-start min-w-[220px] sm:min-w-0 group flex flex-col sm:flex-row items-center gap-3 px-5 py-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border-0 rounded-full transition-all text-left disabled:opacity-50 ring-1 ring-zinc-200/50 dark:ring-zinc-800"
               >
-                <span className="font-medium text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{sugerido.nome}</span>
-                <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                  <span className="font-medium">R$ {sugerido.preco.toFixed(2)}</span>
-                  <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
-                  <span>{sugerido.duracao} min</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Plus className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
+                  <span className="font-semibold text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors text-sm">{sugerido.nome}</span>
+                </div>
+                <div className="hidden sm:flex w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
+                <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-medium bg-white dark:bg-zinc-950 px-2.5 py-1 rounded-full border border-zinc-100 dark:border-zinc-800">
+                  <span>R$ {sugerido.preco.toFixed(2)}</span>
+                  <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-800"></span>
+                  <span>{sugerido.duracao}m</span>
                 </div>
               </button>
             ))}
@@ -532,7 +532,7 @@ export function ServicosMiniGestao({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-5 sm:p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm space-y-5">
+            <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950/70 ring-1 ring-zinc-200/70 dark:ring-zinc-800/70 space-y-5">
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-100 dark:border-zinc-800">
                 <div className="w-10 h-10 bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center">
                   <Plus className="w-5 h-5 text-zinc-900 dark:text-white" />
@@ -598,22 +598,21 @@ export function ServicosMiniGestao({
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
                     Categoria
                   </label>
-                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl flex flex-col sm:flex-row gap-3">
+                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl flex flex-col gap-3">
                     <select
                       value={formulario.categoria}
                       onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
-                      className="flex-1 px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white focus:outline-none"
+                      className="w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white focus:outline-none"
                     >
                       {categoriasDisponiveis.map((cat) => (
                         <option key={cat.valor} value={cat.valor}>{cat.label}</option>
                       ))}
                     </select>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-300 dark:text-zinc-600 hidden sm:block">|</span>
+                    <div className="flex flex-col sm:flex-row items-stretch gap-2 min-w-0">
                       <input
                         type="text"
                         value={novaCategoria}
@@ -625,34 +624,34 @@ export function ServicosMiniGestao({
                           }
                         }}
                         placeholder="Nova categoria"
-                        className="flex-1 sm:w-40 px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none"
+                        className="w-full sm:flex-1 px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none min-w-0"
                       />
                       <button
                         type="button"
                         onClick={adicionarCategoriaCustomizada}
-                        className="px-4 py-2.5 text-sm font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                        className="w-full sm:w-auto px-4 py-2.5 text-sm font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
                       >
-                        Add
+                        Adicionar
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="flex flex-col sm:flex-row gap-3 pt-6">
                 <button
                   onClick={() => {
                     setMostrarFormulario(false)
                     resetarFormulario()
                   }}
-                  className="flex-1 px-4 py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                  className="flex-1 px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-full transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={adicionarServico}
-                  disabled={salvando}
-                  className="flex-[2] flex items-center justify-center gap-2 px-6 py-3 text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-70 shadow-sm"
+                  disabled={salvando || !formulario.nome.trim()}
+                  className="flex-[2] flex items-center justify-center gap-2 px-6 py-3 text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold rounded-full hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all disabled:opacity-70 shadow-xl shadow-zinc-900/20 dark:shadow-white/10"
                 >
                   {salvando ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -738,14 +737,14 @@ export function ServicosMiniGestao({
                 </div>
               ) : (
                 // Modo visualização
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-sm transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 py-5 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-all px-4 -mx-4 rounded-2xl group">
                   <div className="hidden sm:flex p-1 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity">
                     <GripVertical className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                      <p className="font-bold text-zinc-900 dark:text-white truncate text-base">
+                      <p className="font-bold text-zinc-900 dark:text-white truncate text-lg">
                         {servico.nome}
                       </p>
                       <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-md">
@@ -765,22 +764,20 @@ export function ServicosMiniGestao({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800">
+                  <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity pt-4 sm:pt-0 mt-2 sm:mt-0">
                     <button
                       onClick={() => iniciarEdicao(servico)}
-                      className="flex-1 sm:flex-none flex justify-center items-center gap-2 p-2.5 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                      className="flex-1 sm:flex-none flex justify-center items-center p-3 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-colors bg-zinc-100 dark:bg-zinc-800"
                       title="Editar serviço"
                     >
                       <Edit2 className="w-4 h-4" />
-                      <span className="sm:hidden font-medium">Editar</span>
                     </button>
                     <button
                       onClick={() => removerServico(servico.id)}
-                      className="flex-1 sm:flex-none flex justify-center items-center gap-2 p-2.5 text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                      className="flex-1 sm:flex-none flex justify-center items-center p-3 text-zinc-400 hover:text-white hover:bg-red-500 rounded-full transition-colors bg-zinc-100 dark:bg-zinc-800"
                       title="Remover serviço"
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span className="sm:hidden font-medium">Excluir</span>
                     </button>
                   </div>
                 </div>

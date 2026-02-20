@@ -215,8 +215,8 @@ function CabecalhoEtapa({ etapa, etapaAtual, totalEtapas }: CabecalhoEtapaProps)
   const percentual = Math.round((etapaAtual / totalEtapas) * 100)
 
   return (
-    <div className="mb-8 space-y-5">
-      <div className="space-y-2">
+    <div className="mb-8 space-y-6">
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Passo {etapaAtual} de {totalEtapas}
@@ -233,31 +233,46 @@ function CabecalhoEtapa({ etapa, etapaAtual, totalEtapas }: CabecalhoEtapaProps)
         </div>
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-5 sm:p-6">
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-            <Icone className="w-6 h-6 text-zinc-700 dark:text-zinc-300" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white mb-2">
-              {etapa.tituloCompleto}
-            </h2>
-            <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base">
-              {etapa.subtitulo}
-            </p>
+      <div className="space-y-4">
+        <div className="relative overflow-hidden rounded-3xl p-4 sm:p-5 bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900/90 dark:to-zinc-950/70 ring-1 ring-zinc-200/70 dark:ring-zinc-800/70">
+          <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-zinc-200/20 to-transparent dark:from-zinc-700/20 pointer-events-none" />
+          <div className="relative flex items-start gap-4">
+            <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 flex items-center justify-center shadow-lg shadow-zinc-900/15 dark:shadow-white/10">
+              <Icone className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white">
+                  {etapa.tituloCompleto}
+                </h2>
+                <span className="inline-flex items-center rounded-full bg-zinc-900/10 dark:bg-white/10 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  {etapa.tempoEstimado}
+                </span>
+              </div>
+              <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base">
+                {etapa.subtitulo}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="mt-5 border-t border-zinc-200 dark:border-zinc-800 pt-4">
-          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
-            Nesta etapa você vai:
+
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-wide font-semibold text-zinc-500 dark:text-zinc-500">
+            Nesta etapa você vai
           </p>
-          <ul className="space-y-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:overflow-visible">
             {etapa.dicas.map((dica, index) => (
-              <li key={index} className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                • {dica}
-              </li>
+              <div
+                key={index}
+                className="snap-start min-w-[220px] sm:min-w-0 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/60 ring-1 ring-zinc-200/70 dark:ring-zinc-800 px-3.5 py-3"
+              >
+                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+                  <span>{dica}</span>
+                </p>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -871,7 +886,7 @@ export default function ConfigurarPage() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors ${visualAtual.bgClass}`}>
+    <div className={`min-h-screen transition-colors overflow-x-hidden ${visualAtual.bgClass}`}>
       <header className="border-b border-zinc-200/80 dark:border-zinc-800 bg-white/85 dark:bg-black/85 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/"><LogoMarca className="h-10" /></Link>
@@ -956,20 +971,18 @@ export default function ConfigurarPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-10 pb-28 sm:pb-10">
-        <div className="grid lg:grid-cols-5 gap-8 xl:gap-10">
-          <div className="lg:col-span-3">
-            <div className="rounded-[1.5rem] border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/85 backdrop-blur-sm p-4 sm:p-6 lg:p-7">
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-10 pb-28 sm:pb-10 overflow-x-hidden">
+        <div className="grid lg:grid-cols-5 gap-8 xl:gap-10 min-w-0">
+          <div className="lg:col-span-3 min-w-0">
+            <div className="relative overflow-hidden rounded-3xl p-4 sm:p-6 lg:p-7 bg-gradient-to-b from-white/85 to-white/55 dark:from-zinc-950/85 dark:to-zinc-950/65 ring-1 ring-zinc-200/70 dark:ring-zinc-800/70 backdrop-blur-sm">
               <AnimatePresence mode="wait">
                 {etapaAtual === 1 && (
                   <motion.div key="etapa1" initial={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: 10 }} animate={{ opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 }} exit={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: -10 }} transition={{ duration: 0.25, ease: "easeOut" }}>
                     <CabecalhoEtapa etapa={ETAPAS[0]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                     <div className="space-y-6">
-                      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4">
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                          Use o nome que você quer mostrar ao público. Esse nome aparecerá no site, no link de agendamento e em mensagens de confirmação.
-                        </p>
-                      </div>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Use o nome que você quer mostrar ao público. Esse nome aparecerá no site, no link de agendamento e em mensagens de confirmação.
+                      </p>
                       <div>
                         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                           {`Nome ${artigoNomeEstabelecimento} ${nomeEstabelecimento} *`}
@@ -999,11 +1012,9 @@ export default function ConfigurarPage() {
                   <motion.div key="etapa2" initial={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: 10 }} animate={{ opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 }} exit={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: -10 }} transition={{ duration: 0.25, ease: "easeOut" }}>
                     <CabecalhoEtapa etapa={ETAPAS[1]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                     <div className="space-y-5">
-                      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4">
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                          Preencha ao menos WhatsApp para começar a receber mensagens automáticas de confirmação e lembrete.
-                        </p>
-                      </div>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Preencha ao menos WhatsApp para começar a receber mensagens automáticas de confirmação e lembrete.
+                      </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Telefone</label>
@@ -1066,11 +1077,9 @@ export default function ConfigurarPage() {
                   <motion.div key="etapa3" initial={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: 10 }} animate={{ opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 }} exit={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: -10 }} transition={{ duration: 0.25, ease: "easeOut" }}>
                     <CabecalhoEtapa etapa={ETAPAS[2]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                     <div className="space-y-5">
-                      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4">
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                          Endereço completo melhora o encontro pelo mapa e reduz dúvidas no dia do atendimento.
-                        </p>
-                      </div>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Endereço completo melhora o encontro pelo mapa e reduz dúvidas no dia do atendimento.
+                      </p>
                       <div>
                         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Endereço completo</label>
                         <div className="relative">
@@ -1084,7 +1093,7 @@ export default function ConfigurarPage() {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Cidade</label>
                           <input
@@ -1114,11 +1123,9 @@ export default function ConfigurarPage() {
                   <motion.div key="etapa4" initial={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: 10 }} animate={{ opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 }} exit={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: -10 }} transition={{ duration: 0.25, ease: "easeOut" }}>
                     <CabecalhoEtapa etapa={ETAPAS[3]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
                     <div className="space-y-5">
-                      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4">
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                          Escolha um estilo visual para o seu site. Você pode trocar essa paleta depois no painel sem perder nada.
-                        </p>
-                      </div>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Escolha um estilo visual para o seu site. Você pode trocar essa paleta depois no painel sem perder nada.
+                      </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {PALETAS.map((paleta) => {
                           const selecionada = dados.cor_primaria === paleta.primaria
@@ -1153,22 +1160,18 @@ export default function ConfigurarPage() {
                 {etapaAtual === 5 && (
                   <motion.div key="etapa5" initial={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: 10 }} animate={{ opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 }} exit={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: -10 }} transition={{ duration: 0.25, ease: "easeOut" }}>
                     <CabecalhoEtapa etapa={ETAPAS[4]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4 mb-5">
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                        Cadastre primeiro os serviços principais. Você pode ajustar valores e duração com calma depois no painel.
-                      </p>
-                    </div>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-5">
+                      Cadastre primeiro os serviços principais. Você pode ajustar valores e duração com calma depois no painel.
+                    </p>
                     <ServicosMiniGestao tenantId={tenant.id} onTotalChange={setTotalServicos} tipoNegocio={tipoNegocioAtual} />
                   </motion.div>
                 )}
                 {etapaAtual === 6 && (
                   <motion.div key="etapa6" initial={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: 10 }} animate={{ opacity: 1, filter: 'blur(0px)', scale: 1, y: 0 }} exit={{ opacity: 0, filter: 'blur(8px)', scale: 0.98, y: -10 }} transition={{ duration: 0.25, ease: "easeOut" }}>
                     <CabecalhoEtapa etapa={ETAPAS[5]} etapaAtual={etapaAtual} totalEtapas={TOTAL_ETAPAS} />
-                    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 p-4 mb-5">
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                        Cadastre a equipe que vai atender. Cada profissional recebe acesso próprio para ver agenda e comissões.
-                      </p>
-                    </div>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed mb-5">
+                      Cadastre a equipe que vai atender. Cada profissional recebe acesso próprio para ver agenda e comissões.
+                    </p>
                     <CadastroBarbeirosOnboarding tenantId={tenant.id} onTotalChange={setTotalBarbeiros} tipoNegocio={tipoNegocioAtual} />
                   </motion.div>
                 )}
@@ -1194,9 +1197,9 @@ export default function ConfigurarPage() {
               )}
             </div>
           </div>
-          <div className="hidden lg:block lg:col-span-2">
+          <div className="hidden lg:block lg:col-span-2 min-w-0">
             <div className="sticky top-8 space-y-3">
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/85 dark:bg-zinc-950/80 p-4">
+              <div className="px-1">
                 <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Pré-visualização em tempo real</p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
                   Tudo que você altera aqui já aparece no modelo ao lado.
@@ -1226,7 +1229,7 @@ export default function ConfigurarPage() {
                     Fechar
                   </button>
                 </div>
-                <div className="flex-1 overflow-auto p-4">
+                <div className="flex-1 overflow-auto overflow-x-hidden p-4">
                   <PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} tipoNegocio={tipoNegocioAtual} />
                 </div>
               </div>
@@ -1246,7 +1249,7 @@ export default function ConfigurarPage() {
                 <ArrowLeft className="w-4 h-4" />
               </button>
             ) : (
-              <div className="w-[50px]" />
+              <div className="w-11 h-11 shrink-0" />
             )}
 
             {etapaAtual < TOTAL_ETAPAS ? (

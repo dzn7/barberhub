@@ -545,7 +545,7 @@ export function CadastroBarbeirosOnboarding({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 overflow-x-hidden">
       <AnimatePresence mode="wait">
         {/* ETAPA 1: Cadastro do proprietário */}
         {etapa === 'proprietario' && (
@@ -718,7 +718,7 @@ function SeletorEspecialidades({
       {/* Categorias */}
       <div className="space-y-2">
         {Object.entries(categoriasEspecialidades).map(([categoria, especialidades]) => (
-          <div key={categoria} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900/40">
+          <div key={categoria} className="rounded-2xl overflow-hidden bg-zinc-50/70 dark:bg-zinc-900/40 ring-1 ring-zinc-200/70 dark:ring-zinc-800">
             <button
               type="button"
               onClick={() => setCategoriaAberta(categoriaAberta === categoria ? null : categoria)}
@@ -761,8 +761,8 @@ function SeletorEspecialidades({
                           key={esp}
                           type="button"
                           onClick={() => onToggleEspecialidade(esp)}
-                          className={`relative flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl border transition-all active:scale-[0.98] ${especialidadesSelecionadas.includes(esp)
-                            ? 'bg-zinc-900 shadow-sm dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
+                          className={`relative flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full border transition-all active:scale-[0.98] ${especialidadesSelecionadas.includes(esp)
+                            ? 'bg-zinc-900 shadow-md dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
                             : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 shadow-sm'
                             }`}
                         >
@@ -795,8 +795,8 @@ function SeletorEspecialidades({
               key={esp}
               type="button"
               onClick={() => onToggleEspecialidade(esp)}
-              className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${especialidadesSelecionadas.includes(esp)
-                ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
+              className={`px-4 py-1.5 text-sm font-semibold rounded-full border transition-all ${especialidadesSelecionadas.includes(esp)
+                ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white shadow-md'
                 : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-600'
                 }`}
             >
@@ -814,14 +814,14 @@ function SeletorEspecialidades({
           value={novaEspecialidade}
           onChange={(e) => setNovaEspecialidade(e.target.value)}
           placeholder="Adicionar especialidade..."
-          className="flex-1 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20 text-sm"
+          className="flex-1 px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-900 dark:text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white text-sm transition-all"
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), onAdicionarEspecialidade())}
         />
         <button
           type="button"
           onClick={onAdicionarEspecialidade}
           disabled={!novaEspecialidade.trim()}
-          className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-5 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-zinc-900/10 dark:shadow-white/10"
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -905,7 +905,7 @@ function EtapaCadastroProprietario({
         </p>
       </div>
 
-      <div className="p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-6">
+      <div className="p-6 bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900/80 dark:to-zinc-950/70 rounded-3xl space-y-6 shadow-sm ring-1 ring-zinc-200/70 dark:ring-zinc-800/70">
         {/* Foto */}
         <div className="flex items-center gap-4">
           <div className="relative flex-shrink-0">
@@ -960,7 +960,7 @@ function EtapaCadastroProprietario({
               value={formulario.nome}
               onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
               placeholder="Ex: João Silva"
-              className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-colors ${formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2
+              className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 focus:outline-none focus:ring-2 transition-all ${formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2
                 ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-500/20'
                 : 'border-zinc-200 dark:border-zinc-700 focus:ring-zinc-900/20 dark:focus:ring-white/20'
                 }`}
@@ -991,7 +991,7 @@ function EtapaCadastroProprietario({
                 value={formulario.telefone}
                 onChange={(e) => setFormulario({ ...formulario, telefone: formatarTelefone(e.target.value) })}
                 placeholder="(00) 00000-0000"
-                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+                className="w-full pl-12 pr-4 py-3 bg-zinc-50 border-none dark:bg-zinc-900 rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 focus:outline-none focus:ring-1 focus:ring-zinc-200 dark:focus:ring-zinc-700 transition-all ring-1 ring-zinc-200/50 dark:ring-zinc-800"
               />
             </div>
             <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
@@ -1010,7 +1010,7 @@ function EtapaCadastroProprietario({
                 value={formulario.email}
                 onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
                 placeholder="email@exemplo.com"
-                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+                className="w-full pl-12 pr-4 py-3 bg-zinc-50 border-none dark:bg-zinc-900 rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 focus:outline-none focus:ring-1 focus:ring-zinc-200 dark:focus:ring-zinc-700 transition-all ring-1 ring-zinc-200/50 dark:ring-zinc-800"
               />
             </div>
             <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
@@ -1036,7 +1036,7 @@ function EtapaCadastroProprietario({
         <button
           onClick={onSalvar}
           disabled={salvando || !formulario.nome.trim() || formulario.especialidades.length === 0}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl shadow-zinc-900/10 dark:shadow-white/10 rounded-full font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {salvando ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -1103,7 +1103,7 @@ function EtapaPerguntaEquipe({
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className="max-w-md mx-auto"
     >
-      <div className="relative overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+      <div className="relative overflow-hidden bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-900 dark:to-zinc-950/70 rounded-3xl shadow-xl shadow-zinc-900/10 dark:shadow-white/5 ring-1 ring-zinc-200/70 dark:ring-zinc-800/70">
 
         {/* Header decorativo da notificação */}
         <div className="h-2 bg-gradient-to-r from-zinc-800 to-zinc-900 dark:from-zinc-200 dark:to-white w-full"></div>
@@ -1128,7 +1128,7 @@ function EtapaPerguntaEquipe({
           <div className="space-y-3">
             <button
               onClick={onSim}
-              className="w-full group relative flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.98] overflow-hidden"
+              className="w-full group relative flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.98] overflow-hidden"
             >
               <div className="absolute inset-0 bg-white/20 dark:bg-black/10 translate-y-[100%] group-hover:translate-y-[0%] transition-transform duration-300"></div>
               <UserPlus className="w-5 h-5 relative z-10" />
@@ -1136,7 +1136,7 @@ function EtapaPerguntaEquipe({
             </button>
             <button
               onClick={onNao}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-xl font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300 rounded-full font-bold hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors active:scale-[0.98]"
             >
               Não, sou só eu por enquanto
             </button>
@@ -1214,7 +1214,7 @@ function EtapaFormularioEquipe({
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className="space-y-6 max-w-2xl mx-auto"
     >
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900/80 dark:to-zinc-950/70 rounded-3xl overflow-hidden shadow-sm ring-1 ring-zinc-200/70 dark:ring-zinc-800/70">
 
         {/* Notificação/Header da Etapa */}
         <div className="flex items-start sm:items-center gap-4 p-5 sm:p-6 bg-zinc-50 dark:bg-zinc-800/30 border-b border-zinc-200 dark:border-zinc-800">
@@ -1286,7 +1286,7 @@ function EtapaFormularioEquipe({
                 value={formulario.nome}
                 onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
                 placeholder="Ex: Carlos Mendes"
-                className="w-full px-4 py-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-white rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white transition-all"
+                className="w-full px-4 py-3 border-none bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white transition-all ring-1 ring-zinc-200/50 dark:ring-zinc-800"
               />
             </div>
 
@@ -1301,7 +1301,7 @@ function EtapaFormularioEquipe({
                   value={formulario.telefone}
                   onChange={(e) => setFormulario({ ...formulario, telefone: formatarTelefone(e.target.value) })}
                   placeholder="(00) 00000-0000"
-                  className="w-full pl-4 pr-4 py-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-white rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none block transition-all"
+                  className="w-full pl-4 pr-4 py-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 border-none rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none block transition-all ring-1 ring-zinc-200/50 dark:ring-zinc-800 focus:ring-zinc-900 dark:focus:ring-white"
                 />
               </div>
             </div>
@@ -1315,31 +1315,33 @@ function EtapaFormularioEquipe({
                 value={formulario.email}
                 onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
                 placeholder="email@exemplo.com"
-                className="w-full px-4 py-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-white rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none transition-all"
+                className="w-full px-4 py-3 bg-zinc-50 border-none hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none transition-all ring-1 ring-zinc-200/50 dark:ring-zinc-800 focus:ring-zinc-900 dark:focus:ring-white"
               />
             </div>
 
-            <div className="md:col-span-2 p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800">
+            <div className="md:col-span-2 p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-x-hidden">
               <label className="block text-sm font-medium text-zinc-900 dark:text-white mb-3">
                 Comissão por Atendimento (%)
               </label>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex bg-white dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-700 w-full sm:w-auto">
-                  {[30, 40, 50, 60, 70].map((valor) => (
-                    <button
-                      key={valor}
-                      type="button"
-                      onClick={() => setFormulario({ ...formulario, comissao_percentual: valor })}
-                      className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all ${formulario.comissao_percentual === valor
-                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                        }`}
-                    >
-                      {valor}%
-                    </button>
-                  ))}
+              <div className="space-y-3">
+                <div className="w-full overflow-x-auto pb-1">
+                  <div className="inline-flex min-w-max bg-white dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                    {[30, 40, 50, 60, 70].map((valor) => (
+                      <button
+                        key={valor}
+                        type="button"
+                        onClick={() => setFormulario({ ...formulario, comissao_percentual: valor })}
+                        className={`shrink-0 px-3 sm:px-4 py-2 text-sm font-bold transition-all rounded-full ${formulario.comissao_percentual === valor
+                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl shadow-zinc-900/10 dark:shadow-white/10'
+                          : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                          }`}
+                      >
+                        {valor}%
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex-1 relative max-w-[120px]">
+                <div className="relative w-full sm:w-[120px]">
                   <input
                     type="number"
                     min="0"
@@ -1367,17 +1369,17 @@ function EtapaFormularioEquipe({
           />
         </div>
 
-        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/30 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3 flex-wrap">
+        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/30 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3 flex-wrap rounded-b-3xl">
           <button
             onClick={onCancelar}
-            className="px-5 py-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all"
+            className="px-6 py-3 text-sm font-bold text-zinc-900 dark:text-white bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-full transition-all"
           >
             Cancelar
           </button>
           <button
             onClick={onSalvar}
             disabled={salvando || !formulario.nome.trim() || formulario.especialidades.length === 0}
-            className="px-6 py-2.5 text-sm font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center min-w-[140px] disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+            className="px-6 py-3 text-sm font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center min-w-[140px] disabled:opacity-70 disabled:cursor-not-allowed shadow-xl shadow-zinc-900/10 dark:shadow-white/10"
           >
             {salvando ? (
               <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</span>
@@ -1458,11 +1460,11 @@ function EtapaTokenGerado({
 
             <div className="mb-4">
               <p className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Código PIN único</p>
-              <div className="bg-white dark:bg-zinc-900 rounded-xl py-3 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-inner cursor-pointer" onClick={onCopiar}>
-                <span className="font-mono text-xl sm:text-2xl font-bold tracking-[0.2em] sm:tracking-[0.4em] text-zinc-900 dark:text-white">
+              <div className="bg-white dark:bg-zinc-900 rounded-xl py-3 px-2 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center gap-2 shadow-inner cursor-pointer overflow-x-auto" onClick={onCopiar}>
+                <span className="font-mono text-lg sm:text-2xl font-bold tracking-[0.12em] sm:tracking-[0.32em] text-zinc-900 dark:text-white whitespace-nowrap">
                   {token}
                 </span>
-                <Copy className={`w-4 h-4 ml-3 transition-colors ${tokenCopiado ? 'text-emerald-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                <Copy className={`w-4 h-4 shrink-0 transition-colors ${tokenCopiado ? 'text-emerald-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
               </div>
             </div>
 
@@ -1473,17 +1475,17 @@ function EtapaTokenGerado({
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col sm:flex-row gap-3">
+      <div className="mt-8 flex flex-col sm:flex-row gap-3">
         <button
           onClick={onAdicionarOutro}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-xl font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-200 rounded-full font-bold dark:hover:bg-zinc-800 transition-colors"
         >
           <UserPlus className="w-4 h-4" />
           <span className="text-sm">Adicionar outr{terminologia.profissional.artigo === 'a' ? 'a' : 'o'}</span>
         </button>
         <button
           onClick={onContinuar}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-lg shadow-zinc-900/10 dark:shadow-white/10"
         >
           <span className="text-sm">Continuar Configuração</span>
           <ArrowRight className="w-4 h-4" />
@@ -1524,7 +1526,7 @@ function EtapaListaBarbeiros({
       className="max-w-xl mx-auto space-y-8"
     >
       {/* Header Profissionais */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 p-6 bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 p-6 bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900/70 dark:to-zinc-950/60 ring-1 ring-zinc-200/70 dark:ring-zinc-800/70 rounded-2xl">
         <div className="flex gap-4">
           <div className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-700 flex items-center justify-center flex-shrink-0">
             <Users className="w-6 h-6 text-zinc-900 dark:text-white" />
@@ -1554,15 +1556,14 @@ function EtapaListaBarbeiros({
             <h4 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">
               SEU PERFIL (ADMIN)
             </h4>
-            <div className="group relative bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-4 sm:p-5 flex items-center gap-4 hover:shadow-md transition-shadow overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
+            <div className="group relative bg-white dark:bg-zinc-900/40 rounded-3xl p-4 sm:p-5 flex items-center gap-4 transition-shadow overflow-hidden shadow-sm ring-1 ring-amber-100 dark:ring-amber-900/20">
 
-              <div className="relative w-14 h-14 rounded-full overflow-hidden bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 flex-shrink-0">
+              <div className="relative w-14 h-14 rounded-full overflow-hidden bg-amber-50 dark:bg-amber-500/10 border-2 border-white dark:border-zinc-800 flex-shrink-0 shadow-sm">
                 {proprietario.foto_url ? (
                   <Image src={proprietario.foto_url} alt={proprietario.nome} fill className="object-cover" unoptimized />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Crown className="w-6 h-6 text-amber-500" />
+                    <Crown className="w-6 h-6 text-amber-500 drop-shadow-sm" />
                   </div>
                 )}
               </div>
@@ -1570,21 +1571,23 @@ function EtapaListaBarbeiros({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-bold text-zinc-900 dark:text-white truncate text-base">{proprietario.nome}</p>
-                  <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] uppercase font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-md">Admin</span>
+                  <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] uppercase font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full">Admin</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{formatarTelefone(proprietario.telefone)}</span>
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 truncate">{formatarTelefone(proprietario.telefone)}</span>
                   <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">Acesso via <strong className="text-zinc-700 dark:text-zinc-300 font-medium">/admin</strong></span>
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Acesso <strong className="text-zinc-700 dark:text-zinc-300">/admin</strong></span>
                 </div>
               </div>
 
-              <button
-                onClick={() => onEditar(proprietario)}
-                className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-xl transition-colors shrink-0"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
+              <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-amber-50 dark:bg-amber-900/20 p-1.5 rounded-full">
+                <button
+                  onClick={() => onEditar(proprietario)}
+                  className="w-10 h-10 flex items-center justify-center text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-full transition-colors shrink-0"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1592,16 +1595,16 @@ function EtapaListaBarbeiros({
         {/* Equipe */}
         {equipe.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1 flex items-center gap-2">
+            <h4 className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1 flex items-center gap-2">
               DEMAIS MEMBROS
-              <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-[10px] text-zinc-500">{equipe.length}</span>
+              <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full text-[10px] text-zinc-500">{equipe.length}</span>
             </h4>
 
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-transparent overflow-hidden">
               <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
                 {equipe.map((barbeiro) => (
-                  <div key={barbeiro.id} className="group p-4 sm:p-5 flex items-center gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
-                    <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-2 border-transparent group-hover:border-zinc-200 dark:group-hover:border-zinc-700 transition-colors flex-shrink-0">
+                  <div key={barbeiro.id} className="group py-4 flex items-center gap-4 transition-colors">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-[3px] border-zinc-50 dark:border-zinc-900/20 group-hover:border-zinc-200 dark:group-hover:border-zinc-700 transition-colors flex-shrink-0">
                       {barbeiro.foto_url ? (
                         <Image src={barbeiro.foto_url} alt={barbeiro.nome} fill className="object-cover" unoptimized />
                       ) : (
@@ -1612,8 +1615,8 @@ function EtapaListaBarbeiros({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-zinc-900 dark:text-white truncate">{barbeiro.nome}</p>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                      <p className="font-bold text-zinc-900 dark:text-white truncate">{barbeiro.nome}</p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
                         <span className="truncate">{formatarTelefone(barbeiro.telefone)}</span>
 
                         <div className="flex items-center gap-1.5">
@@ -1627,26 +1630,28 @@ function EtapaListaBarbeiros({
                         {barbeiro.token_acesso && (
                           <div className="flex items-center gap-1.5">
                             <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 hidden sm:block"></span>
-                            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs shrink-0 max-w-[80px]">
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full text-[11px] font-bold shrink-0 max-w-[90px]">
                               <Key className="w-3 h-3 text-zinc-400" />
-                              <span className="truncate font-mono">{barbeiro.token_acesso}</span>
+                              <span className="truncate flex-1 text-zinc-700 dark:text-zinc-300 tracking-wider">
+                                {barbeiro.token_acesso}
+                              </span>
                             </div>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100">
+                    <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity focus-within:opacity-100 bg-zinc-50 dark:bg-zinc-800/50 p-1.5 rounded-full">
                       <button
                         onClick={() => onEditar(barbeiro)}
-                        className="p-2.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                        className="p-2.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-colors"
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => onRemover(barbeiro.id)}
-                        className="p-2.5 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                        className="p-2.5 text-zinc-500 hover:text-white hover:bg-red-500 rounded-full transition-colors"
                         title="Remover"
                       >
                         <Trash2 className="w-4 h-4" />

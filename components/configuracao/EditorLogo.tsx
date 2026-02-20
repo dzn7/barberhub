@@ -415,54 +415,54 @@ export function EditorLogo({
       )}
 
       {/* Preview e Controles */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-4">
-        <div className="flex items-center gap-4">
-        {/* Preview da Logo */}
-        <div
-          className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center"
-          style={{ backgroundColor: corPrimaria }}
-        >
-          {logoUrl ? (
-            <Image
-              src={logoUrl}
-              alt="Logo"
-              fill
-              className="object-cover"
-              unoptimized
-            />
-          ) : (
-            <Store className="w-8 h-8" style={{ color: corSecundaria + '50' }} />
-          )}
-          {uploadando && (
-            <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-white" />
-            </div>
-          )}
-        </div>
+      <div className="rounded-3xl p-4 sm:p-5 bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900/80 dark:to-zinc-950/70 ring-1 ring-zinc-200/70 dark:ring-zinc-800/70">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 min-w-0">
+          {/* Preview da Logo */}
+          <div
+            className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center shrink-0"
+            style={{ backgroundColor: corPrimaria }}
+          >
+            {logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt="Logo"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              <Store className="w-8 h-8" style={{ color: corSecundaria + '50' }} />
+            )}
+            {uploadando && (
+              <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-white" />
+              </div>
+            )}
+          </div>
 
-        {/* Botões */}
-        <div className="flex flex-col gap-2">
-          <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-white transition-colors cursor-pointer text-sm font-medium">
-            <Upload className="w-4 h-4" />
-            {logoUrl ? 'Trocar' : 'Enviar'}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleSelecionarArquivo}
-              className="hidden"
-            />
-          </label>
-          {logoUrl && (
-            <button
-              onClick={handleRemoverLogo}
-              disabled={uploadando}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50 text-sm font-medium"
-            >
-              <Trash2 className="w-4 h-4" />
-              Remover
-            </button>
-          )}
-        </div>
+          {/* Botões */}
+          <div className="flex-1 min-w-0 space-y-2">
+            <label className="w-full sm:w-fit inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-white transition-colors cursor-pointer text-sm font-medium">
+              <Upload className="w-4 h-4" />
+              {logoUrl ? 'Trocar imagem' : 'Enviar imagem'}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleSelecionarArquivo}
+                className="hidden"
+              />
+            </label>
+            {logoUrl && (
+              <button
+                onClick={handleRemoverLogo}
+                disabled={uploadando}
+                className="w-full sm:w-fit inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50 text-sm font-medium"
+              >
+                <Trash2 className="w-4 h-4" />
+                Remover
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
