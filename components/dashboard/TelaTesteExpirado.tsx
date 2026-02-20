@@ -11,7 +11,6 @@ import {
   Check,
   ChevronRight,
   Shield,
-  Zap,
   Users,
   BarChart3,
   Bell,
@@ -26,7 +25,7 @@ interface TelaTesteExpiradoProps {
 }
 
 const beneficios = [
-  { icone: Zap, texto: "Agendamentos ilimitados", destaque: true },
+  { icone: Check, texto: "Agendamentos ilimitados", destaque: true },
   { icone: Users, texto: "Gestão completa de equipe" },
   { icone: BarChart3, texto: "Relatórios financeiros" },
   { icone: Bell, texto: "Notificações automáticas" },

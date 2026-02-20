@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   Store, Palette, Upload, Trash2, Check, X, Save, Loader2,
   Eye, ImageIcon, Phone, Mail,
-  MapPin, Instagram, Globe, Smartphone, Type, Search, Sparkles
+  MapPin, Instagram, Globe, Smartphone, Type, Search
 } from "lucide-react";
 import { PreviewSite } from "@/components/configuracao/PreviewSite";
 import { supabase } from "@/lib/supabase";
@@ -634,7 +634,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
               {/* Cor Primária */}
               <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  🎨 Cor de Fundo Principal
+                  Cor de Fundo Principal
                 </label>
                 <p className="text-xs text-zinc-500 mb-2">Cor do cabeçalho e fundo principal do site</p>
                 <div className="flex items-center gap-3">
@@ -656,7 +656,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
               {/* Cor de Texto */}
               <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  ✏️ Cor do Texto
+                  Cor do Texto
                 </label>
                 <p className="text-xs text-zinc-500 mb-2">Cor dos textos e títulos sobre o fundo principal</p>
                 <div className="flex items-center gap-3">
@@ -678,7 +678,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
               {/* Cor Secundária */}
               <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  📦 Cor dos Cards
+                  Cor dos Cards
                 </label>
                 <p className="text-xs text-zinc-500 mb-2">Cor de fundo dos cards de serviços e profissionais</p>
                 <div className="flex items-center gap-3">
@@ -700,7 +700,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
               {/* Cor de Destaque */}
               <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  ⭐ Cor de Destaque
+                  Cor de Destaque
                 </label>
                 <p className="text-xs text-zinc-500 mb-2">Cor dos botões, links e elementos de ação</p>
                 <div className="flex items-center gap-3">
@@ -751,12 +751,12 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
                   />
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   {CATEGORIAS_FONTE.map((categoria) => (
                     <button
                       key={categoria.id}
                       onClick={() => setCategoriaFonte(categoria.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                         categoriaFonte === categoria.id
                           ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
                           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
@@ -771,7 +771,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
               {/* Combinações prontas */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <Type className="w-4 h-4 text-zinc-500" />
                   <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
                     Combinações prontas para aplicar em 1 clique
                   </p>

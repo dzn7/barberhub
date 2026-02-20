@@ -18,7 +18,6 @@ import { GestaoUsuarios } from "@/components/dashboard/GestaoUsuarios";
 import { GestaoServicos } from "@/components/dashboard/GestaoServicos";
 import { GestaoBarbeiros } from "@/components/dashboard/GestaoBarbeiros";
 import { RemarcacaoAgendamento } from "@/components/dashboard/RemarcacaoAgendamento";
-import { GestaoHorarios } from "@/components/dashboard/GestaoHorarios";
 import { GestaoHorariosAvancada } from "@/components/dashboard/GestaoHorariosAvancada";
 import { Relatorios } from "@/components/dashboard/Relatorios";
 import { ConfiguracaoBarbearia } from "@/components/dashboard/ConfiguracaoBarbearia";
@@ -32,6 +31,30 @@ import { useTerminologia } from "@/hooks/useTerminologia";
 import { supabase } from "@/lib/supabase";
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear, subDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+const formatadorMoedaBRL = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const formatadorMoedaBRLSemCentavos = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+function formatarMoedaBRL(valor: number) {
+  const numero = Number.isFinite(valor) ? valor : 0;
+  return formatadorMoedaBRL.format(numero);
+}
+
+function formatarMoedaSemCentavosBRL(valor: number) {
+  const numero = Number.isFinite(valor) ? valor : 0;
+  return formatadorMoedaBRLSemCentavos.format(numero);
+}
 
 /**
  * Dashboard Completo de Gestão
@@ -67,6 +90,7 @@ export default function DashboardCompleto() {
     atendimentosPorBarbeiro: [] as { nome: string; total: number }[],
   });
   const [carregando, setCarregando] = useState(true);
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState<Date | null>(null);
 
   // Hook de notificações em tempo real (PWA removido temporariamente)
   // useAgendamentosRealtime({
@@ -109,6 +133,62 @@ export default function DashboardCompleto() {
       buscarMetricas();
     }
   }, [user, tenant, filtroVisaoGeral]);
+
+  useEffect(() => {
+    if (!user || !tenant?.id) return;
+
+    let debounceAtualizacao: ReturnType<typeof setTimeout> | null = null;
+    const agendarAtualizacao = () => {
+      if (debounceAtualizacao) clearTimeout(debounceAtualizacao);
+      debounceAtualizacao = setTimeout(() => {
+        buscarMetricas();
+      }, 250);
+    };
+
+    const canalMetricas = supabase
+      .channel(`metricas-admin-${tenant.id}-${filtroVisaoGeral.tipo}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "agendamentos",
+          filter: `tenant_id=eq.${tenant.id}`,
+        },
+        agendarAtualizacao
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "atendimentos_presenciais",
+          filter: `tenant_id=eq.${tenant.id}`,
+        },
+        agendarAtualizacao
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "transacoes",
+          filter: `tenant_id=eq.${tenant.id}`,
+        },
+        agendarAtualizacao
+      )
+      .subscribe();
+
+    const pollingId = window.setInterval(() => {
+      buscarMetricas();
+    }, 30000);
+
+    return () => {
+      if (debounceAtualizacao) clearTimeout(debounceAtualizacao);
+      window.clearInterval(pollingId);
+      supabase.removeChannel(canalMetricas);
+    };
+  }, [user, tenant?.id, filtroVisaoGeral]);
 
   // Função para aplicar filtro de período na visão geral
   const aplicarFiltroVisaoGeral = (tipo: typeof filtroVisaoGeral.tipo) => {
@@ -280,6 +360,7 @@ export default function DashboardCompleto() {
         receitaPorDia,
         atendimentosPorBarbeiro,
       });
+      setUltimaAtualizacao(new Date());
 
       console.log('[Métricas] ✅ Métricas atualizadas com sucesso!', {
         receitaTotal,
@@ -591,7 +672,10 @@ export default function DashboardCompleto() {
                   {(["geral", "hoje", "semana", "mes", "ano"] as const).map((tipo) => (
                     <button
                       key={tipo}
-                      onClick={() => aplicarFiltroVisaoGeral(tipo)}
+                      onClick={() => {
+                        aplicarFiltroVisaoGeral(tipo);
+                        setFiltroAberto(false);
+                      }}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         filtroVisaoGeral.tipo === tipo
                           ? "bg-zinc-900 dark:bg-white text-white dark:text-black"
@@ -625,7 +709,7 @@ export default function DashboardCompleto() {
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="absolute right-0 top-full mt-2 p-4 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800 z-50 min-w-[260px]"
+                        className="absolute left-0 top-full z-50 mt-2 w-[min(92vw,320px)] rounded-xl border border-zinc-200 bg-white p-4 shadow-lg dark:border-zinc-800 dark:bg-zinc-900 sm:left-auto sm:right-0"
                       >
                         <div className="space-y-4">
                           <div>
@@ -678,15 +762,22 @@ export default function DashboardCompleto() {
               </div>
 
               {/* Indicador de período selecionado */}
-              <div className="text-sm text-zinc-500 dark:text-zinc-400">
-                Período: {format(filtroVisaoGeral.dataInicio, "dd/MM/yyyy", { locale: ptBR })} até {format(filtroVisaoGeral.dataFim, "dd/MM/yyyy", { locale: ptBR })}
+              <div className="flex flex-col gap-1 text-sm text-zinc-500 dark:text-zinc-400 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Período: {format(filtroVisaoGeral.dataInicio, "dd/MM/yyyy", { locale: ptBR })} até {format(filtroVisaoGeral.dataFim, "dd/MM/yyyy", { locale: ptBR })}
+                </span>
+                <span className="inline-flex items-center gap-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                  Tempo real
+                  {ultimaAtualizacao ? ` • atualizado às ${format(ultimaAtualizacao, "HH:mm:ss")}` : ""}
+                </span>
               </div>
               
               {/* Cards de Métricas */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <MetricCard
                   titulo="Receita Prevista"
-                  valor={`R$ ${metricas.receitaMensal.toFixed(2)}`}
+                  valor={formatarMoedaBRL(metricas.receitaMensal)}
                   icone={DollarSign}
                   tendencia={{ valor: 0, positiva: true }}
                   carregando={carregando}
@@ -700,22 +791,22 @@ export default function DashboardCompleto() {
                 />
                 <MetricCard
                   titulo="Ticket Médio"
-                  valor={`R$ ${metricas.ticketMedio.toFixed(2)}`}
+                  valor={formatarMoedaBRL(metricas.ticketMedio)}
                   icone={TrendingUp}
                   carregando={carregando}
                 />
                 <MetricCard
                   titulo="Despesas Mensais"
-                  valor={`R$ ${metricas.totalDespesas.toFixed(2)}`}
+                  valor={formatarMoedaBRL(metricas.totalDespesas)}
                   icone={TrendingDown}
                   carregando={carregando}
                 />
                 <MetricCard
                   titulo="Lucro Líquido"
-                  valor={`R$ ${metricas.lucroLiquido.toFixed(2)}`}
+                  valor={formatarMoedaBRL(metricas.lucroLiquido)}
                   icone={metricas.lucroLiquido >= 0 ? TrendingUp : TrendingDown}
                   tendencia={{ 
-                    valor: Math.abs(metricas.margemLucro), 
+                    valor: Number(Math.abs(metricas.margemLucro).toFixed(1)), 
                     positiva: metricas.lucroLiquido >= 0 
                   }}
                   carregando={carregando}
@@ -915,20 +1006,7 @@ export default function DashboardCompleto() {
 
                 {/* Aba: Configuração de Horários (horários de funcionamento, bloqueios) */}
                 <Tabs.Content value="horarios">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Clock className="w-5 h-5 text-zinc-500" />
-                      <div>
-                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                          Horários de Funcionamento
-                        </h3>
-                        <p className="text-sm text-zinc-500">
-                          Configure horários de abertura, fechamento, almoço e bloqueios
-                        </p>
-                      </div>
-                    </div>
-                    <GestaoHorariosAvancada />
-                  </div>
+                  <GestaoHorariosAvancada />
                 </Tabs.Content>
 
                 {/* Aba: Acesso dos Barbeiros */}
@@ -993,7 +1071,7 @@ function MetricCard({
         {carregando ? (
           <div className="h-8 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded" />
         ) : (
-          <p className="text-2xl font-bold text-zinc-900 dark:text-white">{valor}</p>
+          <p className="text-2xl font-bold tracking-tight tabular-nums text-zinc-900 dark:text-white">{valor}</p>
         )}
       </div>
     </motion.div>
@@ -1039,7 +1117,7 @@ function GraficoReceita({
               {item.data}
             </div>
             <div className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-              R$ {item.valor.toFixed(0)}
+              {formatarMoedaSemCentavosBRL(item.valor)}
             </div>
           </div>
         ))}
