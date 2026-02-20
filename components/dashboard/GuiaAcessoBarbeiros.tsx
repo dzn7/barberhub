@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTerminologia } from '@/hooks/useTerminologia'
 
 interface BarbeiroComToken {
   id: string
@@ -49,12 +50,21 @@ const gerarNovoToken = (): string => {
  */
 export function GuiaAcessoBarbeiros() {
   const { tenant } = useAuth()
+  const { terminologia } = useTerminologia()
   const [barbeiros, setBarbeiros] = useState<BarbeiroComToken[]>([])
   const [carregando, setCarregando] = useState(true)
   const [expandido, setExpandido] = useState(true)
   const [tokenCopiado, setTokenCopiado] = useState<string | null>(null)
   const [linkCopiado, setLinkCopiado] = useState(false)
   const [regenerando, setRegenerando] = useState<string | null>(null)
+  const profissionalSingular = terminologia.profissional.singular
+  const profissionalPlural = terminologia.profissional.plural
+  const profissionalSingularLower = profissionalSingular.toLowerCase()
+  const profissionalPluralLower = profissionalPlural.toLowerCase()
+  const artigoProfissional = terminologia.profissional.artigo
+  const artigoPluralProfissionais = terminologia.profissional.artigoPlural
+  const preposicaoProfissionais = artigoPluralProfissionais === 'as' ? 'das' : 'dos'
+  const artigoProfissionalCapitalizado = artigoProfissional === 'a' ? 'A' : 'O'
 
   const linkAcesso = typeof window !== 'undefined' 
     ? `${window.location.origin}/colaborador/entrar`
@@ -157,7 +167,7 @@ export function GuiaAcessoBarbeiros() {
           </div>
           <div className="text-left">
             <h3 className="font-semibold text-zinc-900 dark:text-white">
-              Acesso dos Barbeiros
+              Acesso {preposicaoProfissionais} {profissionalPlural}
             </h3>
             <p className="text-sm text-zinc-500">
               Tokens e links para sua equipe acessar o sistema
@@ -186,13 +196,13 @@ export function GuiaAcessoBarbeiros() {
                   <HelpCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                   <div className="text-sm">
                     <p className="font-medium text-blue-800 dark:text-blue-300 mb-2">
-                      Como funciona o acesso dos barbeiros?
+                      Como funciona o acesso {preposicaoProfissionais} {profissionalPluralLower}?
                     </p>
                     <ol className="list-decimal list-inside text-blue-700 dark:text-blue-400 space-y-1">
-                      <li>Cada barbeiro recebe um <strong>código de 8 caracteres</strong></li>
-                      <li>O barbeiro acessa o link de login abaixo</li>
-                      <li>Digita o código para entrar no painel dele</li>
-                      <li>No painel, ele vê seus agendamentos e comissões</li>
+                      <li>Cada {profissionalSingularLower} recebe um <strong>código de 8 caracteres</strong></li>
+                      <li>{artigoProfissionalCapitalizado} {profissionalSingularLower} acessa o link de login abaixo</li>
+                      <li>Digita o código para entrar no próprio painel</li>
+                      <li>No painel, acompanha agendamentos e comissões</li>
                     </ol>
                   </div>
                 </div>
@@ -201,7 +211,7 @@ export function GuiaAcessoBarbeiros() {
               {/* Link de acesso */}
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Link de Acesso (envie para os barbeiros)
+                  Link de Acesso (envie para {artigoPluralProfissionais} {profissionalPluralLower})
                 </label>
                 <div className="flex gap-2">
                   <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-3">
@@ -246,9 +256,9 @@ export function GuiaAcessoBarbeiros() {
                 ) : barbeiros.length === 0 ? (
                   <div className="text-center py-8 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
                     <Users className="w-10 h-10 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
-                    <p className="text-zinc-500">Nenhum barbeiro cadastrado</p>
+                    <p className="text-zinc-500">{terminologia.textos.semProfissionais}</p>
                     <p className="text-xs text-zinc-400 mt-1">
-                      Cadastre barbeiros na seção Barbeiros para ver os códigos
+                      Cadastre {profissionalPluralLower} na seção Equipe para ver os códigos
                     </p>
                   </div>
                 ) : (
@@ -347,10 +357,10 @@ export function GuiaAcessoBarbeiros() {
                   <Smartphone className="w-5 h-5 text-zinc-500 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-zinc-600 dark:text-zinc-400">
                     <p className="font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Dica para os barbeiros
+                      Dica para {artigoPluralProfissionais} {profissionalPluralLower}
                     </p>
                     <p>
-                      O barbeiro pode salvar o link como atalho na tela inicial do celular 
+                      {artigoProfissionalCapitalizado} {profissionalSingularLower} pode salvar o link como atalho na tela inicial do celular 
                       para acesso rápido. O código fica salvo automaticamente após o primeiro acesso.
                     </p>
                   </div>

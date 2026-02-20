@@ -13,6 +13,7 @@ import {
   Star,
   Phone
 } from 'lucide-react'
+import { TipoNegocio } from '@/lib/tipos-negocio'
 
 interface PreviewSiteProps {
   dados: {
@@ -29,14 +30,27 @@ interface PreviewSiteProps {
   }
   totalServicos?: number
   totalBarbeiros?: number
+  tipoNegocio?: TipoNegocio
 }
 
 /**
  * Componente de preview do site público
- * Mostra como ficará a página da barbearia para os clientes
+ * Mostra como ficará a página do negócio para os clientes
  * Utiliza mockup de iPhone do MagicUI
  */
-export function PreviewSite({ dados, totalServicos = 0, totalBarbeiros = 0 }: PreviewSiteProps) {
+export function PreviewSite({
+  dados,
+  totalServicos = 0,
+  totalBarbeiros = 0,
+  tipoNegocio = 'barbearia'
+}: PreviewSiteProps) {
+  const NOMES_PADRAO_POR_TIPO: Record<TipoNegocio, string> = {
+    barbearia: 'Sua Barbearia',
+    nail_designer: 'Seu Estúdio de Unhas',
+    lash_designer: 'Seu Estúdio de Cílios',
+    cabeleireira: 'Seu Salão'
+  }
+
   const cores = {
     primaria: dados.cor_primaria || '#18181b',
     secundaria: dados.cor_secundaria || '#fafafa',
@@ -118,7 +132,7 @@ export function PreviewSite({ dados, totalServicos = 0, totalBarbeiros = 0 }: Pr
                   className="text-sm font-bold mb-0.5"
                   style={{ color: cores.secundaria }}
                 >
-                  {dados.nome || 'Sua Barbearia'}
+                  {dados.nome || NOMES_PADRAO_POR_TIPO[tipoNegocio]}
                 </h1>
 
                 {/* Localização */}

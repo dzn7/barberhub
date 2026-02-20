@@ -40,7 +40,10 @@ import { ptBR } from "date-fns/locale";
 export default function DashboardCompleto() {
   const router = useRouter();
   const { user, tenant, carregando: carregandoAuth, sair } = useAuth();
-  const { profissional, estabelecimento } = useTerminologia();
+  const { profissional, estabelecimento, terminologia } = useTerminologia();
+  const artigoEstabelecimento = terminologia.estabelecimento.artigo;
+  const preposicaoEstabelecimento = artigoEstabelecimento === "a" ? "da" : "do";
+  const pronomePossessivoEstabelecimento = artigoEstabelecimento === "a" ? "sua" : "seu";
   const [abaAtiva, setAbaAtiva] = useState("visao-geral");
   const [menuMobileAberto, setMenuMobileAberto] = useState(false);
   const [filtroAberto, setFiltroAberto] = useState(false);
@@ -344,13 +347,13 @@ export default function DashboardCompleto() {
 
     // Contar agendamentos por barbeiro
     agendamentos.forEach(ag => {
-      const nome = ag.barbeiros?.nome || 'Sem barbeiro';
+      const nome = ag.barbeiros?.nome || `Sem ${profissional().toLowerCase()}`;
       dados[nome] = (dados[nome] || 0) + 1;
     });
 
     // Contar atendimentos por barbeiro
     atendimentos.forEach(at => {
-      const nome = at.barbeiros?.nome || 'Sem barbeiro';
+      const nome = at.barbeiros?.nome || `Sem ${profissional().toLowerCase()}`;
       dados[nome] = (dados[nome] || 0) + 1;
     });
 
@@ -393,7 +396,7 @@ export default function DashboardCompleto() {
           </div>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Erro ao carregar dados</h2>
           <p className="text-zinc-600 dark:text-zinc-400 mb-4">
-            Não foi possível carregar os dados do seu {estabelecimento().toLowerCase()}. Isso pode acontecer se sua conta não está vinculada a uma barbearia.
+            Não foi possível carregar os dados {preposicaoEstabelecimento} {estabelecimento().toLowerCase()}. Isso pode acontecer se sua conta não está vinculada a um estabelecimento válido.
           </p>
           <div className="space-y-2">
             <button
@@ -855,7 +858,7 @@ export default function DashboardCompleto() {
                     Configurações
                   </h2>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Gerencie seu {estabelecimento().toLowerCase()}: identidade visual, horários e acessos
+                    Gerencie {pronomePossessivoEstabelecimento} {estabelecimento().toLowerCase()}: identidade visual, horários e acessos
                   </p>
                 </div>
               </div>

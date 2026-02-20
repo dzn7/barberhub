@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button, TextField, TextArea } from "@radix-ui/themes";
 import { useToast } from "@/hooks/useToast";
+import { useTerminologia } from "@/hooks/useTerminologia";
 import { ModalPortal } from "@/components/ui/modal-portal";
 
 interface Servico {
@@ -36,6 +37,8 @@ interface NovoServicoForm {
  */
 export function GestaoServicos() {
   const { tenant } = useAuth();
+  const { estabelecimento, terminologia } = useTerminologia();
+  const preposicaoEstabelecimento = terminologia.estabelecimento.artigo === "a" ? "da" : "do";
   const { toast } = useToast();
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -276,7 +279,7 @@ export function GestaoServicos() {
             Gestão de Serviços
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400 mt-1">
-            Crie e edite serviços da barbearia
+            Crie e edite serviços {preposicaoEstabelecimento} {estabelecimento().toLowerCase()}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -311,7 +314,9 @@ export function GestaoServicos() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Novo Serviço</h2>
-                <p className="text-sm text-white/60">Adicione um serviço à sua barbearia</p>
+                <p className="text-sm text-white/60">
+                  Adicione um serviço {preposicaoEstabelecimento} {estabelecimento().toLowerCase()}
+                </p>
               </div>
             </div>
           </div>

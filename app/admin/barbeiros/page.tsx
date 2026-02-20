@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTerminologia } from '@/hooks/useTerminologia'
 import { supabase } from '@/lib/supabase'
 import { Barbeiro } from '@/lib/types'
 import { Botao } from '@/components/ui/botao'
@@ -38,6 +39,9 @@ const ESPECIALIDADES_SUGERIDAS = [
 
 export default function BarbeirosPage() {
   const { tenant } = useAuth()
+  const { profissional, estabelecimento, terminologia } = useTerminologia()
+  const preposicaoEstabelecimento = terminologia.estabelecimento.artigo === 'a' ? 'da' : 'do'
+  const preposicaoNoEstabelecimento = terminologia.estabelecimento.artigo === 'a' ? 'na' : 'no'
   const { toast } = useToast()
   const [barbeiros, setBarbeiros] = useState<Barbeiro[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -266,7 +270,7 @@ export default function BarbeirosPage() {
   }
 
   const handleExcluir = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este barbeiro?')) return
+    if (!confirm('Tem certeza que deseja excluir este profissional?')) return
     
     await supabase
       .from('barbeiros')
@@ -286,14 +290,16 @@ export default function BarbeirosPage() {
               <ArrowLeft className="w-5 h-5 text-zinc-400" />
             </Link>
             <div>
-              <h1 className="font-bold text-white">Barbeiros</h1>
-              <p className="text-xs text-zinc-400">Gerencie os profissionais da sua barbearia</p>
+              <h1 className="font-bold text-white">{profissional(true)}</h1>
+              <p className="text-xs text-zinc-400">
+                Gerencie os profissionais {preposicaoEstabelecimento} {estabelecimento().toLowerCase()}
+              </p>
             </div>
           </div>
           
           <Botao onClick={() => abrirModal()}>
             <Plus className="w-4 h-4 mr-2" />
-            Novo Barbeiro
+            Adicionar {profissional()}
           </Botao>
         </div>
       </header>
@@ -306,11 +312,13 @@ export default function BarbeirosPage() {
         ) : barbeiros.length === 0 ? (
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">Nenhum barbeiro cadastrado</h3>
-            <p className="text-zinc-400 mb-6">Adicione os profissionais que trabalham na sua barbearia</p>
+            <h3 className="text-lg font-semibold text-white mb-2">Nenhum profissional cadastrado</h3>
+            <p className="text-zinc-400 mb-6">
+              Adicione os profissionais que trabalham {preposicaoNoEstabelecimento} {estabelecimento().toLowerCase()}
+            </p>
             <Botao onClick={() => abrirModal()}>
               <Plus className="w-4 h-4 mr-2" />
-              Adicionar Barbeiro
+              Adicionar {profissional()}
             </Botao>
           </div>
         ) : (

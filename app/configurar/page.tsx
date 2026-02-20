@@ -1095,7 +1095,7 @@ export default function ConfigurarPage() {
             </div>
           </div>
           <div className="hidden lg:block lg:col-span-2">
-            <div className="sticky top-8"><PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} /></div>
+            <div className="sticky top-8"><PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} tipoNegocio={tipoNegocioAtual} /></div>
           </div>
         </div>
 
@@ -1119,7 +1119,7 @@ export default function ConfigurarPage() {
                   </button>
                 </div>
                 <div className="flex-1 overflow-auto p-4">
-                  <PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} />
+                  <PreviewSite dados={dados} totalServicos={totalServicos} totalBarbeiros={totalBarbeiros} tipoNegocio={tipoNegocioAtual} />
                 </div>
               </div>
             </motion.div>

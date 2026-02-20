@@ -161,6 +161,11 @@ export function GestaoHorariosAvancada() {
   // Terminologia dinâmica baseada no tipo de negócio
   const tipoNegocio = (tenant?.tipo_negocio as TipoNegocio) || 'barbearia';
   const terminologia = useMemo(() => obterTerminologia(tipoNegocio), [tipoNegocio]);
+  const estabelecimentoSingularLower = terminologia.estabelecimento.singular.toLowerCase();
+  const artigoEstabelecimento = terminologia.estabelecimento.artigo;
+  const estabelecimentoComArtigo = `${artigoEstabelecimento} ${estabelecimentoSingularLower}`;
+  const sufixoGeneroEstabelecimento = artigoEstabelecimento === 'a' ? 'a' : 'o';
+  const artigoEstabelecimentoCapitalizado = artigoEstabelecimento === 'a' ? 'A' : 'O';
   
   const [barbeiros, setBarbeiros] = useState<BarbeiroSimples[]>([]);
   const [modalConfig, setModalConfig] = useState<ModalConfigState | null>(null);
@@ -278,13 +283,13 @@ export function GestaoHorariosAvancada() {
     // Se está tentando FECHAR, pedir confirmação dupla
     if (!novoStatus) {
       const confirmacao1 = confirm(
-        "⚠️ ATENÇÃO!\n\nDeseja realmente FECHAR a barbearia?\n\nClientes não poderão fazer novos agendamentos."
+        `⚠️ ATENÇÃO!\n\nDeseja realmente FECHAR ${estabelecimentoComArtigo}?\n\nClientes não poderão fazer novos agendamentos.`
       );
       
       if (!confirmacao1) return;
       
       const confirmacao2 = confirm(
-        "🔒 CONFIRMAÇÃO FINAL\n\nTem certeza? Esta ação fechará a barbearia para agendamentos.\n\nClique OK para confirmar ou Cancelar para manter aberta."
+        `🔒 CONFIRMAÇÃO FINAL\n\nTem certeza? Esta ação fechará ${estabelecimentoComArtigo} para agendamentos.\n\nClique OK para confirmar ou Cancelar para manter ${estabelecimentoComArtigo} abert${sufixoGeneroEstabelecimento}.`
       );
       
       if (!confirmacao2) return;
@@ -303,10 +308,12 @@ export function GestaoHorariosAvancada() {
       if (error) throw error;
 
       setModalConfig({
-        title: novoStatus ? "✅ Barbearia Aberta" : "🔒 Barbearia Fechada",
+        title: novoStatus
+          ? `✅ ${terminologia.estabelecimento.singular} Abert${sufixoGeneroEstabelecimento}`
+          : `🔒 ${terminologia.estabelecimento.singular} Fechad${sufixoGeneroEstabelecimento}`,
         message: novoStatus 
-          ? "A barbearia está aberta para agendamentos. Clientes podem agendar normalmente."
-          : "A barbearia foi fechada. Clientes não poderão agendar novos horários.",
+          ? `${artigoEstabelecimentoCapitalizado} ${estabelecimentoSingularLower} está abert${sufixoGeneroEstabelecimento} para agendamentos. Clientes podem agendar normalmente.`
+          : `${artigoEstabelecimentoCapitalizado} ${estabelecimentoSingularLower} foi fechad${sufixoGeneroEstabelecimento}. Clientes não poderão agendar novos horários.`,
         type: "success"
       });
       setModalAberto(true);
@@ -646,7 +653,7 @@ export function GestaoHorariosAvancada() {
                 className="text-lg font-semibold"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2">
-                Quando a barbearia abre para atendimento
+                Quando {artigoEstabelecimento} {estabelecimentoSingularLower} abre para atendimento
               </p>
             </div>
 
@@ -665,7 +672,7 @@ export function GestaoHorariosAvancada() {
                 className="text-lg font-semibold"
               />
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2">
-                Quando a barbearia fecha
+                Quando {artigoEstabelecimento} {estabelecimentoSingularLower} fecha
               </p>
             </div>
           </div>
@@ -902,7 +909,7 @@ export function GestaoHorariosAvancada() {
             Dias de Funcionamento
           </h4>
           <p className="text-sm text-purple-700 dark:text-purple-300 mb-4">
-            Selecione os dias da semana em que a barbearia funciona
+            Selecione os dias da semana em que {estabelecimentoComArtigo} funciona
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
             {diasSemana.map(dia => (

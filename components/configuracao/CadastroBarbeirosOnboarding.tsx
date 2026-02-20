@@ -33,7 +33,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { obterCategoriasEspecialidades, obterTerminologia } from '@/lib/configuracoes-negocio'
-import { TipoNegocio, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
+import { TipoNegocio, Terminologia, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
 
 interface Barbeiro {
   id: string
@@ -602,6 +602,8 @@ export function CadastroBarbeirosOnboarding({
             onAdicionarEspecialidade={adicionarEspecialidadeCustomizada}
             categoriaAberta={categoriaAberta}
             setCategoriaAberta={setCategoriaAberta}
+            terminologia={terminologia}
+            linkAcesso={linkAcesso}
           />
         )}
 
@@ -612,6 +614,7 @@ export function CadastroBarbeirosOnboarding({
             token={tokenGerado}
             tokenCopiado={tokenCopiado}
             linkAcesso={linkAcesso}
+            terminologia={terminologia}
             onCopiar={copiarToken}
             onContinuar={() => {
               setTokenGerado(null)
@@ -634,6 +637,7 @@ export function CadastroBarbeirosOnboarding({
             onEditar={iniciarEdicao}
             onRemover={removerBarbeiro}
             formatarTelefone={formatarTelefone}
+            terminologia={terminologia}
           />
         )}
       </AnimatePresence>
@@ -1089,7 +1093,9 @@ function EtapaFormularioEquipe({
   setNovaEspecialidade,
   onAdicionarEspecialidade,
   categoriaAberta,
-  setCategoriaAberta
+  setCategoriaAberta,
+  terminologia,
+  linkAcesso
 }: {
   formulario: {
     nome: string
@@ -1116,7 +1122,14 @@ function EtapaFormularioEquipe({
   onAdicionarEspecialidade: () => void
   categoriaAberta: string | null
   setCategoriaAberta: (cat: string | null) => void
+  terminologia: Terminologia
+  linkAcesso: string
 }) {
+  const artigoProfissional = terminologia.profissional.artigo
+  const tituloNovoProfissional = artigoProfissional === 'a'
+    ? `Nova ${terminologia.profissional.singular} da Equipe`
+    : `Novo ${terminologia.profissional.singular} da Equipe`
+
   return (
     <motion.div
       key="cadastro_equipe"
@@ -1132,10 +1145,10 @@ function EtapaFormularioEquipe({
           </div>
           <div>
             <h3 className="font-medium text-zinc-900 dark:text-white">
-              {editando ? 'Editar Barbeiro' : 'Novo Barbeiro da Equipe'}
+              {editando ? `Editar ${terminologia.profissional.singular}` : tituloNovoProfissional}
             </h3>
             <p className="text-xs text-zinc-600 dark:text-zinc-500">
-              Ele receberá acesso via WhatsApp para usar o /barbeiro
+              Receberá acesso via WhatsApp para entrar em {linkAcesso}
             </p>
           </div>
         </div>
@@ -1298,7 +1311,7 @@ function EtapaFormularioEquipe({
             </div>
           </div>
           <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">
-            Porcentagem que o barbeiro recebe de cada atendimento realizado
+            Porcentagem que {artigoProfissional} {terminologia.profissional.singular.toLowerCase()} recebe de cada atendimento realizado
           </p>
         </div>
 
@@ -1349,6 +1362,7 @@ function EtapaTokenGerado({
   token,
   tokenCopiado,
   linkAcesso,
+  terminologia,
   onCopiar,
   onContinuar,
   onAdicionarOutro
@@ -1357,10 +1371,13 @@ function EtapaTokenGerado({
   token: string
   tokenCopiado: boolean
   linkAcesso: string
+  terminologia: Terminologia
   onCopiar: () => void
   onContinuar: () => void
   onAdicionarOutro: () => void
 }) {
+  const artigoProfissionalCapitalizado = terminologia.profissional.artigo === 'a' ? 'A' : 'O'
+
   return (
     <motion.div
       key="token"
@@ -1390,7 +1407,7 @@ function EtapaTokenGerado({
           </div>
           <div>
             <p className="font-medium text-zinc-900 dark:text-white">Código de Acesso</p>
-            <p className="text-xs text-zinc-500">O barbeiro usa este código para entrar no /barbeiro</p>
+            <p className="text-xs text-zinc-500">{artigoProfissionalCapitalizado} {terminologia.profissional.singular.toLowerCase()} usa este código para entrar no painel do colaborador</p>
           </div>
         </div>
 
@@ -1426,7 +1443,7 @@ function EtapaTokenGerado({
           </div>
           <div>
             <p className="font-medium text-zinc-900 dark:text-white">Link de Acesso</p>
-            <p className="text-xs text-zinc-500">Onde o barbeiro faz login</p>
+            <p className="text-xs text-zinc-500">Onde {terminologia.profissional.artigo} {terminologia.profissional.singular.toLowerCase()} faz login</p>
           </div>
         </div>
 
@@ -1444,7 +1461,7 @@ function EtapaTokenGerado({
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
         >
           <UserPlus className="w-5 h-5" />
-          Adicionar outro barbeiro
+          Adicionar outr{terminologia.profissional.artigo === 'a' ? 'a' : 'o'} {terminologia.profissional.singular.toLowerCase()}
         </button>
         <button
           onClick={onContinuar}
@@ -1466,13 +1483,15 @@ function EtapaListaBarbeiros({
   onAdicionar,
   onEditar,
   onRemover,
-  formatarTelefone
+  formatarTelefone,
+  terminologia
 }: {
   barbeiros: Barbeiro[]
   onAdicionar: () => void
   onEditar: (barbeiro: Barbeiro) => void
   onRemover: (id: string) => void
   formatarTelefone: (valor: string) => string
+  terminologia: Terminologia
 }) {
   const proprietario = barbeiros.find(b => b.is_proprietario)
   const equipe = barbeiros.filter(b => !b.is_proprietario)
@@ -1490,7 +1509,9 @@ function EtapaListaBarbeiros({
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {barbeiros.length} profissional{barbeiros.length !== 1 ? 'is' : ''}
+            {barbeiros.length} {barbeiros.length === 1
+              ? terminologia.profissional.singular.toLowerCase()
+              : terminologia.profissional.plural.toLowerCase()}
           </span>
         </div>
         <button
@@ -1619,16 +1640,16 @@ function EtapaListaBarbeiros({
       {equipe.length === 0 && proprietario && (
         <div className="text-center py-6 px-4 bg-zinc-50 dark:bg-zinc-900/30 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
           <Users className="w-8 h-8 text-zinc-400 dark:text-zinc-700 mx-auto mb-2" />
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-1">Nenhum barbeiro na equipe ainda</p>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-1">Nenhum{terminologia.profissional.artigo === 'a' ? 'a' : ''} {terminologia.profissional.singular.toLowerCase()} na equipe ainda</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-600 mb-3">
-            Você pode adicionar mais barbeiros a qualquer momento
+            Você pode adicionar mais {terminologia.profissional.plural.toLowerCase()} a qualquer momento
           </p>
           <button
             onClick={onAdicionar}
             className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm"
           >
             <UserPlus className="w-4 h-4" />
-            Adicionar barbeiro
+            Adicionar {terminologia.profissional.singular.toLowerCase()}
           </button>
         </div>
       )}

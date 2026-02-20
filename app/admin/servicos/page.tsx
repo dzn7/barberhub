@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTerminologia } from '@/hooks/useTerminologia'
 import { supabase } from '@/lib/supabase'
 import { Servico } from '@/lib/types'
 import { Botao } from '@/components/ui/botao'
@@ -21,6 +22,9 @@ import {
 
 export default function ServicosPage() {
   const { tenant } = useAuth()
+  const { estabelecimento, terminologia } = useTerminologia()
+  const preposicaoEstabelecimento = terminologia.estabelecimento.artigo === 'a' ? 'da' : 'do'
+  const estabelecimentoComArtigo = estabelecimento(true).toLowerCase()
   const [servicos, setServicos] = useState<Servico[]>([])
   const [carregando, setCarregando] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
@@ -143,7 +147,9 @@ export default function ServicosPage() {
             </Link>
             <div>
               <h1 className="font-bold text-white">Serviços</h1>
-              <p className="text-xs text-zinc-400">Gerencie os serviços da sua barbearia</p>
+              <p className="text-xs text-zinc-400">
+                Gerencie os serviços {preposicaoEstabelecimento} {estabelecimento().toLowerCase()}
+              </p>
             </div>
           </div>
           
@@ -163,7 +169,9 @@ export default function ServicosPage() {
           <div className="text-center py-12">
             <Scissors className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">Nenhum serviço cadastrado</h3>
-            <p className="text-zinc-400 mb-6">Comece adicionando os serviços que sua barbearia oferece</p>
+            <p className="text-zinc-400 mb-6">
+              Comece adicionando os serviços que {estabelecimentoComArtigo} oferece
+            </p>
             <Botao onClick={() => abrirModal()}>
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Serviço

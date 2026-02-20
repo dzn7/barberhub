@@ -8,12 +8,14 @@ import { Button, Select, TextField } from "@radix-ui/themes";
 import type { AtendimentoPresencial, FormaPagamento } from "@/types";
 import { supabase } from "@/lib/supabase";
 import { startOfDay, endOfDay } from "date-fns";
+import { useTerminologia } from "@/hooks/useTerminologia";
 
 /**
  * Componente de Atendimentos Presenciais
  * Registro de clientes walk-in (sem agendamento)
  */
 export function AtendimentosPresenciais() {
+  const { profissional } = useTerminologia();
   const [modalAberto, setModalAberto] = useState(false);
   const [clienteNome, setClienteNome] = useState("");
   const [clienteTelefone, setClienteTelefone] = useState("");
@@ -95,7 +97,7 @@ export function AtendimentosPresenciais() {
     }
     
     if (!barbeiroId) {
-      alert("❌ Por favor, selecione um barbeiro");
+      alert(`❌ Por favor, selecione ${profissional(true, true).toLowerCase()}`);
       return;
     }
     
@@ -398,10 +400,10 @@ export function AtendimentosPresenciais() {
               {/* Barbeiro */}
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Barbeiro
+                  {profissional()}
                 </label>
                 <Select.Root value={barbeiroId} onValueChange={setBarbeiroId}>
-                  <Select.Trigger className="w-full" placeholder="Selecione o barbeiro" />
+                  <Select.Trigger className="w-full" placeholder={`Selecione ${profissional().toLowerCase()}`} />
                   <Select.Content>
                     {barbeiros.map((barbeiro) => (
                       <Select.Item key={barbeiro.id} value={barbeiro.id}>

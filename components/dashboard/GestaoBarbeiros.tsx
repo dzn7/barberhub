@@ -829,7 +829,7 @@ Você foi cadastrad${ehSegmentoFeminino ? 'a' : 'o'} como ${terminologia.profiss
 Para acessar seu painel de ${terminologia.profissional.singular.toLowerCase()}, siga os passos:
 
 1️⃣ Acesse o link:
-${typeof window !== 'undefined' ? window.location.origin : ''}/barbeiro/entrar
+${typeof window !== 'undefined' ? window.location.origin : ''}/colaborador/entrar
 
 2️⃣ Digite seu token de acesso:
 *${tokenGerado}*
@@ -853,7 +853,7 @@ Você foi cadastrad${ehSegmentoFeminino ? 'a' : 'o'} como ${terminologia.profiss
 Para acessar seu painel de ${terminologia.profissional.singular.toLowerCase()}, siga os passos:
 
 1️⃣ Acesse o link:
-${typeof window !== 'undefined' ? window.location.origin : ''}/barbeiro/entrar
+${typeof window !== 'undefined' ? window.location.origin : ''}/colaborador/entrar
 
 2️⃣ Digite seu token de acesso:
 *${tokenGerado}*
