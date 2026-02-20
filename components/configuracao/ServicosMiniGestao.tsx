@@ -171,7 +171,7 @@ export function ServicosMiniGestao({
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [novaCategoria, setNovaCategoria] = useState('')
   const [categoriasCustomizadas, setCategoriasCustomizadas] = useState<CategoriaOption[]>([])
-  
+
   // Categorias e serviços dinâmicos baseados no tipo de negócio
   const { CATEGORIAS, SERVICOS_SUGERIDOS, categoriaInicial, placeholderNome } = useMemo(() => {
     if (tipoNegocio === 'nail_designer') {
@@ -208,7 +208,7 @@ export function ServicosMiniGestao({
       placeholderNome: 'Ex: Corte Degradê'
     }
   }, [tipoNegocio])
-  
+
   const categoriasDisponiveis = useMemo<CategoriaOption[]>(() => {
     const porValor = new Map<string, CategoriaOption>()
 
@@ -317,8 +317,8 @@ export function ServicosMiniGestao({
     }
     setSalvando(true)
     try {
-      const proximaOrdem = servicos.length > 0 
-        ? Math.max(...servicos.map(s => s.ordem_exibicao || 0)) + 1 
+      const proximaOrdem = servicos.length > 0
+        ? Math.max(...servicos.map(s => s.ordem_exibicao || 0)) + 1
         : 1
 
       const { data, error } = await supabase
@@ -366,8 +366,8 @@ export function ServicosMiniGestao({
 
       if (error) throw error
 
-      setServicos(servicos.map(s => 
-        s.id === id 
+      setServicos(servicos.map(s =>
+        s.id === id
           ? { ...s, nome: formulario.nome, descricao: formulario.descricao, preco: precoNumerico, duracao: duracaoNumerica, categoria: formulario.categoria }
           : s
       ))
@@ -424,8 +424,8 @@ export function ServicosMiniGestao({
 
     setSalvando(true)
     try {
-      const proximaOrdem = servicos.length > 0 
-        ? Math.max(...servicos.map(s => s.ordem_exibicao || 0)) + 1 
+      const proximaOrdem = servicos.length > 0
+        ? Math.max(...servicos.map(s => s.ordem_exibicao || 0)) + 1
         : 1
 
       const { data, error } = await supabase
@@ -458,45 +458,69 @@ export function ServicosMiniGestao({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Scissors className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
-          <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {servicos.length} {servicos.length === 1 ? 'servico' : 'servicos'} cadastrados
-          </span>
+      <div className="flex items-center justify-between p-5 sm:p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-zinc-50 dark:bg-zinc-800 rounded-2xl flex items-center justify-center border border-zinc-100 dark:border-zinc-700/50">
+            <Scissors className="w-6 h-6 text-zinc-900 dark:text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Serviços</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {servicos.length} {servicos.length === 1 ? 'cadastrado' : 'cadastrados'}
+            </p>
+          </div>
         </div>
         {!mostrarFormulario && !editando && (
           <button
             onClick={() => setMostrarFormulario(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-900 dark:bg-zinc-800 text-white rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
-            Adicionar
+            <span className="hidden sm:inline">Novo Serviço</span>
           </button>
         )}
       </div>
 
       {/* Sugestões Rápidas (quando lista vazia) */}
       {servicos.length === 0 && !mostrarFormulario && (
-        <div className="space-y-3">
-          <p className="text-sm text-zinc-600 dark:text-zinc-500">
-            Sugestoes prontas para {terminologia.estabelecimento.artigo} {terminologia.estabelecimento.singular.toLowerCase()}:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-6 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-2xl"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-amber-100 dark:bg-amber-500/20 rounded-xl flex items-center justify-center">
+              <Plus className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="font-bold text-amber-900 dark:text-amber-300">
+                Adicione seu primeiro serviço
+              </p>
+              <p className="text-sm text-amber-700 dark:text-amber-400/80">
+                Clique nas sugestões abaixo para adicionar rapidamente:
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             {SERVICOS_SUGERIDOS.map((sugerido, index) => (
               <button
                 key={index}
                 onClick={() => adicionarSugerido(sugerido)}
                 disabled={salvando}
-                className="px-3 py-2.5 text-sm text-left bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all disabled:opacity-50"
+                className="group flex flex-col items-start px-4 py-3 bg-white dark:bg-zinc-900 border border-amber-200/60 dark:border-amber-500/20 rounded-xl hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-sm transition-all text-left disabled:opacity-50"
               >
-                {sugerido.nome}
+                <span className="font-medium text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{sugerido.nome}</span>
+                <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  <span className="font-medium">R$ {sugerido.preco.toFixed(2)}</span>
+                  <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
+                  <span>{sugerido.duracao} min</span>
+                </div>
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Formulário de Novo Serviço */}
@@ -508,10 +532,20 @@ export function ServicosMiniGestao({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-5 sm:p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm space-y-5">
+              <div className="flex items-center gap-3 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="w-10 h-10 bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-zinc-900 dark:text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-zinc-900 dark:text-white">Configurar Serviço</h4>
+                  <p className="text-xs text-zinc-500">Defina valores e tempo de execução</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
                     Nome do Serviço *
                   </label>
                   <input
@@ -519,16 +553,16 @@ export function ServicosMiniGestao({
                     value={formulario.nome}
                     onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
                     {...{ placeholder: placeholderNome }}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                    className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
                     Preço (R$) *
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                     <input
                       type="text"
                       inputMode="decimal"
@@ -538,17 +572,17 @@ export function ServicosMiniGestao({
                         setFormulario({ ...formulario, preco: valor })
                       }}
                       placeholder="0,00"
-                      className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                      className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                    Duração (min) *
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    Duração (minutos) *
                   </label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                     <input
                       type="text"
                       inputMode="numeric"
@@ -558,72 +592,76 @@ export function ServicosMiniGestao({
                         setFormulario({ ...formulario, duracao: valor })
                       }}
                       placeholder="30"
-                      className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                      className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
                     Categoria
                   </label>
-                  <select
-                    value={formulario.categoria}
-                    onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
-                  >
-                    {categoriasDisponiveis.map((cat) => (
-                      <option key={cat.valor} value={cat.valor}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="mt-2 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={novaCategoria}
-                      onChange={(e) => setNovaCategoria(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          adicionarCategoriaCustomizada()
-                        }
-                      }}
-                      placeholder="Nova categoria (ex: terapia capilar)"
-                      className="flex-1 px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={adicionarCategoriaCustomizada}
-                      className="px-3 py-2 text-xs font-medium bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                  <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={formulario.categoria}
+                      onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
+                      className="flex-1 px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white focus:outline-none"
                     >
-                      Criar
-                    </button>
+                      {categoriasDisponiveis.map((cat) => (
+                        <option key={cat.valor} value={cat.valor}>{cat.label}</option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-300 dark:text-zinc-600 hidden sm:block">|</span>
+                      <input
+                        type="text"
+                        value={novaCategoria}
+                        onChange={(e) => setNovaCategoria(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            adicionarCategoriaCustomizada()
+                          }
+                        }}
+                        placeholder="Nova categoria"
+                        className="flex-1 sm:w-40 px-3 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={adicionarCategoriaCustomizada}
+                        className="px-4 py-2.5 text-sm font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-2 justify-end">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                 <button
                   onClick={() => {
                     setMostrarFormulario(false)
                     resetarFormulario()
                   }}
-                  className="px-4 py-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                  className="flex-1 px-4 py-3 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={adicionarServico}
                   disabled={salvando}
-                  className="flex items-center gap-2 px-4 py-2 text-sm bg-zinc-900 dark:bg-white text-white dark:text-black rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                  className="flex-[2] flex items-center justify-center gap-2 px-6 py-3 text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-70 shadow-sm"
                 >
                   {salvando ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <Check className="w-4 h-4" />
+                    <>
+                      <Check className="w-5 h-5" />
+                      Salvar Serviço
+                    </>
                   )}
-                  Adicionar
                 </button>
               </div>
             </div>
@@ -632,31 +670,31 @@ export function ServicosMiniGestao({
       </AnimatePresence>
 
       {/* Lista de Serviços */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <AnimatePresence>
           {servicos.map((servico) => (
             <motion.div
               key={servico.id}
               layout
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              exit={{ opacity: 0, scale: 0.98 }}
               className="group"
             >
               {editando === servico.id ? (
-                // Modo edição
-                <div className="p-4 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700 rounded-xl space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                // Modo edição INLINE
+                <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-inner space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div className="sm:col-span-2">
                       <input
                         type="text"
                         value={formulario.nome}
                         onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
-                        className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                        className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none"
                       />
                     </div>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
                       <input
                         type="text"
                         inputMode="decimal"
@@ -665,12 +703,11 @@ export function ServicosMiniGestao({
                           const valor = e.target.value.replace(/[^0-9.,]/g, '')
                           setFormulario({ ...formulario, preco: valor })
                         }}
-                        placeholder="0,00"
-                        className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                        className="w-full pl-9 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none"
                       />
                     </div>
                     <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
                       <input
                         type="text"
                         inputMode="numeric"
@@ -679,84 +716,71 @@ export function ServicosMiniGestao({
                           const valor = e.target.value.replace(/[^0-9]/g, '')
                           setFormulario({ ...formulario, duracao: valor })
                         }}
-                        placeholder="30"
-                        className="w-full pl-10 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
+                        className="w-full pl-9 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none"
                       />
                     </div>
-                    <div className="sm:col-span-2">
-                      <select
-                        value={formulario.categoria}
-                        onChange={(e) => setFormulario({ ...formulario, categoria: e.target.value })}
-                        className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500"
-                      >
-                        {categoriasDisponiveis.map((cat) => (
-                          <option key={cat.valor} value={cat.valor}>
-                            {cat.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
                   </div>
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex gap-2 justify-end pt-2 border-t border-zinc-200 dark:border-zinc-700">
                     <button
                       onClick={cancelarEdicao}
-                      className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                      className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      Cancelar
                     </button>
                     <button
                       onClick={() => atualizarServico(servico.id)}
                       disabled={salvando}
-                      className="p-2 text-white bg-zinc-800 dark:bg-zinc-700 rounded-lg hover:bg-zinc-700 dark:hover:bg-zinc-600 transition-colors disabled:opacity-50"
+                      className="px-5 py-2 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50"
                     >
-                      {salvando ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Check className="w-4 h-4" />
-                      )}
+                      {salvando ? 'Salvando...' : 'Atualizar'}
                     </button>
                   </div>
                 </div>
               ) : (
                 // Modo visualização
-                <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                  <GripVertical className="w-4 h-4 text-zinc-300 dark:text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
-                  
-                  <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-zinc-900 dark:text-white truncate">
-                      {servico.nome}
-                    </span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-sm transition-all">
+                  <div className="hidden sm:flex p-1 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity">
+                    <GripVertical className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-zinc-500 mt-1">
-                    <span className="flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" />
-                      R$ {servico.preco.toFixed(2)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {servico.duracao} min
-                    </span>
-                    <span>
-                      Categoria: {obterLabelCategoria(servico.categoria)}
-                    </span>
-                  </div>
-                </div>
 
-                  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <p className="font-bold text-zinc-900 dark:text-white truncate text-base">
+                        {servico.nome}
+                      </p>
+                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-md">
+                        {obterLabelCategoria(servico.categoria)}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 px-2 py-1 rounded-lg">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+                        R$ {servico.preco.toFixed(2)}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+                        <Clock className="w-3.5 h-3.5" />
+                        {servico.duracao} min
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800">
                     <button
                       onClick={() => iniciarEdicao(servico)}
-                      className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                      aria-label="Editar serviço"
+                      className="flex-1 sm:flex-none flex justify-center items-center gap-2 p-2.5 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                      title="Editar serviço"
                     >
                       <Edit2 className="w-4 h-4" />
+                      <span className="sm:hidden font-medium">Editar</span>
                     </button>
                     <button
                       onClick={() => removerServico(servico.id)}
-                      className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                      aria-label="Remover serviço"
+                      className="flex-1 sm:flex-none flex justify-center items-center gap-2 p-2.5 text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                      title="Remover serviço"
                     >
                       <Trash2 className="w-4 h-4" />
+                      <span className="sm:hidden font-medium">Excluir</span>
                     </button>
                   </div>
                 </div>
@@ -766,10 +790,10 @@ export function ServicosMiniGestao({
         </AnimatePresence>
       </div>
 
-      {/* Dica quando tem serviços */}
       {servicos.length > 0 && !mostrarFormulario && !editando && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-600 text-center hidden sm:block">
-          Passe o mouse sobre um serviço para editar ou remover
+        <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center font-medium flex items-center justify-center gap-2 pt-4">
+          <GripVertical className="w-3.5 h-3.5" />
+          Arraste para reordenar os serviços no seu catálogo
         </p>
       )}
     </div>

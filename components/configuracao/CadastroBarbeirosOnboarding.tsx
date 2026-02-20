@@ -30,7 +30,10 @@ import {
   MessageCircle,
   Scissors,
   Hand,
-  Sparkles
+  Sparkles,
+  Eye,
+  Star,
+  ChevronDown
 } from 'lucide-react'
 import { obterCategoriasEspecialidades, obterTerminologia } from '@/lib/configuracoes-negocio'
 import { TipoNegocio, Terminologia, ehTipoNegocioFeminino } from '@/lib/tipos-negocio'
@@ -82,7 +85,7 @@ export function CadastroBarbeirosOnboarding({
   tipoNegocio = 'barbearia'
 }: CadastroBarbeirosOnboardingProps) {
   const { toast } = useToast()
-  
+
   // Obter terminologia e categorias dinâmicas baseadas no tipo de negócio
   const terminologia = obterTerminologia(tipoNegocio)
   const categoriasEspecialidades = obterCategoriasEspecialidades(tipoNegocio)
@@ -106,7 +109,7 @@ export function CadastroBarbeirosOnboarding({
   )
   const [novaEspecialidade, setNovaEspecialidade] = useState('')
   const [especialidadesCustomizadas, setEspecialidadesCustomizadas] = useState<string[]>([])
-  
+
   const [imagemParaRecortar, setImagemParaRecortar] = useState<string | null>(null)
   const [arquivoOriginal, setArquivoOriginal] = useState<File | null>(null)
 
@@ -179,7 +182,7 @@ export function CadastroBarbeirosOnboarding({
     const urlTemporaria = URL.createObjectURL(arquivo)
     setImagemParaRecortar(urlTemporaria)
     setArquivoOriginal(arquivo)
-    
+
     if (inputFotoRef.current) {
       inputFotoRef.current.value = ''
     }
@@ -188,10 +191,10 @@ export function CadastroBarbeirosOnboarding({
   const handleRecorteConcluido = async (imagemRecortada: Blob) => {
     setUploadandoFoto(true)
     setImagemParaRecortar(null)
-    
+
     try {
       const arquivoRecortado = new File(
-        [imagemRecortada], 
+        [imagemRecortada],
         arquivoOriginal?.name || 'foto-barbeiro.jpg',
         { type: 'image/jpeg' }
       )
@@ -371,7 +374,7 @@ export function CadastroBarbeirosOnboarding({
     try {
       const novoToken = gerarTokenAcesso()
       const emailFinal = formulario.email.trim() || gerarEmailTemporario(formulario.nome)
-      
+
       const { data, error } = await supabase
         .from('barbeiros')
         .insert([{
@@ -485,7 +488,7 @@ export function CadastroBarbeirosOnboarding({
 
       if (error) throw error
       setBarbeiros(barbeiros.filter(b => b.id !== id))
-      
+
       if (barbeiros.filter(b => b.id !== id && !b.is_proprietario).length === 0) {
         setEtapa('pergunta_equipe')
       }
@@ -529,7 +532,7 @@ export function CadastroBarbeirosOnboarding({
     }
   }
 
-  const linkAcesso = typeof window !== 'undefined' 
+  const linkAcesso = typeof window !== 'undefined'
     ? `${window.location.origin}/colaborador/entrar`
     : '/colaborador/entrar'
 
@@ -674,6 +677,18 @@ interface EspecialidadesProps {
 }
 
 /**
+ * Ícones por categoria
+ */
+const obterIconeCategoria = (categoria: string) => {
+  const catLower = categoria.toLowerCase()
+  if (catLower.includes('cabel') || catLower.includes('barb') || catLower.includes('corte')) return <Scissors className="w-4 h-4" />
+  if (catLower.includes('sobrancelha') || catLower.includes('lash') || catLower.includes('cíl')) return <Eye className="w-4 h-4" />
+  if (catLower.includes('unha') || catLower.includes('nail')) return <Hand className="w-4 h-4" />
+  if (catLower.includes('químic') || catLower.includes('cor') || catLower.includes('tint')) return <Sparkles className="w-4 h-4" />
+  return <Star className="w-4 h-4" />
+}
+
+/**
  * Componente de seleção de especialidades com categorias
  */
 function SeletorEspecialidades({
@@ -689,50 +704,85 @@ function SeletorEspecialidades({
 }: EspecialidadesProps) {
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Especialidades
-      </label>
-      
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          Especialidades <span className="text-xs text-amber-500 font-normal">* Selecione ao menos 1</span>
+        </label>
+        {especialidadesSelecionadas.length > 0 && (
+          <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/10 px-2 py-1 rounded-full">
+            {especialidadesSelecionadas.length} selecionada(s)
+          </span>
+        )}
+      </div>
+
       {/* Categorias */}
       <div className="space-y-2">
         {Object.entries(categoriasEspecialidades).map(([categoria, especialidades]) => (
-          <div key={categoria} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+          <div key={categoria} className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900/40">
             <button
               type="button"
               onClick={() => setCategoriaAberta(categoriaAberta === categoria ? null : categoria)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
             >
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{categoria}</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-lg ${categoriaAberta === categoria ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
+                  {obterIconeCategoria(categoria)}
+                </div>
+                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{categoria}</span>
+              </div>
+              <div className="flex items-center gap-3 border-l border-zinc-200 dark:border-zinc-700 pl-3">
                 {especialidadesSelecionadas.filter(e => especialidades.includes(e)).length > 0 && (
-                  <span className="px-2 py-0.5 bg-zinc-900 dark:bg-white text-white dark:text-black text-xs rounded-full">
+                  <span className="w-5 h-5 flex items-center justify-center bg-zinc-900 dark:bg-white text-white dark:text-black text-xs font-bold rounded-full">
                     {especialidadesSelecionadas.filter(e => especialidades.includes(e)).length}
                   </span>
                 )}
-                <Scissors className={`w-4 h-4 text-zinc-500 dark:text-zinc-400 transition-transform ${categoriaAberta === categoria ? 'rotate-90' : ''}`} />
+                <motion.div
+                  animate={{ rotate: categoriaAberta === categoria ? 180 : 0 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                >
+                  <ChevronDown className="w-4 h-4 text-zinc-400" />
+                </motion.div>
               </div>
             </button>
-            
-            {categoriaAberta === categoria && (
-              <div className="p-3 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
-                <div className="flex flex-wrap gap-2">
-                  {especialidades.map((esp) => (
-                    <button
-                      key={esp}
-                      type="button"
-                      onClick={() => onToggleEspecialidade(esp)}
-                      className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
-                        especialidadesSelecionadas.includes(esp)
-                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-600'
-                      }`}
-                    >
-                      {esp}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+
+            <AnimatePresence initial={false}>
+              {categoriaAberta === categoria && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 bg-zinc-50/50 dark:bg-zinc-900/20 border-t border-zinc-200 dark:border-zinc-800">
+                    <div className="flex flex-wrap gap-2.5">
+                      {especialidades.map((esp) => (
+                        <button
+                          key={esp}
+                          type="button"
+                          onClick={() => onToggleEspecialidade(esp)}
+                          className={`relative flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl border transition-all active:scale-[0.98] ${especialidadesSelecionadas.includes(esp)
+                            ? 'bg-zinc-900 shadow-sm dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
+                            : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 shadow-sm'
+                            }`}
+                        >
+                          {esp}
+                          {especialidadesSelecionadas.includes(esp) && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="bg-white/20 dark:bg-black/10 rounded-full p-0.5"
+                            >
+                              <Check className="w-3 h-3" />
+                            </motion.div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ))}
       </div>
@@ -745,11 +795,10 @@ function SeletorEspecialidades({
               key={esp}
               type="button"
               onClick={() => onToggleEspecialidade(esp)}
-              className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${
-                especialidadesSelecionadas.includes(esp)
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
-                  : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-600'
-              }`}
+              className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${especialidadesSelecionadas.includes(esp)
+                ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
+                : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 hover:border-zinc-500 dark:hover:border-zinc-600'
+                }`}
             >
               <Check className="w-3 h-3 inline mr-1" />
               {esp}
@@ -911,11 +960,10 @@ function EtapaCadastroProprietario({
               value={formulario.nome}
               onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
               placeholder="Ex: João Silva"
-              className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-colors ${
-                formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2
-                  ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-500/20'
-                  : 'border-zinc-200 dark:border-zinc-700 focus:ring-zinc-900/20 dark:focus:ring-white/20'
-              }`}
+              className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-colors ${formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2
+                ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-500/20'
+                : 'border-zinc-200 dark:border-zinc-700 focus:ring-zinc-900/20 dark:focus:ring-white/20'
+                }`}
             />
             {formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2 && (
               <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -987,20 +1035,46 @@ function EtapaCadastroProprietario({
         {/* Botão */}
         <button
           onClick={onSalvar}
-          disabled={salvando || !formulario.nome.trim()}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50"
+          disabled={salvando || !formulario.nome.trim() || formulario.especialidades.length === 0}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {salvando ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <ArrowRight className="w-5 h-5" />
+            <CheckCircle className="w-5 h-5" />
           )}
-          {editando ? 'Salvar Alterações' : 'Continuar'}
+          {editando ? 'Salvar Alterações' : 'Salvar Meu Perfil'}
         </button>
       </div>
     </motion.div>
   )
 }
+
+/**
+ * SVGs personalizados para UI
+ */
+const SvgEquipe = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M16 21V19C16 17.8954 15.1046 17 14 17H5C3.89543 17 3 17.8954 3 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9.5 13C11.433 13 13 11.433 13 9.5C13 7.567 11.433 6 9.5 6C7.567 6 6 7.567 6 9.5C6 11.433 7.567 13 9.5 13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M21 21V19C20.9961 17.8996 20.1039 17.0049 19 17H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M15 6.09631C16.1738 6.40251 17.0344 7.45862 17.0344 8.70613C17.0344 9.95364 16.1738 11.0098 15 11.316" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="17.5" cy="5.5" r="3.5" fill="currentColor" opacity="0.2" />
+    <circle cx="5" cy="14" r="2" fill="currentColor" opacity="0.2" />
+  </svg>
+)
+
+const SvgChaveAcesso = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M13.6262 6.64177C14.0044 6.26359 14.6174 6.26359 14.9956 6.64177L21.3592 13.0054C21.7374 13.3836 21.7374 13.9966 21.3592 14.3748L15.3592 20.3748C14.9811 20.753 14.368 20.753 13.9898 20.3748L7.62621 14.0112C7.24803 13.633 7.24803 13.02 7.62621 12.6418L13.6262 6.64177Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M9.50005 7L4.50005 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M11 4.5L5.49995 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16 11.5L17.5 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="16" cy="11.5" r="1.5" fill="currentColor" />
+    <path d="M7 16V18H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M4 13V15H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
 
 /**
  * Etapa 2: Pergunta se tem equipe
@@ -1019,53 +1093,54 @@ function EtapaPerguntaEquipe({
   const ehSegmentoFeminino = ehTipoNegocioFeminino(tipoNegocio)
   const profissionalPlural = terminologia.profissional.plural.toLowerCase()
   const profissionalSingular = terminologia.profissional.singular.toLowerCase()
-  const artigoPlural = terminologia.profissional.artigoPlural
-  const artigo = terminologia.profissional.artigo
-  
+
   return (
     <motion.div
       key="pergunta_equipe"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-6"
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="max-w-md mx-auto"
     >
-      <div className="text-center py-8 px-4 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
-        <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <Users className="w-8 h-8 text-zinc-600 dark:text-zinc-400" />
-        </div>
-        
-        <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mb-2">
-          Você tem outr{ehSegmentoFeminino ? 'as' : 'os'} {profissionalPlural} na equipe?
-        </h3>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-8 max-w-md mx-auto">
-          Cada {profissionalSingular} terá seu próprio acesso pelo <strong>/colaborador</strong> e será notificad{ehSegmentoFeminino ? 'a' : 'o'} via WhatsApp com o link e código de acesso.
-        </p>
+      <div className="relative overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={onSim}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
-          >
-            <UserPlus className="w-5 h-5" />
-            Sim, cadastrar equipe
-          </button>
-          <button
-            onClick={onNao}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-          >
-            Não, trabalho sozinh{ehSegmentoFeminino ? 'a' : 'o'}
-          </button>
-        </div>
-      </div>
+        {/* Header decorativo da notificação */}
+        <div className="h-2 bg-gradient-to-r from-zinc-800 to-zinc-900 dark:from-zinc-200 dark:to-white w-full"></div>
 
-      <div className="flex items-start gap-3 p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl">
-        <MessageCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-        <div className="text-sm">
-          <p className="text-emerald-700 dark:text-emerald-300 font-medium mb-1">Notificação automática via WhatsApp</p>
-          <p className="text-emerald-600/80 dark:text-emerald-200/70">
-            Cada {profissionalSingular} cadastrad{ehSegmentoFeminino ? 'a' : 'o'} receberá uma mensagem no WhatsApp com o link de acesso e código único.
+        <div className="p-8 text-center relative z-10">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+            className="w-20 h-20 mx-auto bg-zinc-50 dark:bg-zinc-800/80 rounded-full flex items-center justify-center mb-6 shadow-inner border border-zinc-100 dark:border-zinc-700/50"
+          >
+            <SvgEquipe className="w-10 h-10 text-zinc-900 dark:text-white" />
+          </motion.div>
+
+          <h3 className="text-xl md:text-2xl font-bold text-zinc-900 dark:text-white mb-3">
+            Trabalha com {profissionalPlural}?
+          </h3>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base leading-relaxed mb-8">
+            Adicione sua equipe e deixe que cada {profissionalSingular} gerencie a própria agenda. Eles receberão o acesso automaticamente por <span className="font-medium text-emerald-600 dark:text-emerald-400">WhatsApp</span>.
           </p>
+
+          <div className="space-y-3">
+            <button
+              onClick={onSim}
+              className="w-full group relative flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.98] overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-white/20 dark:bg-black/10 translate-y-[100%] group-hover:translate-y-[0%] transition-transform duration-300"></div>
+              <UserPlus className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Sim, adicionar {profissionalPlural}</span>
+            </button>
+            <button
+              onClick={onNao}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-xl font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors active:scale-[0.98]"
+            >
+              Não, sou só eu por enquanto
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -1126,227 +1201,189 @@ function EtapaFormularioEquipe({
   linkAcesso: string
 }) {
   const artigoProfissional = terminologia.profissional.artigo
-  const tituloNovoProfissional = artigoProfissional === 'a'
-    ? `Nova ${terminologia.profissional.singular} da Equipe`
-    : `Novo ${terminologia.profissional.singular} da Equipe`
+  const tituloNovoProfissional = editando
+    ? `Editar ${terminologia.profissional.singular}`
+    : `Novo membro: ${terminologia.profissional.singular}`
 
   return (
     <motion.div
       key="cadastro_equipe"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-6"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="space-y-6 max-w-2xl mx-auto"
     >
-      <div className="p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-6">
-        <div className="flex items-center gap-3 pb-4 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-            <UserPlus className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+
+        {/* Notificação/Header da Etapa */}
+        <div className="flex items-start sm:items-center gap-4 p-5 sm:p-6 bg-zinc-50 dark:bg-zinc-800/30 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm border border-zinc-100 dark:border-zinc-700">
+            <UserPlus className="w-5 h-5 text-zinc-900 dark:text-white" />
           </div>
-          <div>
-            <h3 className="font-medium text-zinc-900 dark:text-white">
-              {editando ? `Editar ${terminologia.profissional.singular}` : tituloNovoProfissional}
+          <div className="flex-1">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+              {tituloNovoProfissional}
             </h3>
-            <p className="text-xs text-zinc-600 dark:text-zinc-500">
-              Receberá acesso via WhatsApp para entrar em {linkAcesso}
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm">
+              Ao salvar, enviaremos as credenciais automaticamente pelo WhatsApp para acesso ao painel.
             </p>
           </div>
         </div>
 
-        {/* Foto */}
-        <div className="flex items-center gap-4">
-          <div className="relative flex-shrink-0">
-            <div className="w-20 h-20 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center relative">
-              {formulario.foto_url ? (
-                <Image
-                  src={formulario.foto_url}
-                  alt="Foto"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <User className="w-8 h-8 text-zinc-500 dark:text-zinc-600" />
-              )}
-              {uploadandoFoto && (
-                <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 animate-spin text-white" />
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => inputFotoRef.current?.click()}
-              disabled={uploadandoFoto}
-              className="absolute -bottom-1 -right-1 p-2 bg-zinc-700 rounded-full hover:bg-zinc-600 transition-colors disabled:opacity-50"
-            >
-              <Camera className="w-4 h-4 text-white" />
-            </button>
-            <input
-              ref={inputFotoRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={onSelecionarFoto}
-              className="hidden"
-            />
-          </div>
-          <div className="text-sm">
-            <p className="text-zinc-700 dark:text-zinc-300">Foto do profissional</p>
-            <p className="text-xs text-zinc-600 dark:text-zinc-500">Opcional • JPG, PNG, WebP</p>
-          </div>
-        </div>
-
-        {/* Campos */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Nome Completo *
-            </label>
-            <input
-              type="text"
-              value={formulario.nome}
-              onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
-              placeholder="Ex: João Silva"
-              className={`w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-colors ${
-                formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2
-                  ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-500/20'
-                  : 'border-zinc-200 dark:border-zinc-700 focus:ring-zinc-900/20 dark:focus:ring-white/20'
-              }`}
-            />
-            {formulario.nome.trim() && formulario.nome.trim().split(' ').filter(p => p.length > 0).length < 2 && (
-              <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                Digite nome e sobrenome
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              WhatsApp * <span className="text-xs font-normal text-zinc-600 dark:text-zinc-500">(para notificação)</span>
-            </label>
-            <div className="relative">
-              <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+        <div className="p-5 sm:p-6 space-y-6">
+          {/* Foto Minimalista */}
+          <div className="flex items-center gap-5">
+            <div className="relative group">
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center border-2 border-dashed border-zinc-300 dark:border-zinc-700 group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors">
+                {formulario.foto_url ? (
+                  <Image
+                    src={formulario.foto_url}
+                    alt="Foto"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <Camera className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                )}
+                {uploadandoFoto && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+                    <Loader2 className="w-5 h-5 animate-spin text-white" />
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => inputFotoRef.current?.click()}
+                disabled={uploadandoFoto}
+                className="absolute inset-0 w-full h-full rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center bg-black/40 text-white text-xs font-medium cursor-pointer"
+              >
+                Alterar
+              </button>
               <input
-                type="tel"
-                value={formulario.telefone}
-                onChange={(e) => setFormulario({ ...formulario, telefone: formatarTelefone(e.target.value) })}
-                placeholder="(00) 00000-0000"
-                className={`w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-colors ${
-                  formulario.telefone && formulario.telefone.replace(/\D/g, '').length > 0 && formulario.telefone.replace(/\D/g, '').length < 10
-                    ? 'border-amber-400 dark:border-amber-500 focus:ring-amber-500/20'
-                    : 'border-zinc-200 dark:border-zinc-700 focus:ring-zinc-900/20 dark:focus:ring-white/20'
-                }`}
+                ref={inputFotoRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={onSelecionarFoto}
+                className="hidden"
               />
             </div>
-            {formulario.telefone && formulario.telefone.replace(/\D/g, '').length > 0 && formulario.telefone.replace(/\D/g, '').length < 10 && (
-              <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                Telefone incompleto (mínimo 10 dígitos)
-              </p>
-            )}
-            {!formulario.telefone && (
-              <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
-                Obrigatório para envio do código de acesso
-              </p>
-            )}
+            <div>
+              <p className="font-medium text-zinc-900 dark:text-white">Foto de Perfil</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Recomendado para identificar o profissional no agendamento</p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              E-mail
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-500" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center justify-between">
+                <span>Nome Completo do Profissional</span>
+                <span className="text-xs text-amber-500 font-normal">Obrigatório</span>
+              </label>
+              <input
+                type="text"
+                value={formulario.nome}
+                onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
+                placeholder="Ex: Carlos Mendes"
+                className="w-full px-4 py-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-white rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                <span>WhatsApp</span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-md font-medium">Usado p/ login</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={formulario.telefone}
+                  onChange={(e) => setFormulario({ ...formulario, telefone: formatarTelefone(e.target.value) })}
+                  placeholder="(00) 00000-0000"
+                  className="w-full pl-4 pr-4 py-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-white rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none block transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                E-mail <span className="text-zinc-400 font-normal">(Opcional)</span>
+              </label>
               <input
                 type="email"
                 value={formulario.email}
                 onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
                 placeholder="email@exemplo.com"
-                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
+                className="w-full px-4 py-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 focus:bg-white dark:focus:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-zinc-900 dark:focus:border-white rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none transition-all"
               />
             </div>
-            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-500">
-              Opcional • Usado para recuperação de acesso
-            </p>
-          </div>
-        </div>
 
-        {/* Comissão */}
-        <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Comissão por atendimento
-          </label>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Percent className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 dark:text-zinc-500" />
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={formulario.comissao_percentual}
-                onChange={(e) => setFormulario({ ...formulario, comissao_percentual: Number(e.target.value) })}
-                className="w-full pl-12 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-zinc-900/20 dark:focus:ring-white/20"
-              />
-            </div>
-            <div className="flex gap-2">
-              {[30, 40, 50, 60].map((valor) => (
-                <button
-                  key={valor}
-                  type="button"
-                  onClick={() => setFormulario({ ...formulario, comissao_percentual: valor })}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    formulario.comissao_percentual === valor
-                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-black'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                  }`}
-                >
-                  {valor}%
-                </button>
-              ))}
+            <div className="md:col-span-2 p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800">
+              <label className="block text-sm font-medium text-zinc-900 dark:text-white mb-3">
+                Comissão por Atendimento (%)
+              </label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex bg-white dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-700 w-full sm:w-auto">
+                  {[30, 40, 50, 60, 70].map((valor) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => setFormulario({ ...formulario, comissao_percentual: valor })}
+                      className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all ${formulario.comissao_percentual === valor
+                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
+                    >
+                      {valor}%
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 relative max-w-[120px]">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formulario.comissao_percentual}
+                    onChange={(e) => setFormulario({ ...formulario, comissao_percentual: Number(e.target.value) })}
+                    className="w-full pr-8 pl-4 py-2 text-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:border-zinc-400"
+                  />
+                  <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+                </div>
+              </div>
             </div>
           </div>
-          <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">
-            Porcentagem que {artigoProfissional} {terminologia.profissional.singular.toLowerCase()} recebe de cada atendimento realizado
-          </p>
+
+          <SeletorEspecialidades
+            categoriasEspecialidades={categoriasEspecialidades}
+            especialidadesCustomizadas={especialidadesCustomizadas}
+            especialidadesSelecionadas={formulario.especialidades}
+            novaEspecialidade={novaEspecialidade}
+            setNovaEspecialidade={setNovaEspecialidade}
+            onToggleEspecialidade={onToggleEspecialidade}
+            onAdicionarEspecialidade={onAdicionarEspecialidade}
+            categoriaAberta={categoriaAberta}
+            setCategoriaAberta={setCategoriaAberta}
+          />
         </div>
 
-        {/* Especialidades */}
-        <SeletorEspecialidades
-          categoriasEspecialidades={categoriasEspecialidades}
-          especialidadesCustomizadas={especialidadesCustomizadas}
-          especialidadesSelecionadas={formulario.especialidades}
-          novaEspecialidade={novaEspecialidade}
-          setNovaEspecialidade={setNovaEspecialidade}
-          onToggleEspecialidade={onToggleEspecialidade}
-          onAdicionarEspecialidade={onAdicionarEspecialidade}
-          categoriaAberta={categoriaAberta}
-          setCategoriaAberta={setCategoriaAberta}
-        />
-
-        {/* Botões */}
-        <div className="flex gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/30 border-t border-zinc-200 dark:border-zinc-800 flex justify-end gap-3 flex-wrap">
           <button
             onClick={onCancelar}
-            className="flex-1 px-4 py-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all"
           >
             Cancelar
           </button>
           <button
             onClick={onSalvar}
-            disabled={salvando}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50"
+            disabled={salvando || !formulario.nome.trim() || formulario.especialidades.length === 0}
+            className="px-6 py-2.5 text-sm font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center min-w-[140px] disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
           >
             {salvando ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</span>
             ) : (
-              <Check className="w-5 h-5" />
+              <span className="flex items-center gap-2"><Check className="w-4 h-4" /> {editando ? 'Salvar Edição' : 'Salvar Profissional'}</span>
             )}
-            {editando ? 'Salvar' : 'Cadastrar'}
           </button>
         </div>
       </div>
@@ -1355,7 +1392,7 @@ function EtapaFormularioEquipe({
 }
 
 /**
- * Etapa 4: Token gerado com instruções
+ * Etapa 4: Token gerado com instruções (estilo Ticket/Card)
  */
 function EtapaTokenGerado({
   barbeiro,
@@ -1376,99 +1413,80 @@ function EtapaTokenGerado({
   onContinuar: () => void
   onAdicionarOutro: () => void
 }) {
-  const artigoProfissionalCapitalizado = terminologia.profissional.artigo === 'a' ? 'A' : 'O'
-
   return (
     <motion.div
       key="token"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-6"
+      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="max-w-md mx-auto"
     >
-      {/* Sucesso */}
-      <div className="text-center py-6 px-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-2xl">
-        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
-        </div>
-        <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mb-1">
-          {barbeiro.nome} foi cadastrado!
-        </h3>
-        <p className="text-emerald-600 dark:text-emerald-300/70 text-sm">
-          Uma mensagem foi enviada via WhatsApp com o link e código de acesso
-        </p>
-      </div>
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm relative">
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
 
-      {/* Token */}
-      <div className="p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-lg">
-            <Key className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-          </div>
-          <div>
-            <p className="font-medium text-zinc-900 dark:text-white">Código de Acesso</p>
-            <p className="text-xs text-zinc-500">{artigoProfissionalCapitalizado} {terminologia.profissional.singular.toLowerCase()} usa este código para entrar no painel do colaborador</p>
-          </div>
-        </div>
-
-        <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
-          <p className="text-center text-3xl font-mono font-bold tracking-[0.4em] text-zinc-900 dark:text-white">
-            {token}
+        <div className="p-8 pb-6 text-center">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", delay: 0.2, bounce: 0.5 }}
+            className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100 dark:border-emerald-500/20"
+          >
+            <CheckCircle className="w-8 h-8 text-emerald-500" />
+          </motion.div>
+          <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
+            Acesso Liberado!
+          </h3>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+            {barbeiro.nome} receberá o login via WhatsApp em instantes.
           </p>
         </div>
 
-        <button
-          onClick={onCopiar}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-        >
-          {tokenCopiado ? (
-            <>
-              <Check className="w-5 h-5 text-emerald-500" />
-              Copiado!
-            </>
-          ) : (
-            <>
-              <Copy className="w-5 h-5" />
-              Copiar Código
-            </>
-          )}
-        </button>
-      </div>
+        {/* Ticket Area */}
+        <div className="px-6 pb-8 relative">
+          <div className="absolute -left-3 top-0 bottom-0 border-r-2 border-dashed border-zinc-200 dark:border-zinc-800"></div>
+          <div className="absolute -right-3 top-0 bottom-0 border-l-2 border-dashed border-zinc-200 dark:border-zinc-800"></div>
 
-      {/* Link de acesso */}
-      <div className="p-6 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
-            <ExternalLink className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <p className="font-medium text-zinc-900 dark:text-white">Link de Acesso</p>
-            <p className="text-xs text-zinc-500">Onde {terminologia.profissional.artigo} {terminologia.profissional.singular.toLowerCase()} faz login</p>
-          </div>
-        </div>
+          <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-700/50">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <p className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-1">Credencial de</p>
+                <p className="font-semibold text-zinc-900 dark:text-white truncate max-w-[150px]">{barbeiro.nome}</p>
+              </div>
+              <SvgChaveAcesso className="w-8 h-8 text-amber-500" />
+            </div>
 
-        <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3">
-          <code className="text-sm text-blue-600 dark:text-blue-400 break-all">
-            {linkAcesso}
-          </code>
+            <div className="mb-4">
+              <p className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Código PIN único</p>
+              <div className="bg-white dark:bg-zinc-900 rounded-xl py-3 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-inner cursor-pointer" onClick={onCopiar}>
+                <span className="font-mono text-xl sm:text-2xl font-bold tracking-[0.2em] sm:tracking-[0.4em] text-zinc-900 dark:text-white">
+                  {token}
+                </span>
+                <Copy className={`w-4 h-4 ml-3 transition-colors ${tokenCopiado ? 'text-emerald-500' : 'text-zinc-300 dark:text-zinc-600'}`} />
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-zinc-500 dark:text-zinc-400 mt-2">
+              Login em: <span className="font-medium text-blue-600 dark:text-blue-400 truncate break-all block mt-1">{linkAcesso}</span>
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Ações */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="mt-6 flex flex-col sm:flex-row gap-3">
         <button
           onClick={onAdicionarOutro}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-xl font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-xl font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
         >
-          <UserPlus className="w-5 h-5" />
-          Adicionar outr{terminologia.profissional.artigo === 'a' ? 'a' : 'o'} {terminologia.profissional.singular.toLowerCase()}
+          <UserPlus className="w-4 h-4" />
+          <span className="text-sm">Adicionar outr{terminologia.profissional.artigo === 'a' ? 'a' : 'o'}</span>
         </button>
         <button
           onClick={onContinuar}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm"
         >
-          Continuar
-          <ArrowRight className="w-5 h-5" />
+          <span className="text-sm">Continuar Configuração</span>
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </motion.div>
@@ -1476,7 +1494,7 @@ function EtapaTokenGerado({
 }
 
 /**
- * Etapa 5: Lista de barbeiros cadastrados (ilimitados)
+ * Etapa 5: Lista de barbeiros cadastrados (ilimitados) - NOVO VISUAL LISTA LIMPA
  */
 function EtapaListaBarbeiros({
   barbeiros,
@@ -1499,160 +1517,169 @@ function EtapaListaBarbeiros({
   return (
     <motion.div
       key="lista"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-4"
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="max-w-xl mx-auto space-y-8"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
-          <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {barbeiros.length} {barbeiros.length === 1
-              ? terminologia.profissional.singular.toLowerCase()
-              : terminologia.profissional.plural.toLowerCase()}
-          </span>
+      {/* Header Profissionais */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 p-6 bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
+        <div className="flex gap-4">
+          <div className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-700 flex items-center justify-center flex-shrink-0">
+            <Users className="w-6 h-6 text-zinc-900 dark:text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Equipe</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+              {barbeiros.length} {barbeiros.length === 1
+                ? terminologia.profissional.singular.toLowerCase()
+                : terminologia.profissional.plural.toLowerCase()} no total
+            </p>
+          </div>
         </div>
         <button
           onClick={onAdicionar}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm active:scale-[0.98]"
         >
           <UserPlus className="w-4 h-4" />
-          Adicionar
+          Novo Membro
         </button>
       </div>
 
-      {/* Proprietário */}
-      {proprietario && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-            <Crown className="w-3 h-3 text-amber-500" />
-            Proprietário (Admin)
-          </p>
-          <div
-            className="group flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl"
-          >
-            {/* Foto */}
-            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-amber-100 dark:bg-amber-500/20 flex-shrink-0">
-              {proprietario.foto_url ? (
-                <Image
-                  src={proprietario.foto_url}
-                  alt={proprietario.nome}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-amber-500" />
-                </div>
-              )}
-            </div>
+      <div className="space-y-6">
+        {/* Proprietário */}
+        {proprietario && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">
+              SEU PERFIL (ADMIN)
+            </h4>
+            <div className="group relative bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-4 sm:p-5 flex items-center gap-4 hover:shadow-md transition-shadow overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-zinc-900 dark:text-white truncate">{proprietario.nome}</p>
-              <p className="text-xs text-amber-600 dark:text-amber-400">
-                Acesso via /admin
-              </p>
-            </div>
-
-            {/* Ações */}
-            <button
-              onClick={() => onEditar(proprietario)}
-              className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20 rounded-lg transition-colors"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Equipe */}
-      {equipe.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-            Equipe ({equipe.length})
-          </p>
-          <div className="space-y-2">
-            {equipe.map((barbeiro) => (
-              <div
-                key={barbeiro.id}
-                className="group flex items-center gap-4 p-4 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
-              >
-                {/* Foto */}
-                <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
-                  {barbeiro.foto_url ? (
-                    <Image
-                      src={barbeiro.foto_url}
-                      alt={barbeiro.nome}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <User className="w-5 h-5 text-zinc-500 dark:text-zinc-600" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-zinc-900 dark:text-white truncate">{barbeiro.nome}</p>
-                  <div className="flex items-center gap-3 text-xs text-zinc-600 dark:text-zinc-500 mt-0.5">
-                    <span>{formatarTelefone(barbeiro.telefone)}</span>
-                    <span className="text-emerald-600 dark:text-emerald-400">{barbeiro.comissao_percentual}%</span>
-                  </div>
-                </div>
-
-                {/* Token badge */}
-                {barbeiro.token_acesso && (
-                  <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-xs text-zinc-600 dark:text-zinc-400">
-                    <Key className="w-3 h-3" />
-                    {barbeiro.token_acesso}
+              <div className="relative w-14 h-14 rounded-full overflow-hidden bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 flex-shrink-0">
+                {proprietario.foto_url ? (
+                  <Image src={proprietario.foto_url} alt={proprietario.nome} fill className="object-cover" unoptimized />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Crown className="w-6 h-6 text-amber-500" />
                   </div>
                 )}
+              </div>
 
-                {/* Ações */}
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => onEditar(barbeiro)}
-                    className="p-2 text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onRemover(barbeiro.id)}
-                    className="p-2 text-zinc-500 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-zinc-900 dark:text-white truncate text-base">{proprietario.nome}</p>
+                  <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] uppercase font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-md">Admin</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400 truncate">{formatarTelefone(proprietario.telefone)}</span>
+                  <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">Acesso via <strong className="text-zinc-700 dark:text-zinc-300 font-medium">/admin</strong></span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Sem equipe ainda */}
-      {equipe.length === 0 && proprietario && (
-        <div className="text-center py-6 px-4 bg-zinc-50 dark:bg-zinc-900/30 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
-          <Users className="w-8 h-8 text-zinc-400 dark:text-zinc-700 mx-auto mb-2" />
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-1">Nenhum{terminologia.profissional.artigo === 'a' ? 'a' : ''} {terminologia.profissional.singular.toLowerCase()} na equipe ainda</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-600 mb-3">
-            Você pode adicionar mais {terminologia.profissional.plural.toLowerCase()} a qualquer momento
-          </p>
-          <button
-            onClick={onAdicionar}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-white rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm"
-          >
-            <UserPlus className="w-4 h-4" />
-            Adicionar {terminologia.profissional.singular.toLowerCase()}
-          </button>
-        </div>
-      )}
+              <button
+                onClick={() => onEditar(proprietario)}
+                className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-xl transition-colors shrink-0"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Equipe */}
+        {equipe.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1 flex items-center gap-2">
+              DEMAIS MEMBROS
+              <span className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-[10px] text-zinc-500">{equipe.length}</span>
+            </h4>
+
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                {equipe.map((barbeiro) => (
+                  <div key={barbeiro.id} className="group p-4 sm:p-5 flex items-center gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-2 border-transparent group-hover:border-zinc-200 dark:group-hover:border-zinc-700 transition-colors flex-shrink-0">
+                      {barbeiro.foto_url ? (
+                        <Image src={barbeiro.foto_url} alt={barbeiro.nome} fill className="object-cover" unoptimized />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-zinc-400" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-zinc-900 dark:text-white truncate">{barbeiro.nome}</p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                        <span className="truncate">{formatarTelefone(barbeiro.telefone)}</span>
+
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                            <Percent className="w-3 h-3 inline pb-0.5" />
+                            {barbeiro.comissao_percentual}%
+                          </span>
+                        </div>
+
+                        {barbeiro.token_acesso && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 hidden sm:block"></span>
+                            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs shrink-0 max-w-[80px]">
+                              <Key className="w-3 h-3 text-zinc-400" />
+                              <span className="truncate font-mono">{barbeiro.token_acesso}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity focus-within:opacity-100">
+                      <button
+                        onClick={() => onEditar(barbeiro)}
+                        className="p-2.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                        title="Editar"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onRemover(barbeiro.id)}
+                        className="p-2.5 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                        title="Remover"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Empty State Simplificado */}
+        {equipe.length === 0 && proprietario && (
+          <div className="border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 text-center bg-zinc-50/50 dark:bg-zinc-900/20">
+            <div className="w-12 h-12 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+              <UserPlus className="w-5 h-5 text-zinc-400" />
+            </div>
+            <p className="font-medium text-zinc-900 dark:text-white text-sm mb-1">
+              Trabalha com outras pessoas?
+            </p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4 max-w-[200px] mx-auto">
+              Adicione mais {terminologia.profissional.plural.toLowerCase()} para gerirem a própria agenda.
+            </p>
+            <button
+              onClick={onAdicionar}
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
+            >
+              Adicionar agora
+            </button>
+          </div>
+        )}
+      </div>
     </motion.div>
   )
 }
