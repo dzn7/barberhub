@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     // Buscar dados do tenant
     const { data: tenant, error } = await supabase
       .from('tenants')
-      .select('nome, cor_primaria, cor_secundaria, icone_pwa_192, icone_pwa_512, logo_url')
+      .select('nome, cor_primaria, cor_secundaria, icone_pwa_192, icone_pwa_512, logo_url, atualizado_em')
       .eq('id', tenantId)
       .single()
 
@@ -97,14 +97,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Montar nome do app: "Nome Admin"
-    const nomeCompleto = `${tenant.nome} Admin`
-    const nomeReduzido = tenant.nome.length > 10 
-      ? `${tenant.nome.substring(0, 10)} Admin` 
-      : `${tenant.nome} Admin`
+    const nomeBase = (tenant.nome || 'BarberHub').trim()
+    const nomeCompleto = `${nomeBase} Admin`
+    const nomeReduzido = nomeCompleto.length > 30
+      ? `${nomeBase.substring(0, 24).trim()} Admin`
+      : nomeCompleto
     
     // Ícones: prioriza ícones PWA gerados, depois logo, depois padrão
     const icone192 = tenant.icone_pwa_192 || tenant.logo_url || '/icons/icon-192.png'
     const icone512 = tenant.icone_pwa_512 || tenant.logo_url || '/icons/icon-512.png'
+    const versaoIcones = encodeURIComponent(tenant.atualizado_em || String(Date.now()))
+    const icone192Versionado = `${icone192}${icone192.includes('?') ? '&' : '?'}v=${versaoIcones}`
+    const icone512Versionado = `${icone512}${icone512.includes('?') ? '&' : '?'}v=${versaoIcones}`
     
     // Cores do tenant
     const corPrimaria = tenant.cor_primaria || '#18181b'
@@ -112,7 +116,7 @@ export async function GET(request: NextRequest) {
 
     const manifest = {
       name: nomeCompleto,
-      short_name: nomeReduzido.length > 12 ? nomeReduzido.substring(0, 12) : nomeReduzido,
+      short_name: nomeReduzido,
       description: `Painel administrativo - ${tenant.nome}`,
       start_url: '/admin',
       scope: '/admin',
@@ -122,25 +126,25 @@ export async function GET(request: NextRequest) {
       theme_color: corPrimaria,
       icons: [
         {
-          src: icone192,
+          src: icone192Versionado,
           sizes: '192x192',
           type: 'image/png',
           purpose: 'any',
         },
         {
-          src: icone192,
+          src: icone192Versionado,
           sizes: '192x192',
           type: 'image/png',
           purpose: 'maskable',
         },
         {
-          src: icone512,
+          src: icone512Versionado,
           sizes: '512x512',
           type: 'image/png',
           purpose: 'any',
         },
         {
-          src: icone512,
+          src: icone512Versionado,
           sizes: '512x512',
           type: 'image/png',
           purpose: 'maskable',

@@ -227,6 +227,8 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
   const [dados, setDados] = useState({
     nome: "",
     logo_url: "",
+    icone_pwa_192: "",
+    icone_pwa_512: "",
     cor_primaria: "#18181b",
     cor_secundaria: "#f4f4f5",
     cor_destaque: "#a1a1aa",
@@ -303,6 +305,8 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
       setDados({
         nome: tenant.nome || "",
         logo_url: tenant.logo_url || "",
+        icone_pwa_192: tenant.icone_pwa_192 || "",
+        icone_pwa_512: tenant.icone_pwa_512 || "",
         cor_primaria: tenant.cor_primaria || "#18181b",
         cor_secundaria: tenant.cor_secundaria || "#f4f4f5",
         cor_destaque: tenant.cor_destaque || "#a1a1aa",
@@ -370,8 +374,35 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
         throw new Error(data.error);
       }
 
-      setDados((prev) => ({ ...prev, logo_url: data.url }));
-      setMensagem({ tipo: "sucesso", texto: "Logo atualizada com sucesso!" });
+      // Gerar ícones PWA com a nova logo para refletir a troca no app instalado
+      let icone192 = "";
+      let icone512 = "";
+      try {
+        const formDataPwa = new FormData();
+        formDataPwa.append("file", file);
+        formDataPwa.append("tenant_id", tenant.id);
+
+        const respostaPwa = await fetch("/api/gerar-icones-pwa", {
+          method: "POST",
+          body: formDataPwa,
+        });
+
+        if (respostaPwa.ok) {
+          const dadosPwa = await respostaPwa.json();
+          icone192 = dadosPwa.icone_192 || "";
+          icone512 = dadosPwa.icone_512 || "";
+        }
+      } catch (erroPwa) {
+        console.warn("Não foi possível gerar ícones PWA:", erroPwa);
+      }
+
+      setDados((prev) => ({
+        ...prev,
+        logo_url: data.url,
+        icone_pwa_192: icone192 || prev.icone_pwa_192,
+        icone_pwa_512: icone512 || prev.icone_pwa_512,
+      }));
+      setMensagem({ tipo: "sucesso", texto: "Logo e ícones PWA atualizados com sucesso! Clique em Salvar para aplicar no site." });
     } catch (error: any) {
       console.error("Erro ao fazer upload:", error);
       setMensagem({ tipo: "erro", texto: error.message || "Erro ao fazer upload da logo" });
@@ -392,7 +423,7 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
       await fetch(`/api/upload?url=${encodeURIComponent(dados.logo_url)}`, {
         method: "DELETE",
       });
-      setDados((prev) => ({ ...prev, logo_url: "" }));
+      setDados((prev) => ({ ...prev, logo_url: "", icone_pwa_192: "", icone_pwa_512: "" }));
       setMensagem({ tipo: "sucesso", texto: "Logo removida com sucesso!" });
     } catch (error) {
       console.error("Erro ao remover logo:", error);
@@ -428,6 +459,8 @@ export function ConfiguracaoBarbearia({ onSalvar }: ConfiguracaoBarbeariaProps) 
         .update({
           nome: dados.nome,
           logo_url: dados.logo_url || null,
+          icone_pwa_192: dados.icone_pwa_192 || null,
+          icone_pwa_512: dados.icone_pwa_512 || null,
           cor_primaria: dados.cor_primaria,
           cor_secundaria: dados.cor_secundaria,
           cor_destaque: dados.cor_destaque,

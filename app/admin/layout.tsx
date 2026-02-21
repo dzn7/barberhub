@@ -7,7 +7,7 @@ import { ProvedorTema } from '@/components/provedores/provedor-tema'
 import { RegistrarServiceWorker } from '@/components/pwa'
 import { Loader2 } from 'lucide-react'
 
-const ADMIN_PWA_VERSION = '2026-02-20-admin-fix-4'
+const ADMIN_PWA_VERSION = '2026-02-21-admin-manifest-fix-1'
 const ADMIN_PWA_VERSION_KEY = 'admin-pwa-version'
 
 /**
@@ -20,15 +20,25 @@ function ManifestDinamicoAdmin() {
   useEffect(() => {
     if (!tenant?.id) return
 
-    // Usa um link dedicado para evitar remover nós gerenciados pelo React/Next
-    let manifestLink = document.querySelector<HTMLLinkElement>('#admin-dynamic-manifest')
+    const versaoTenant = tenant.atualizado_em || String(Date.now())
+    const manifestHref = `/api/admin/manifest?tenant_id=${tenant.id}&v=${encodeURIComponent(versaoTenant)}`
+
+    // Reutiliza o primeiro link de manifest encontrado (incluindo o injetado pelo Next)
+    let manifestLink =
+      document.querySelector<HTMLLinkElement>('#admin-dynamic-manifest') ||
+      document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
     if (!manifestLink) {
       manifestLink = document.createElement('link')
-      manifestLink.id = 'admin-dynamic-manifest'
-      manifestLink.rel = 'manifest'
       document.head.appendChild(manifestLink)
     }
-    manifestLink.href = `/api/admin/manifest?tenant_id=${tenant.id}`
+    manifestLink.id = 'admin-dynamic-manifest'
+    manifestLink.rel = 'manifest'
+    manifestLink.href = manifestHref
+
+    // Remove manifests duplicados para evitar o browser usar o estático /manifest.json
+    document.querySelectorAll<HTMLLinkElement>('link[rel="manifest"]').forEach((link) => {
+      if (link !== manifestLink) link.remove()
+    })
 
     // Atualizar theme-color meta tag
     let themeColorMeta = document.querySelector<HTMLMetaElement>('#admin-theme-color')
@@ -42,7 +52,8 @@ function ManifestDinamicoAdmin() {
 
     // Atualizar apple-touch-icon se houver logo
     if (tenant.logo_url || (tenant as any).icone_pwa_192) {
-      const iconUrl = (tenant as any).icone_pwa_192 || tenant.logo_url
+      const iconBaseUrl = (tenant as any).icone_pwa_192 || tenant.logo_url
+      const iconUrl = `${iconBaseUrl}${iconBaseUrl.includes('?') ? '&' : '?'}v=${encodeURIComponent(versaoTenant)}`
       let appleTouchIcon = document.querySelector<HTMLLinkElement>('#admin-apple-touch-icon')
       if (!appleTouchIcon) {
         appleTouchIcon = document.createElement('link')
