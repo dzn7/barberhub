@@ -9,6 +9,14 @@ interface LayoutProps {
   params: Promise<{ slug: string }>
 }
 
+function detectarTipoIcone(src: string): string {
+  const urlLimpa = src.split('?')[0].toLowerCase()
+  if (urlLimpa.endsWith('.jpg') || urlLimpa.endsWith('.jpeg')) return 'image/jpeg'
+  if (urlLimpa.endsWith('.webp')) return 'image/webp'
+  if (urlLimpa.endsWith('.svg')) return 'image/svg+xml'
+  return 'image/png'
+}
+
 async function obterTenantPorSlug(slug: string) {
   const { data, error } = await supabase
     .from('tenants')
@@ -33,6 +41,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const icone192 = tenant.icone_pwa_192 || tenant.logo_url || '/icons/icon-192.png'
   const icone512 = tenant.icone_pwa_512 || tenant.logo_url || '/icons/icon-512.png'
+  const versaoTenant = encodeURIComponent(tenant.atualizado_em || String(Date.now()))
+  const icone192Versionado = `${icone192}${icone192.includes('?') ? '&' : '?'}v=${versaoTenant}`
+  const icone512Versionado = `${icone512}${icone512.includes('?') ? '&' : '?'}v=${versaoTenant}`
+  const tipoIcone192 = detectarTipoIcone(icone192)
+  const tipoIcone512 = detectarTipoIcone(icone512)
 
   return {
     title: {
@@ -40,7 +53,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       template: `%s | ${tenant.nome}`,
     },
     description: `Agende seu horário na ${tenant.nome}. Atendimento profissional e de qualidade.`,
-    manifest: `/${slug}/manifest.webmanifest`,
     themeColor: tenant.cor_primaria || '#18181b',
     appleWebApp: {
       capable: true,
@@ -49,11 +61,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
     icons: {
       icon: [
-        { url: icone192, sizes: '192x192', type: 'image/png' },
-        { url: icone512, sizes: '512x512', type: 'image/png' },
+        { url: icone192Versionado, sizes: '192x192', type: tipoIcone192 },
+        { url: icone512Versionado, sizes: '512x512', type: tipoIcone512 },
       ],
       apple: [
-        { url: icone192, sizes: '192x192', type: 'image/png' },
+        { url: icone192Versionado, sizes: '192x192', type: tipoIcone192 },
       ],
     },
     openGraph: {
@@ -79,6 +91,8 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
   const classeFontePrincipal = obterClasseFonte(fontePrincipal)
   const familiaFonteTitulos = obterFamiliaFonte(fonteTitulos)
   const urlFontes = gerarUrlFontes(fontePrincipal, fonteTitulos)
+  const versaoTenant = encodeURIComponent(tenant.atualizado_em || String(Date.now()))
+  const manifestHref = `/api/manifest?slug=${encodeURIComponent(slug)}&v=${versaoTenant}`
 
   return (
     <>
@@ -90,6 +104,7 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
           <link rel="stylesheet" href={urlFontes} />
         </>
       )}
+      <link rel="manifest" href={manifestHref} crossOrigin="use-credentials" />
       <div 
         className={`tenant-fonts min-h-screen bg-zinc-900 ${classeFontePrincipal}`}
         style={{

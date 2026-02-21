@@ -205,7 +205,6 @@ export const metadata: Metadata = {
       { rel: 'mask-icon', url: '/assets/favicon/safari-pinned-tab.svg', color: '#000000' },
     ],
   },
-  manifest: '/manifest.json',
   openGraph: {
     type: 'website',
     locale: 'pt_BR',

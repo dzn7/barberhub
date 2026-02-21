@@ -3,7 +3,7 @@
  * Gerencia cache, funcionamento offline e notificações
  */
 
-const CACHE_NAME = 'barberhub-v5-google-calendar'
+const CACHE_NAME = 'barberhub-v6-pwa-manifest'
 const OFFLINE_URL = '/offline.html'
 
 // Recursos estáticos para cachear
@@ -57,6 +57,10 @@ self.addEventListener('fetch', (event) => {
 
   // Ignorar requisições para APIs externas
   if (url.origin !== self.location.origin) return
+
+  // Nunca cachear manifestos do PWA para evitar ícones/nome desatualizados
+  if (request.destination === 'manifest') return
+  if (url.pathname.endsWith('manifest.webmanifest') || url.pathname.endsWith('manifest.json')) return
 
   // Ignorar requisições de API (sempre buscar do servidor)
   if (url.pathname.startsWith('/api/')) return
