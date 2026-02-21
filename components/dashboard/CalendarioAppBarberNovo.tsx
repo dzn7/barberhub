@@ -13,12 +13,13 @@ import { ptBR } from "date-fns/locale";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { ModalNovoAgendamento } from "@/components/agendamento";
+import { ModalEditarAgendamento, ModalNovoAgendamento } from "@/components/agendamento";
 import {
   buscarConfiguracaoHorarios,
   ConfiguracaoHorarios,
   HORARIOS_PADRAO,
 } from "@/lib/horarios-funcionamento";
+import { TipoNegocio } from "@/lib/tipos-negocio";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
 const BREAKPOINT_MOBILE = "(max-width: 1023px)";
@@ -36,7 +37,9 @@ interface Agendamento {
   id: string;
   data_hora: string;
   status: string;
+  cliente_id?: string;
   barbeiro_id: string;
+  servico_id?: string;
   observacoes?: string;
   servicos_ids?: string[];
   clientes?: { nome: string; telefone: string } | null;
@@ -200,6 +203,8 @@ export function CalendarioAppBarberNovo() {
   const [processandoConcluirTodos, setProcessandoConcluirTodos] = useState(false);
   const [configHorarios, setConfigHorarios] = useState<ConfiguracaoHorarios>(HORARIOS_PADRAO);
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
+  const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<AgendamentoProcessado | null>(null);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
 
   const subscriptionRef = useRef<any>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -754,9 +759,14 @@ export function CalendarioAppBarberNovo() {
                       {agDia.map((agendamento) => {
                         const statusClasses = ESTILOS_STATUS[agendamento.status] || ESTILOS_STATUS.pendente;
                         return (
-                          <div
+                          <button
                             key={agendamento.id}
-                            className={`rounded-lg border px-2.5 py-2 shadow-sm ${statusClasses}`}
+                            type="button"
+                            onClick={() => {
+                              setAgendamentoSelecionado(agendamento);
+                              setModalEditarAberto(true);
+                            }}
+                            className={`w-full text-left rounded-lg border px-2.5 py-2 shadow-sm ${statusClasses}`}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <p className="text-xs font-bold">
@@ -775,7 +785,7 @@ export function CalendarioAppBarberNovo() {
                             <p className="mt-1 text-[11px] opacity-80">
                               {agendamento.barbeiros?.nome || "Profissional"}
                             </p>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -884,9 +894,14 @@ export function CalendarioAppBarberNovo() {
                         const alturaCard = Math.max(layout.height - 2, 36);
 
                         return (
-                          <div
+                          <button
                             key={agendamento.id}
-                            className={`absolute overflow-hidden rounded-md border px-2 py-1 shadow-sm ${statusClasses}`}
+                            type="button"
+                            onClick={() => {
+                              setAgendamentoSelecionado(agendamento);
+                              setModalEditarAberto(true);
+                            }}
+                            className={`absolute overflow-hidden rounded-md border px-2 py-1 shadow-sm text-left ${statusClasses}`}
                             style={{
                               top: layout.top + 1,
                               left: `calc(${left}% + 3px)`,
@@ -907,7 +922,7 @@ export function CalendarioAppBarberNovo() {
                             <p className="mt-0.5 inline-flex rounded bg-black/10 px-1.5 py-0.5 text-[10px] font-semibold capitalize dark:bg-white/10">
                               {agendamento.status}
                             </p>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -949,6 +964,20 @@ export function CalendarioAppBarberNovo() {
           onFechar={() => setModalNovoAberto(false)}
           onSucesso={buscarAgendamentos}
           dataPadrao={format(dataFoco, "yyyy-MM-dd")}
+        />
+      )}
+
+      {tenant && agendamentoSelecionado && (
+        <ModalEditarAgendamento
+          tenantId={tenant.id}
+          aberto={modalEditarAberto}
+          agendamento={agendamentoSelecionado}
+          onFechar={() => setModalEditarAberto(false)}
+          onSucesso={() => {
+            void buscarAgendamentos();
+            setModalEditarAberto(false);
+          }}
+          tipoNegocio={(tenant.tipo_negocio as TipoNegocio) || 'barbearia'}
         />
       )}
     </div>

@@ -44,6 +44,7 @@ interface SeletorHorarioAvancadoProps {
   servicoDuracao?: number
   onClose?: () => void
   mostrarCalendario?: boolean
+  agendamentoIdIgnorar?: string
 }
 
 /**
@@ -59,7 +60,8 @@ export function SeletorHorarioAvancado({
   onHorarioChange,
   servicoDuracao = 30,
   onClose,
-  mostrarCalendario = true
+  mostrarCalendario = true,
+  agendamentoIdIgnorar
 }: SeletorHorarioAvancadoProps) {
   const [config, setConfig] = useState<ConfiguracaoBarbearia | null>(null)
   const [agendamentosOcupados, setAgendamentosOcupados] = useState<AgendamentoOcupado[]>([])
@@ -122,7 +124,7 @@ export function SeletorHorarioAvancado({
 
       let query = supabase
         .from('agendamentos')
-        .select('id, data_hora, servicos(duracao)')
+        .select('id, data_hora, servico_id, servicos_ids')
         .eq('tenant_id', tenantId)
         .gte('data_hora', inicioDiaUTC.toISOString())
         .lte('data_hora', fimDiaUTC.toISOString())
@@ -132,23 +134,77 @@ export function SeletorHorarioAvancado({
         query = query.eq('barbeiro_id', barbeiroId)
       }
 
+      if (agendamentoIdIgnorar) {
+        query = query.neq('id', agendamentoIdIgnorar)
+      }
+
       const { data, error } = await query
 
       if (error) throw error
 
+      const registros = (data || []) as Array<{
+        id: string
+        data_hora: string
+        servico_id?: string | null
+        servicos_ids?: string[] | null
+      }>
+
+      const idsServicos = new Set<string>()
+
+      for (const agendamento of registros) {
+        if (Array.isArray(agendamento.servicos_ids) && agendamento.servicos_ids.length > 0) {
+          agendamento.servicos_ids.forEach((servicoId) => {
+            if (servicoId) idsServicos.add(servicoId)
+          })
+          continue
+        }
+
+        if (agendamento.servico_id) {
+          idsServicos.add(agendamento.servico_id)
+        }
+      }
+
+      const duracaoPorServico = new Map<string, number>()
+      if (idsServicos.size > 0) {
+        const { data: servicosData, error: erroServicos } = await supabase
+          .from('servicos')
+          .select('id, duracao')
+          .in('id', Array.from(idsServicos))
+
+        if (erroServicos) throw erroServicos
+
+        for (const servico of (servicosData || []) as Array<{ id: string; duracao: number | null }>) {
+          duracaoPorServico.set(servico.id, servico.duracao || 30)
+        }
+      }
+
       setAgendamentosOcupados(
-        (data || []).map((ag: any) => ({
-          id: ag.id,
-          data_hora: ag.data_hora,
-          duracao: ag.servicos?.duracao || 30
-        }))
+        registros.map((agendamento) => {
+          let duracao = 30
+
+          if (Array.isArray(agendamento.servicos_ids) && agendamento.servicos_ids.length > 0) {
+            const duracaoTotal = agendamento.servicos_ids.reduce((total, servicoId) => {
+              if (!servicoId) return total
+              return total + (duracaoPorServico.get(servicoId) || 0)
+            }, 0)
+            duracao = duracaoTotal > 0 ? duracaoTotal : 30
+          } else if (agendamento.servico_id) {
+            duracao = duracaoPorServico.get(agendamento.servico_id) || 30
+          }
+
+          return {
+            id: agendamento.id,
+            data_hora: agendamento.data_hora,
+            duracao
+          }
+        })
       )
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error)
     } finally {
       setCarregando(false)
     }
-  }, [dataSelecionada, tenantId, barbeiroId])
+  }, [dataSelecionada, tenantId, barbeiroId, agendamentoIdIgnorar])
 
   useEffect(() => {
     buscarAgendamentosOcupados()
@@ -311,6 +367,15 @@ export function SeletorHorarioAvancado({
   }
 
   const horariosDisponiveisCount = horariosDisponiveis.filter(h => h.disponivel).length
+
+  useEffect(() => {
+    if (!horarioSelecionado) return
+
+    const horarioAtual = horariosDisponiveis.find((item) => item.horario === horarioSelecionado)
+    if (!horarioAtual?.disponivel) {
+      onHorarioChange('')
+    }
+  }, [horariosDisponiveis, horarioSelecionado, onHorarioChange])
 
   if (erro) {
     return (

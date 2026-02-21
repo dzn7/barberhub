@@ -50,6 +50,28 @@ interface ModalRemarcacaoProps {
   nomeEstabelecimento?: string;
 }
 
+function normalizarNumeroWhatsapp(telefoneRaw: string): string {
+  let numero = telefoneRaw.replace(/\D/g, '');
+
+  if (numero.startsWith('55')) {
+    numero = numero.slice(2);
+  }
+
+  const ddd = numero.slice(0, 2);
+
+  // SP (11): usa formato com 9
+  if (ddd === '11' && numero.length === 10) {
+    numero = `${ddd}9${numero.slice(2)}`;
+  }
+
+  // Demais DDDs: usa formato antigo sem 9
+  if (ddd !== '11' && numero.length === 11 && numero[2] === '9') {
+    numero = `${ddd}${numero.slice(3)}`;
+  }
+
+  return `55${numero}`;
+}
+
 /**
  * Modal Inteligente de Remarcação
  * Mostra disponibilidade de horários em tempo real
@@ -296,18 +318,7 @@ export function ModalRemarcacao({ agendamento, aberto, onFechar, onSucesso, tipo
       const dataFormatada = format(novaDataHora, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
       const mensagem = `🔄 *Agendamento Remarcado*\n\nOlá ${agendamento.clientes.nome}!\n\nSeu agendamento foi remarcado:\n\n📅 *Nova Data:* ${dataFormatada}\n${emoji} *Serviço:* ${agendamento.servicos.nome}\n👤 *${terminologia.profissional.singular}:* ${agendamento.barbeiros.nome}\n💰 *Valor:* R$ ${agendamento.servicos.preco.toFixed(2)}\n\n${motivo ? `📝 *Motivo:* ${motivo}\n\n` : ""}Qualquer dúvida, entre em contato!\n\n_${nomeEstabelecimento || 'BarberHub'}_`;
 
-      // Limpar e formatar número
-      let telefone = agendamento.clientes.telefone.replace(/\D/g, '');
-      
-      // Adicionar código do país se não tiver
-      if (!telefone.startsWith('55')) {
-        telefone = '55' + telefone;
-      }
-      
-      // Remover o 9 extra se tiver 13 dígitos (formato antigo)
-      if (telefone.length === 13 && telefone.charAt(4) === '9') {
-        telefone = telefone.substring(0, 4) + telefone.substring(5);
-      }
+      const telefone = normalizarNumeroWhatsapp(agendamento.clientes.telefone);
 
       console.log("[Remarcação] Enviando notificação para:", telefone);
       console.log("[Remarcação] URL do bot:", BOT_URL);

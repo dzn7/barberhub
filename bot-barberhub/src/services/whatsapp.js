@@ -501,7 +501,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Gera JID para um telefone brasileiro.
- * Regra: remove o "9" extra (celulares BR) quando aplicável.
+ * Regra: usa normalização híbrida por DDD (11 com 9, demais sem 9).
  */
 function gerarJid(telefone) {
   return formatarParaJid(telefone);

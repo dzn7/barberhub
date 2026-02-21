@@ -3,13 +3,12 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Plus, ChevronLeft, ChevronRight, Calendar, Scissors,
-  CheckCircle, XCircle, Trash2, X, Clock, Phone, RefreshCw,
+  CheckCircle, XCircle, Trash2, X, Clock, Phone, Pencil,
   ZoomIn, ZoomOut, CalendarDays, Columns, LayoutGrid
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { PortalModal } from "@/components/ui/PortalModal";
-import { ModalRemarcacao } from "./ModalRemarcacao";
-import { ModalNovoAgendamento } from "@/components/agendamento";
+import { ModalEditarAgendamento, ModalNovoAgendamento } from "@/components/agendamento";
 import { ModalConfirmacaoExclusao } from "@/components/calendario";
 import {
   format, addDays, startOfWeek, parseISO, subDays,
@@ -39,7 +38,9 @@ interface Agendamento {
   data_hora: string;
   status: string;
   observacoes?: string;
+  cliente_id?: string;
   barbeiro_id: string;
+  servico_id?: string;
   servicos_ids?: string[];
   clientes?: { nome: string; telefone: string } | null;
   barbeiros?: { id: string; nome: string } | null;
@@ -176,7 +177,7 @@ export function CalendarioSemanalNovo() {
   const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null);
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
-  const [modalRemarcacaoAberto, setModalRemarcacaoAberto] = useState(false);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
   const [processandoExclusao, setProcessandoExclusao] = useState(false);
   const [processandoConcluirTodos, setProcessandoConcluirTodos] = useState(false);
@@ -1484,11 +1485,14 @@ export function CalendarioSemanalNovo() {
                 )}
                 {agendamentoSelecionado.status !== 'concluido' && agendamentoSelecionado.status !== 'cancelado' && (
                   <button
-                    onClick={() => { setModalDetalhesAberto(false); setTimeout(() => setModalRemarcacaoAberto(true), 150); }}
+                    onClick={() => {
+                      setModalDetalhesAberto(false);
+                      setTimeout(() => setModalEditarAberto(true), 120);
+                    }}
                     className="flex items-center justify-center gap-2 px-3 py-2.5 bg-zinc-600 hover:bg-zinc-500 text-white rounded-xl text-sm font-medium"
                   >
-                    <RefreshCw className="w-4 h-4" />
-                    Remarcar
+                    <Pencil className="w-4 h-4" />
+                    Editar
                   </button>
                 )}
               </div>
@@ -1515,20 +1519,17 @@ export function CalendarioSemanalNovo() {
         )}
       </PortalModal>
 
-      {/* Modal Remarcação */}
-      {agendamentoSelecionado && (
-        <ModalRemarcacao
-          agendamento={{
-            id: agendamentoSelecionado.id,
-            data_hora: agendamentoSelecionado.data_hora,
-            status: agendamentoSelecionado.status,
-            clientes: agendamentoSelecionado.clientes || { nome: 'Cliente', telefone: '' },
-            barbeiros: { id: agendamentoSelecionado.barbeiros?.id || agendamentoSelecionado.barbeiro_id, nome: agendamentoSelecionado.barbeiros?.nome || '' },
-            servicos: agendamentoSelecionado.servicos || { nome: 'Serviço', preco: 0, duracao: 0 }
+      {tenant && agendamentoSelecionado && (
+        <ModalEditarAgendamento
+          tenantId={tenant.id}
+          aberto={modalEditarAberto}
+          agendamento={agendamentoSelecionado}
+          onFechar={() => setModalEditarAberto(false)}
+          onSucesso={() => {
+            buscarAgendamentos({ silencioso: true });
+            setModalEditarAberto(false);
           }}
-          aberto={modalRemarcacaoAberto}
-          onFechar={() => setModalRemarcacaoAberto(false)}
-          onSucesso={() => { buscarAgendamentos({ silencioso: true }); setModalRemarcacaoAberto(false); }}
+          tipoNegocio={(tenant.tipo_negocio as TipoNegocio) || 'barbearia'}
         />
       )}
 

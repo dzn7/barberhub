@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import {
   Calendar, 
   Clock, 
   User, 
@@ -17,7 +17,7 @@ import {
   Filter,
   Trash2,
   Plus,
-  RefreshCw,
+  Pencil,
   X
 } from "lucide-react";
 import { format, addDays, isSameDay, parseISO, startOfDay, isToday, isPast } from "date-fns";
@@ -30,8 +30,7 @@ import { obterEmojiPrincipal, obterTerminologia } from "@/lib/configuracoes-nego
 import { TipoNegocio } from "@/lib/tipos-negocio";
 import { Badge, Button, TextField, Select } from "@radix-ui/themes";
 import { PortalModal } from "@/components/ui/PortalModal";
-import { ModalRemarcacao } from "./ModalRemarcacao";
-import { ModalNovoAgendamento } from "@/components/agendamento";
+import { ModalEditarAgendamento, ModalNovoAgendamento } from "@/components/agendamento";
 import { buscarConfiguracaoHorarios, ConfiguracaoHorarios, HORARIOS_PADRAO } from "@/lib/horarios-funcionamento";
 
 const TIMEZONE_BRASILIA = "America/Sao_Paulo";
@@ -50,7 +49,9 @@ interface Agendamento {
   data_hora: string;
   status: string;
   observacoes?: string;
+  cliente_id?: string;
   barbeiro_id: string;
+  servico_id?: string;
   servicos_ids?: string[];
   clientes: {
     nome: string;
@@ -141,7 +142,7 @@ export function CalendarioAgendamentos() {
   const [processando, setProcessando] = useState(false);
   const [modalConcluirTodos, setModalConcluirTodos] = useState(false);
   const [diaSelecionadoConcluir, setDiaSelecionadoConcluir] = useState<Date | null>(null);
-  const [modalRemarcacaoAberto, setModalRemarcacaoAberto] = useState(false);
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
   
   // Estado para novo agendamento
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
@@ -912,7 +913,7 @@ export function CalendarioAgendamentos() {
 
       {/* Modal de Detalhes */}
       <PortalModal
-        aberto={!!agendamentoSelecionado && !modalRemarcacaoAberto}
+        aberto={!!agendamentoSelecionado && !modalEditarAberto}
         onFechar={() => setAgendamentoSelecionado(null)}
         titulo="Detalhes do Agendamento"
         tamanho="md"
@@ -1037,12 +1038,12 @@ export function CalendarioAgendamentos() {
                 {agendamentoSelecionado.status !== 'concluido' && agendamentoSelecionado.status !== 'cancelado' && (
                   <button
                     onClick={() => {
-                      setModalRemarcacaoAberto(true);
+                      setModalEditarAberto(true);
                     }}
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-zinc-600 hover:bg-zinc-500 text-white rounded-xl transition-all font-medium text-sm active:scale-[0.98]"
                   >
-                    <RefreshCw className="w-4 h-4" />
-                    Remarcar
+                    <Pencil className="w-4 h-4" />
+                    Editar
                   </button>
                 )}
               </div>
@@ -1071,27 +1072,18 @@ export function CalendarioAgendamentos() {
         )}
       </PortalModal>
 
-      {/* Modal de Remarcação */}
-      {agendamentoSelecionado && (
-        <ModalRemarcacao
-          agendamento={{
-            id: agendamentoSelecionado.id,
-            data_hora: agendamentoSelecionado.data_hora,
-            status: agendamentoSelecionado.status,
-            clientes: agendamentoSelecionado.clientes,
-            barbeiros: {
-              id: agendamentoSelecionado.barbeiros?.id || agendamentoSelecionado.barbeiro_id,
-              nome: agendamentoSelecionado.barbeiros?.nome || ''
-            },
-            servicos: agendamentoSelecionado.servicos
-          }}
-          aberto={modalRemarcacaoAberto}
-          onFechar={() => setModalRemarcacaoAberto(false)}
+      {tenant && agendamentoSelecionado && (
+        <ModalEditarAgendamento
+          tenantId={tenant.id}
+          aberto={modalEditarAberto}
+          agendamento={agendamentoSelecionado}
+          onFechar={() => setModalEditarAberto(false)}
           onSucesso={() => {
             buscarAgendamentos();
-            setModalRemarcacaoAberto(false);
+            setModalEditarAberto(false);
             setAgendamentoSelecionado(null);
           }}
+          tipoNegocio={(tenant.tipo_negocio as TipoNegocio) || 'barbearia'}
         />
       )}
 
