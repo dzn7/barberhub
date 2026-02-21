@@ -93,6 +93,10 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
   const urlFontes = gerarUrlFontes(fontePrincipal, fonteTitulos)
   const versaoTenant = encodeURIComponent(tenant.atualizado_em || String(Date.now()))
   const manifestHref = `/api/manifest?slug=${encodeURIComponent(slug)}&v=${versaoTenant}`
+  const logoInstalacao = tenant.icone_pwa_192 || tenant.logo_url || ''
+  const logoInstalacaoVersionada = logoInstalacao
+    ? `${logoInstalacao}${logoInstalacao.includes('?') ? '&' : '?'}v=${versaoTenant}`
+    : ''
 
   return (
     <>
@@ -118,7 +122,8 @@ export default async function TenantLayout({ children, params }: LayoutProps) {
         {children}
         <InstalarPWA 
           nomeBarbearia={tenant.nome} 
-          corPrimaria={tenant.cor_primaria || '#18181b'} 
+          corPrimaria={tenant.cor_primaria || '#18181b'}
+          logoUrl={logoInstalacaoVersionada}
         />
       </div>
     </>

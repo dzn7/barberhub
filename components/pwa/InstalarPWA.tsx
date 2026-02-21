@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Download, X, Smartphone, Share, Plus } from 'lucide-react'
+import { Download, X, Smartphone, Share, Plus, ExternalLink } from 'lucide-react'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -12,31 +12,53 @@ interface BeforeInstallPromptEvent extends Event {
 interface InstalarPWAProps {
   nomeBarbearia?: string
   corPrimaria?: string
+  logoUrl?: string
+}
+
+function isCorClara(corHex: string): boolean {
+  const hex = corHex.replace('#', '')
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return false
+  const r = parseInt(hex.slice(0, 2), 16)
+  const g = parseInt(hex.slice(2, 4), 16)
+  const b = parseInt(hex.slice(4, 6), 16)
+  const luminancia = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+  return luminancia > 0.65
 }
 
 /**
  * Componente para exibir prompt de instalação do PWA
  * Detecta automaticamente se o app pode ser instalado
  */
-export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181b' }: InstalarPWAProps) {
+export function InstalarPWA({
+  nomeBarbearia = 'BarberHub',
+  corPrimaria = '#18181b',
+  logoUrl = '',
+}: InstalarPWAProps) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [mostrarBanner, setMostrarBanner] = useState(false)
   const [mostrarInstrucoesIOS, setMostrarInstrucoesIOS] = useState(false)
   const [jaInstalado, setJaInstalado] = useState(false)
-
-  // Detectar se é iOS
-  const isIOS = typeof window !== 'undefined' && 
-    /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-    !(window as any).MSStream
-
-  // Detectar se já está instalado como PWA
-  const isStandalone = typeof window !== 'undefined' && 
-    (window.matchMedia('(display-mode: standalone)').matches || 
-     (window.navigator as any).standalone === true)
+  const [isIOS, setIsIOS] = useState(false)
+  const [isAndroid, setIsAndroid] = useState(false)
+  const iconeEscuro = isCorClara(corPrimaria)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const userAgent = navigator.userAgent || navigator.vendor
+    const iOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream
+    const android = /Android/i.test(userAgent)
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
+      (window.navigator as any).standalone === true
+
+    setIsIOS(iOS)
+    setIsAndroid(android)
+
     // Se já está em modo standalone, não mostrar
-    if (isStandalone) {
+    if (standalone) {
       setJaInstalado(true)
       return
     }
@@ -62,7 +84,7 @@ export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
     // Para iOS, mostrar instruções manuais após 5 segundos
-    if (isIOS && !isStandalone) {
+    if (iOS && !standalone) {
       setTimeout(() => {
         setMostrarBanner(true)
       }, 5000)
@@ -71,7 +93,7 @@ export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
-  }, [isIOS, isStandalone])
+  }, [])
 
   const handleInstalar = async () => {
     if (!deferredPrompt) {
@@ -131,10 +153,18 @@ export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181
             >
               <div className="flex items-start gap-3">
                 <div 
-                  className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center"
+                  className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-1 ring-white/15"
                   style={{ backgroundColor: corPrimaria }}
                 >
-                  <Smartphone className="w-6 h-6 text-white" />
+                  {logoUrl ? (
+                    <div
+                      className="w-full h-full bg-cover bg-center"
+                      style={{ backgroundImage: `url(${logoUrl})` }}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Smartphone className={`w-6 h-6 ${iconeEscuro ? 'text-zinc-900' : 'text-white'}`} />
+                  )}
                 </div>
                 
                 <div className="flex-1 min-w-0">
@@ -142,7 +172,11 @@ export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181
                     Instalar {nomeBarbearia}
                   </h3>
                   <p className="text-zinc-400 text-xs mt-0.5">
-                    Adicione à tela inicial para acesso rápido
+                    {isIOS
+                      ? 'No iPhone, use o Safari para adicionar à Tela de Início'
+                      : isAndroid
+                        ? 'No Android, toque em Instalar para concluir em 1 passo'
+                        : 'Adicione à tela inicial para acesso rápido'}
                   </p>
                 </div>
 
@@ -165,8 +199,8 @@ export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181
                   onClick={handleInstalar}
                   className="flex-1 py-2.5 px-4 text-sm font-medium text-black bg-white rounded-xl hover:bg-zinc-100 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Download className="w-4 h-4" />
-                  Instalar
+                  {isIOS && !deferredPrompt ? <Share className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                  {isIOS && !deferredPrompt ? 'Ver como instalar' : 'Instalar'}
                 </button>
               </div>
             </div>
@@ -210,10 +244,10 @@ export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181
                   </div>
                   <div className="flex-1">
                     <p className="text-white text-sm">
-                      Toque no ícone <Share className="w-4 h-4 inline text-blue-500" /> compartilhar
+                      Abra este site no <span className="font-semibold">Safari</span>
                     </p>
                     <p className="text-zinc-500 text-xs mt-0.5">
-                      Na barra inferior do Safari
+                      Em iPhone, a instalação PWA funciona via Safari
                     </p>
                   </div>
                 </div>
@@ -224,10 +258,10 @@ export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181
                   </div>
                   <div className="flex-1">
                     <p className="text-white text-sm">
-                      Role e toque em &quot;Adicionar à Tela de Início&quot;
+                      Toque em <Share className="w-4 h-4 inline text-blue-500" /> Compartilhar
                     </p>
-                    <p className="text-zinc-500 text-xs mt-0.5 flex items-center gap-1">
-                      <Plus className="w-3 h-3" /> Adicionar à Tela de Início
+                    <p className="text-zinc-500 text-xs mt-0.5">
+                      Fica na barra inferior (ou superior, dependendo do iOS)
                     </p>
                   </div>
                 </div>
@@ -238,13 +272,20 @@ export function InstalarPWA({ nomeBarbearia = 'BarberHub', corPrimaria = '#18181
                   </div>
                   <div className="flex-1">
                     <p className="text-white text-sm">
-                      Toque em &quot;Adicionar&quot; no canto superior
+                      Escolha <Plus className="w-3 h-3 inline" /> &quot;Adicionar à Tela de Início&quot;
                     </p>
                     <p className="text-zinc-500 text-xs mt-0.5">
-                      O app aparecerá na sua tela inicial
+                      Depois toque em &quot;Adicionar&quot; para finalizar
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-5 p-3 rounded-xl bg-zinc-800/60 border border-zinc-700">
+                <p className="text-zinc-300 text-xs flex items-center gap-2">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Dica: se o botão não aparecer, atualize a página e tente novamente no Safari.
+                </p>
               </div>
 
               <button
